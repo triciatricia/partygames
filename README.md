@@ -17,5 +17,5 @@ Games to play at parties. Instead of staring at your phone, you can interact wit
 ## Unit tests
 
 * Install jasmine-node: https://github.com/mhevery/jasmine-node
-* Add tests to __tests__ folders
+* Add tests to `__tests__` folders
 * Run `find . -name __tests__ | xargs jasmine-node --matchall` to run all tests in that directory (recursively)
