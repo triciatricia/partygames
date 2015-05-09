@@ -18,4 +18,4 @@ Games to play at parties. Instead of staring at your phone, you can interact wit
 
 * Install jasmine-node: https://github.com/mhevery/jasmine-node
 * Add tests to __tests__ folders
-* Run `find -name __tests__ | xargs jasmine-node --matchall` to run all tests in that directory (recursively)
+* Run `find . -name __tests__ | xargs jasmine-node --matchall` to run all tests in that directory (recursively)
