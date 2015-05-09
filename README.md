@@ -1,12 +1,7 @@
-bookmarks
+partygames
 =========
 
-Social link-sharing widget
-
-## Supported Browsers
-
-* Google Chrome
-* Mozilla Firefox
+Games to play at parties. Instead of staring at your phone, you can interact with others while staring at your phone.
 
 ## Webserver setup
 
