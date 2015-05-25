@@ -110,4 +110,23 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
   gameDAO.insertData(gameTable, props, callback);
  };
 
+ /**
+  * Function that retrieves a game.
+  * TODO Placeholder for now.
+  * Callback(err, game)
+  */
+  DAOs.getGame = function(DBConn, gameID, callback) {
+    var game = {
+      id: 1,
+      roundNum: 1,
+      hasStarted: 0,
+      isCompleted: 1,
+      lastImageRetrieved: 1,
+      URLSuffix: 'abc',
+      timeCreated: 123,
+      host: 1
+    };
+    callback(0, game);
+  };
+
 module.exports = DAOs;
