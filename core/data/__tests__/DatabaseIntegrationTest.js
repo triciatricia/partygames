@@ -1,6 +1,7 @@
 /**
  * Integration test.
  * Make a connection and insert/get data from a test database.
+ * TODO: Test getGame.
  */
 
  var JSON = require('JSON');
