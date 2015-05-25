@@ -1,10 +1,20 @@
+/**
+ * The schema for the data types.
+ * Define data types (DataFields), their properties,
+ * and what type they are in the mysql table ("DBType").
+ */
+
 var utils = require('../utils');
 
+// DataTypes holds all the DataFields defined below.
 var DataTypes = {};
 
 function addType(name, dbTypeGetter, props) {
   /**
    * @constructor
+   * name: Name of the data type
+   * dbTypeGetter: Function that returns the database type (ie: bigint)
+   * props: List of properties of the data type (ie: size)
    */
   function DataField() {
     this.props = {};
@@ -33,24 +43,25 @@ function addType(name, dbTypeGetter, props) {
   DataField.prototype.getType = function() {
     return DataTypes[name];
   };
-  
+
   DataTypes[name] = function() {
     return new DataField();
   };
-};
+}
 
-addType('int', 'bigint (20)');
-addType('id', 'bigint (20) unsigned');
-addType('time', 'int (10) unsigned');
+// Add data types
+addType('int', utils.functionThatReturns('bigint (20)'));
+addType('id', utils.functionThatReturns('bigint (20) unsigned'));
+addType('time', utils.functionThatReturns('int (10) unsigned'));
+addType('boolean', utils.functionThatReturns('tinyint(1)'));
 addType(
-  'char', 
+  'char',
   function(props) {
     return 'varchar(' + props.size || 256 + ')';
   },
-  ['size']
-);
-addType('text', 'text');
+  ['size']);
+addType('text', utils.functionThatReturns('text'));
 // TODO: Need a way to resolve references
-addType('ref', 'bigint (20) unsigned');
+addType('ref', utils.functionThatReturns('bigint (20) unsigned'));
 
 module.exports = DataTypes;
