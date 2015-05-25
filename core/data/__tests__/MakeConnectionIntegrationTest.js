@@ -11,23 +11,24 @@ describe('MakeConnectionIntegrationTest', function() {
    *
    * If this fails, either the code is wrong or your mysql setup is not working
    */
-  it('should be able to make a connection', function() {
+
+  it('should be able to make a connection', function(done) {
     var connUtils = require('../conn');
-    var rConn = connUtils.getNewConnection(connUtils.Modes.READ);
-
-    expect(rConn.getConn()).toBeDefined();
-
-    rConn.getConn().end();
+    var rConn = connUtils.getNewConnection(connUtils.Modes.READ, function(err) {
+      rConn.getConn().end();
+      expect(err).toBe(null);
+      done();
+    });
   });
 
   it('should not allow invalid modes', function() {
     var connUtils = require('../conn');
     expect(function() {
-      connUtils.getNewConnection('read')
+      connUtils.getNewConnection('read');
     }).toThrow();
 
     expect(function() {
-      connUtils.getNewConnection('write')
+      connUtils.getNewConnection('write');
     }).toThrow();
   });
 

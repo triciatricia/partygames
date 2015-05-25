@@ -7,15 +7,24 @@ var utils = require('../utils');
 var mysql = require('mysql');
 var assert = require('assert');
 
-function getConnection() {
-  var connection = mysql.createConnection({
-    host: conf.dbHost,
-    user: conf.dbUser,
-    password: conf.dbPass,
-    name: conf.dbName
-  });
+function getConnection(callback, customConf) {
+  /**
+   * customConf is an optional configuration
+   * If null, it will use the default in ../../conf.js.
+   */
+  var connection;
+  if (customConf) {
+    connection = mysql.createConnection(customConf);
+  } else {
+    connection = mysql.createConnection({
+      host: conf.dbHost,
+      user: conf.dbUser,
+      password: conf.dbPass,
+      database: conf.dbName
+    });
+  }
 
-  connection.connect();
+  connection.connect(callback);
 
   return connection;
 }
@@ -44,10 +53,17 @@ utils.extend(DBConn.prototype, {
 });
 
 var ConnectionUtils = {
-  getNewConnection: function(mode) {
+  getNewConnection: function(mode, callback, customConf) {
+    /**
+     * customConf is an optional object with parameters
+     * host, user, password, and database.
+     */
     assert(mode === ConnectionModes.READ || mode == ConnectionModes.WRITE);
 
-    var connection = getConnection();
+    var connection = getConnection(callback, customConf);
+    // assert(
+    //   connection.state != 'disconnected',
+    //   'New mysql connection should be connected to database.');
 
     return new DBConn(connection, mode);
   },
