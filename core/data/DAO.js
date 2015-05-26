@@ -126,7 +126,7 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
       timeCreated: 123,
       host: 1
     };
-    callback(0, game);
+    callback(null, game);
   };
 
 module.exports = DAOs;
