@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "find . -name __tests__ | xargs jasmine-node --matchall"
   },
   "dependencies": {
     "body-parser": "~1.12.4",
@@ -12,6 +13,16 @@
     "ejs": "~2.3.1",
     "express": "~4.12.4",
     "morgan": "~1.5.3",
-    "serve-favicon": "~2.2.1"
+    "serve-favicon": "~2.2.1",
+    "JSON": "~1.0.0",
+    "assert": "~1.3.0",
+    "mysql": "~2.0.0-alpha8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/triciatricia/partygames.git"
+  },
+  "bugs": {
+    "url": "https://github.com/triciatricia/partygames/issues"
   }
 }
