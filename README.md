@@ -14,3 +14,5 @@ Games to play at parties. Instead of staring at your phone, you can interact wit
 
 * Run `npm start`
 * Go to http://127.0.0.1:3000/
+
+More info in the Google Doc & Powerpoint files.
