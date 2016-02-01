@@ -90,7 +90,7 @@ function DAO(DBConn) {
 }
 
 // Function that sets a value for a game.
-// Change to make more specific.
+// TODO Change to make more specific.
 DAOs.setGame = function(DBConn, gameID, props, callback) {
   var gameDAO = new DAO(DBConn);
   var gameTable = tables.game.tableName;
