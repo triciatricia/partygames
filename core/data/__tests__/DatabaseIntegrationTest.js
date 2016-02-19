@@ -4,10 +4,12 @@
  * TODO: Test getGame.
  */
 
- var JSON = require('JSON');
+ "use strict";
+
+ //var JSON = require('JSON');
 
  // Use a custom database configuration for these tests.
- DBConfig = {
+ var DBConfig = {
   host: 'localhost',
   user: 'test',
   password: 'happytesting',
@@ -48,24 +50,28 @@ describe('DatabaseIntegrationTest', function() {
             // Try to make a new game
             // DAOs.newGame = function(DBConn, game, callback)
             var game = {
-              roundNum: 1,
-              hasStarted: 0,
+              round: 1,
               isCompleted: 1,
-              lastImageRetrieved: 1,
-              URLSuffix: 'abc',
+              lastImage: 1,
+              gameCode: 'abc',
               timeCreated: 123,
-              host: 1
+              host: 1,
+              reactor: 1,
+              images: 'xyz'
             };
             var expectedRow = {
               id: 1,
-              roundNum: 1,
-              hasStarted: 0,
+              round: 1,
               isCompleted: 1,
-              lastImageRetrieved: 1,
-              URLSuffix: 'abc',
+              lastImage: 1,
+              gameCode: 'abc',
               timeCreated: 123,
-              host: 1
+              host: 1,
+              reactor: 1,
+              images: 'xyz'
             };
+
+            expect(err).toBe(null);
 
             DAO.newGame(wConn, game, function(err, result) {
               expect(wConn.getConn()).toBeDefined();

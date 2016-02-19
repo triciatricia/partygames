@@ -4,6 +4,8 @@
  * and what type they are in the mysql table ("DBType").
  */
 
+"use strict";
+
 var utils = require('../utils');
 
 // DataTypes holds all the DataFields defined below.
@@ -61,7 +63,7 @@ addType(
   },
   ['size']);
 addType('text', utils.functionThatReturns('text'));
-// TODO: Need a way to resolve references
-addType('ref', utils.functionThatReturns('bigint (20) unsigned'));
+// TODO Need a way to get out links
+addType('links', utils.functionThatReturns('text'));
 
 module.exports = DataTypes;
