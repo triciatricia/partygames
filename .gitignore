@@ -14,6 +14,7 @@ build/Release
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
+.jshintrc
 
 # secret settings
 local_conf.js
