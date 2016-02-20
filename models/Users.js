@@ -2,11 +2,12 @@ var DataTypes = require('../core/data/types');
 
 var Users = {
   id: DataTypes.id(),
-  name: DataTypes.char().setSize(256),
-  email: DataTypes.char().setSize(256),
-  passHash: DataTypes.char().setSize(256),
-  passSalt: DataTypes.char().setSize(256),
-  timeCreated: DataTypes.time(),
+  nickname: DataTypes.char(),
+  accessToken: DataTypes.char(),
+  roundOfLastResponse: DataTypes.unsignedint(),
+  response: DataTypes.text(),
+  score: DataTypes.int(),
+  game: DataTypes.id()
 };
 
 module.exports = Users;

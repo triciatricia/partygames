@@ -9,9 +9,9 @@ describe('LoadAllModels', function() {
   }
 
   it('should be able to load all models', function() {
-    test(require('../Bookmarks'));
-    test(require('../Friendships'));
+    test(require('../Games'));
     test(require('../Users'));
+    test(require('../UserGame'));
   });
 });
 

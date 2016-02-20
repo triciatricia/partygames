@@ -6,6 +6,13 @@
  	game: {
  		tableName: 'games',
  		gameIDName: 'ID'
+ 	},
+ 	users: {
+ 		tableName: 'users',
+ 		userIDName: 'ID'
+ 	},
+ 	usergame: {
+ 		tableName: 'usergame'
  	}
  };
 

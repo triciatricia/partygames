@@ -53,6 +53,7 @@ function addType(name, dbTypeGetter, props) {
 
 // Add data types
 addType('int', utils.functionThatReturns('bigint (20)'));
+addType('unsignedint', utils.functionThatReturns('bigint (20) unsigned'));
 addType('id', utils.functionThatReturns('bigint (20) unsigned'));
 addType('time', utils.functionThatReturns('int (10) unsigned'));
 addType('boolean', utils.functionThatReturns('tinyint(1)'));
