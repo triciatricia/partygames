@@ -1,12 +1,9 @@
 /**
  * Integration test.
  * Make a connection and insert/get data from a test database.
- * TODO: Test getGame.
  */
 
  "use strict";
-
- //var JSON = require('JSON');
 
  // Use a custom database configuration for these tests.
  var DBConfig = {
@@ -141,9 +138,9 @@ describe('DatabaseIntegrationTest', function() {
           expect(result.insertId).toEqual(1);
           expect(result.affectedRows).toEqual(1);
 
-          DAO.getGame(wConn, game, function(err, result) {
+          DAO.getGame(wConn, 1, function(err, result) {
             expect(err).toBe(null);
-            expect(result).toEqual(expectedRow);
+            expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
             // Close database connections
             wConn.getConn().end();

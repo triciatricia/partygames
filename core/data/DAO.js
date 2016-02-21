@@ -3,6 +3,7 @@ var types = require('./types');
 var assert = require('assert');
 var utils = require('../utils');
 var tables = require('./tables');
+var Games = require('../../models/Games');
 
 // All the data access objects
 var DAOs = {};
@@ -20,18 +21,18 @@ function DAO(DBConn) {
   /**
    * table: Name of the table to get data from
    * selectedCols: List of columns to select
-   * queryProps: Object with column names and values specifying which
+   * queryProps: String with column names and values specifying which
    * rows to get
    * callback: Callback function(err, results)
    */
   this.getData = function(table, selectedCols, queryProps, callback) {
-    var command = 'SELECT ? FROM ?';
+    var command = 'SELECT ?? FROM ??';
     var commandVals = [selectedCols, table];
-    if (queryProps.length > 0) {
-      command += 'WHERE ?;';
-      commandVals += [queryProps];
+    if (queryProps) {
+      command += ' WHERE ?';
+      Array.prototype.push.apply(commandVals, [queryProps]);
     } else {
-      command += ';';
+      command += '';
     }
 
     this.DBConn.getConn().query(command, commandVals, callback);
@@ -112,22 +113,25 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
 
  /**
   * Function that retrieves a game.
-  * TODO Placeholder for now.
   * Callback(err, game)
   */
   DAOs.getGame = function(DBConn, gameID, callback) {
-    var game = {
-      id: 1,
-      round: 1,
-      isCompleted: 1,
-      lastImage: 1,
-      gameCode: 'abc',
-      timeCreated: 123,
-      host: 1,
-      reactor: 1,
-      images: 'xyz'
+    var gameDAO = new DAO(DBConn);
+    var queryProps = {};
+    queryProps[tables.game.gameIDName] = gameID;
+
+    var newCallback = function(err, res) {
+      if (err) {
+        callback(err, null);
+      } else if (res.length === 0) {
+        callback('Could not find game ' + gameID + 'in database', res);
+      } else {
+        callback(err, res[0]);
+      }
     };
-    callback(null, game);
+
+    gameDAO.getData(tables.game.tableName, Object.getOwnPropertyNames(Games), queryProps,
+                    newCallback);
   };
 
 module.exports = DAOs;
