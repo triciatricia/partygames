@@ -118,13 +118,14 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
   DAOs.getGame = function(DBConn, gameID, callback) {
     var game = {
       id: 1,
-      roundNum: 1,
-      hasStarted: 0,
+      round: 1,
       isCompleted: 1,
-      lastImageRetrieved: 1,
-      URLSuffix: 'abc',
+      lastImage: 1,
+      gameCode: 'abc',
       timeCreated: 123,
-      host: 1
+      host: 1,
+      reactor: 1,
+      images: 'xyz'
     };
     callback(null, game);
   };
