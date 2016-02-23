@@ -30,7 +30,7 @@ describe('DatabaseIntegrationTest', function() {
         return;
       }
 
-      // Setup: Truncate games table
+      // Setup: Truncate games and users tables
       connection.query('TRUNCATE TABLE games', function(err) {
         if (err) {
           console.error('Error truncating mysql table for jasmine test setup: ' + err.stack);
@@ -38,7 +38,15 @@ describe('DatabaseIntegrationTest', function() {
           done();
           return;
         }
-        done();
+        connection.query('TRUNCATE TABLE users', function(err) {
+          if (err) {
+            console.error('Error truncating mysql table for jasmine test setup: ' + err.stack);
+            connection.end();
+            done();
+            return;
+          }
+          done();
+        });
       });
     });
   });
@@ -135,8 +143,10 @@ describe('DatabaseIntegrationTest', function() {
         DAO.newGame(wConn, game, function(err, result) {
           expect(wConn.getConn()).toBeDefined();
           expect(err).toBe(null);
-          expect(result.insertId).toEqual(1);
-          expect(result.affectedRows).toEqual(1);
+          if (!err) {
+            expect(result.insertId).toEqual(1);
+            expect(result.affectedRows).toEqual(1);
+          }
 
           DAO.getGame(wConn, 1, function(err, result) {
             expect(err).toBe(null);
@@ -150,5 +160,55 @@ describe('DatabaseIntegrationTest', function() {
       },
       DBConfig);
   });
+
+  it('should be able to make and get a user', function(done) {
+    // Connect to the database for the integration test
+    var connUtils = require('../conn');
+    var DAO = require('../DAO');
+    var wConn = connUtils.getNewConnection(
+      connUtils.Modes.WRITE,
+      function(err) {
+        // Make a new game
+        var user = {
+          nickname: 'testuser',
+          accessToken: 'secret',
+          roundOfLastResponse: null,
+          response: null,
+          score: 0,
+          game: 1
+        };
+        var expectedRow = {
+          id: 1,
+          nickname: 'testuser',
+          accessToken: 'secret',
+          roundOfLastResponse: null,
+          response: null,
+          score: 0,
+          game: 1
+        };
+
+        expect(err).toBe(null);
+
+        DAO.newUser(wConn, user, function(err, result) {
+          expect(wConn.getConn()).toBeDefined();
+          expect(err).toBe(null);
+          if (!err) {
+            expect(result.insertId).toEqual(1);
+            expect(result.affectedRows).toEqual(1);
+          }
+
+          DAO.getUser(wConn, 1, function(err, result) {
+            expect(err).toBe(null);
+            expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
+
+            // Close database connections
+            wConn.getConn().end();
+            done();
+          });
+        });
+      },
+      DBConfig);
+  });
+
 
 });

@@ -1,9 +1,13 @@
+"use strict";
+
 var conn = require('./conn');
 var types = require('./types');
 var assert = require('assert');
 var utils = require('../utils');
 var tables = require('./tables');
 var Games = require('../../models/Games');
+var Users = require('../../models/Users');
+var UserGame = require('../../models/UserGame');
 
 // All the data access objects
 var DAOs = {};
@@ -91,7 +95,6 @@ function DAO(DBConn) {
 }
 
 // Function that sets a value for a game.
-// TODO Change to make more specific.
 DAOs.setGame = function(DBConn, gameID, props, callback) {
   var gameDAO = new DAO(DBConn);
   var gameTable = tables.game.tableName;
@@ -101,8 +104,9 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
 
 /**
  * Function that inserts a game.
+ * Callback(err, res)
  */
- DAOs.newGame = function(DBConn, game, callback) {  // Import game datatype above?
+ DAOs.newGame = function(DBConn, game, callback) {
   var gameDAO = new DAO(DBConn);
   var props = {};
   // Copy all the properties from game to props.
@@ -111,27 +115,69 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
   gameDAO.insertData(gameTable, props, callback);
  };
 
- /**
-  * Function that retrieves a game.
-  * Callback(err, game)
-  */
-  DAOs.getGame = function(DBConn, gameID, callback) {
-    var gameDAO = new DAO(DBConn);
-    var queryProps = {};
-    queryProps[tables.game.gameIDName] = gameID;
+/**
+ * Function that retrieves a game.
+ * Callback(err, game)
+ */
+DAOs.getGame = function(DBConn, gameID, callback) {
+  var gameDAO = new DAO(DBConn);
+  var queryProps = {};
+  queryProps[tables.game.gameIDName] = gameID;
 
-    var newCallback = function(err, res) {
-      if (err) {
-        callback(err, null);
-      } else if (res.length === 0) {
-        callback('Could not find game ' + gameID + 'in database', res);
-      } else {
-        callback(err, res[0]);
-      }
-    };
-
-    gameDAO.getData(tables.game.tableName, Object.getOwnPropertyNames(Games), queryProps,
-                    newCallback);
+  var cb = function(err, res) {
+    if (err) {
+      callback(err, null);
+    } else if (res.length === 0) {
+      callback('Could not find game ' + gameID + 'in database', res);
+    } else {
+      callback(err, res[0]);
+    }
   };
+
+  gameDAO.getData(tables.game.tableName, Object.getOwnPropertyNames(Games), queryProps, cb);
+};
+
+/**
+ * Function that sets a value for a user.
+ */
+DAOs.setUser = function(DBConn, userID, props, callback) {
+  var userDAO = new DAO(DBConn);
+  var userTable = tables.users.tableName;
+  var userIDName = tables.users.userIDName;
+  userDAO.setData(userTable, userIDName, props, callback);
+};
+
+/**
+ * Function that creates a new user.
+ * Callback(err, res)
+ */
+DAOs.newUser = function(DBConn, user, callback) {
+  var userDAO = new DAO(DBConn);
+  var props = {};
+  utils.extend(props, user);
+  userDAO.insertData(tables.users.tableName, props, callback);
+};
+
+/**
+ * Function that retrieves a user.
+ * Callback(err, user)
+ */
+DAOs.getUser = function(DBConn, userID, callback) {
+  var userDAO = new DAO(DBConn);
+  var queryProps = {};
+  queryProps[tables.users.userIDName] = userID;
+
+  var cb = function(err, res) {
+    if (err) {
+      callback(err, null);
+    } else if (res.length === 0) {
+      callback('Could not find user ' + userID + ' in database', res);
+    } else {
+      callback(err, res[0]);
+    }
+  };
+
+  userDAO.getData(tables.users.tableName, Object.getOwnPropertyNames(Users), queryProps, cb);
+};
 
 module.exports = DAOs;
