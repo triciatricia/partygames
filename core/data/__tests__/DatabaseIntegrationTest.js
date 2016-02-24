@@ -108,7 +108,7 @@ describe('DatabaseIntegrationTest', function() {
       DBConfig);
   });
 
-  it('should be able to make and get a game', function(done) {
+  it('should be able to make, set, and get a game', function(done) {
     // Connect to the database for the integration test
     var connUtils = require('../conn');
     var DAO = require('../DAO');
@@ -152,9 +152,32 @@ describe('DatabaseIntegrationTest', function() {
             expect(err).toBe(null);
             expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-            // Close database connections
-            wConn.getConn().end();
-            done();
+            DAO.setGame(wConn, 1, {host: 3, round: 2}, function(err, result) {
+              expect(err).toBe(null);
+              if (!err) {
+                expect(result.affectedRows).toEqual(1);
+              }
+
+              DAO.getGame(wConn, 1, function(err, result) {
+                var expectedRow2 = {
+                  id: 1,
+                  round: 2,
+                  isCompleted: 1,
+                  lastImage: 1,
+                  gameCode: 'abc',
+                  timeCreated: 123,
+                  host: 3,
+                  reactor: 1,
+                  images: 'xyz'
+                };
+                expect(err).toBe(null);
+                expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
+
+                // Close database connections
+                wConn.getConn().end();
+                done();
+              });
+            });
           });
         });
       },
@@ -201,9 +224,31 @@ describe('DatabaseIntegrationTest', function() {
             expect(err).toBe(null);
             expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-            // Close database connections
-            wConn.getConn().end();
-            done();
+            DAO.setUser(wConn, 1, {}, function(err, result) {
+              expect(err).toBe(null);
+              expect(result).toBe(null);
+              DAO.setUser(wConn, 1, {score: 3}, function(err, result) {
+                expect(err).toBe(null);
+
+                DAO.getUser(wConn, 1, function(err, result) {
+                  var expectedRow2 = {
+                    id: 1,
+                    nickname: 'testuser',
+                    accessToken: 'secret',
+                    roundOfLastResponse: null,
+                    response: null,
+                    score: 3,
+                    game: 1
+                  };
+                  expect(err).toBe(null);
+                  expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
+
+                  // Close database connections
+                  wConn.getConn().end();
+                  done();
+                });
+              });
+            });
           });
         });
       },

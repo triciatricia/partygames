@@ -44,38 +44,57 @@ function DAO(DBConn) {
 
   /**
    * table: Name of the table to modify
-   * idProp: Name of the ID column (unique key column), null to make new entry
    * props: Object with column names and values to insert
    * callback: Callback function(err, results)
    */
-  this.setData = function(table, idProp, props, callback) {
+  this.insertData = function(table, props, callback) {
     // Assert that the connection mode is write so the database can be changed.
     assert(this.DBConn.getMode() === conn.Modes.WRITE);
 
     // Make mysql command
-    var command = 'INSERT INTO ' + table + ' SET ?';
+    var command = 'INSERT INTO ' + table + ' SET ?;';
     var commandVals = [props];
-    if (idProp && props.hasOwnProperty(idProp)) {
-      command += ' ON DUPLICATE KEY UPDATE ?;';
-      var propsNoID = {};
-      for (var prop in props) {
-        if (props.hasOwnProperty(prop) && props[prop] != idProp) {
-          propsNoID[prop] = props[prop];
-        }
-      }
-    }  else {
-      command += ';';
-    }
 
     // Run mysql command
     this.DBConn.getConn().query(command, commandVals, callback);
   };
 
   /**
-   * Insert data
+   * Update the data for a table
+   * table: Name of the table to modify
+   * idProp: Name of the ID column (unique key column) - will not change this.
+   * idVal: The ID (row value in the unique key column)
+   * props: Object with column names and values to insert
+   * callback: Callback function(err, results)
    */
-  this.insertData = function(table, props, callback) {
-    this.setData(table, null, props, callback);
+  this.updateData = function(table, idProp, idVal, props, callback) {
+    // Assert that the connection mode is write so the database can be changed.
+    assert(this.DBConn.getMode() === conn.Modes.WRITE);
+
+    // Make mysql command
+    var command = 'UPDATE ?? SET';
+    var commandVals = [table];
+    for (var prop in props) {
+      if (props.hasOwnProperty(prop)) {
+        if (commandVals.length > 1) {
+          command += ',';
+        }
+        command += ' ?? = ?';
+        commandVals.push(prop);
+        commandVals.push(props[prop]);
+      }
+    }
+    if (commandVals.length == 1) {
+      // There are no values to update
+      callback(null, null);
+      return;
+    }
+
+    command += ' WHERE ?? = ?;';
+    commandVals.push(idProp);
+    commandVals.push(idVal);
+
+    this.DBConn.getConn().query(command, commandVals, callback);
   };
 
   /**
@@ -99,7 +118,7 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
   var gameDAO = new DAO(DBConn);
   var gameTable = tables.game.tableName;
   var gameIDName = tables.game.gameIDName;
-  gameDAO.setData(gameTable, gameIDName, props, callback);
+  gameDAO.updateData(gameTable, gameIDName, gameID, props, callback);
 };
 
 /**
@@ -144,7 +163,7 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
   var userDAO = new DAO(DBConn);
   var userTable = tables.users.tableName;
   var userIDName = tables.users.userIDName;
-  userDAO.setData(userTable, userIDName, props, callback);
+  userDAO.updateData(userTable, userIDName, userID, props, callback);
 };
 
 /**
