@@ -212,12 +212,11 @@ describe('DatabaseIntegrationTest', function() {
 
         expect(err).toBe(null);
 
-        DAO.newUser(wConn, user, function(err, result) {
+        DAO.newUser(wConn, user, function(err, id) {
           expect(wConn.getConn()).toBeDefined();
           expect(err).toBe(null);
           if (!err) {
-            expect(result.insertId).toEqual(1);
-            expect(result.affectedRows).toEqual(1);
+            expect(id).toEqual(1);
           }
 
           DAO.getUser(wConn, 1, function(err, result) {

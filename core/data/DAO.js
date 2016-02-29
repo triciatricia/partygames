@@ -168,13 +168,25 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
 
 /**
  * Function that creates a new user.
- * Callback(err, res)
+ * Callback(err, userID)
  */
 DAOs.newUser = function(DBConn, user, callback) {
   var userDAO = new DAO(DBConn);
   var props = {};
   utils.extend(props, user);
-  userDAO.insertData(tables.users.tableName, props, callback);
+
+  // Modify the callback to get the userID
+  var cb = callback;
+  if (user.hasOwnProperty('game')) {
+    cb = function(err, userID) {
+      assert(err === null, 'Should not have an error accessing database');
+      userDAO.insertData(tables.usergame.tableName,
+        {'user': userID, 'game': user.game},
+        function(err, res) {callback(err, userID);});
+    };
+  }
+  userDAO.insertData(tables.users.tableName, props,
+    function(err, res) {cb(err, res.insertId);});
 };
 
 /**
