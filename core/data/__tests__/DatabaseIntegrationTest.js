@@ -45,7 +45,15 @@ describe('DatabaseIntegrationTest', function() {
             done();
             return;
           }
-          done();
+          connection.query('TRUNCATE TABLE usergame', function(err) {
+            if (err) {
+              console.error('Error truncating mysql table for jasmine test setup: ' + err.stack);
+              connection.end();
+              done();
+              return;
+            }
+            done();
+          });
         });
       });
     });
@@ -226,7 +234,7 @@ describe('DatabaseIntegrationTest', function() {
             DAO.setUser(wConn, 1, {}, function(err, result) {
               expect(err).toBe(null);
               expect(result).toBe(null);
-              DAO.setUser(wConn, 1, {score: 3}, function(err, result) {
+              DAO.setUser(wConn, 1, {score: 3, game: 2}, function(err, result) {
                 expect(err).toBe(null);
 
                 DAO.getUser(wConn, 1, function(err, result) {
@@ -237,14 +245,28 @@ describe('DatabaseIntegrationTest', function() {
                     roundOfLastResponse: null,
                     response: null,
                     score: 3,
-                    game: 1
+                    game: 2
                   };
                   expect(err).toBe(null);
                   expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
 
-                  // Close database connections
-                  wConn.getConn().end();
-                  done();
+                  DAO.newUser(wConn, user, function(err, id) {
+                    DAO.newUser(wConn, user, function(err, id) {
+                      expect(err).toBe(null);
+                      DAO.getGameUsers(wConn, 2, function(err, users) {
+                        expect(err).toBe(null);
+                        expect(users).toEqual([1]);
+                        DAO.getGameUsers(wConn, 1, function(err, users) {
+                          expect(err).toBe(null);
+                          expect(users).toEqual([2, 3]);
+
+                          // Close database connections
+                          wConn.getConn().end();
+                          done();
+                        });
+                      });
+                    });
+                  });
                 });
               });
             });

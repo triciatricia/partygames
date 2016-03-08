@@ -158,12 +158,25 @@ DAOs.getGame = function(DBConn, gameID, callback) {
 
 /**
  * Function that sets a value for a user.
+ * callback(error, result)
  */
 DAOs.setUser = function(DBConn, userID, props, callback) {
   var userDAO = new DAO(DBConn);
   var userTable = tables.users.tableName;
   var userIDName = tables.users.userIDName;
-  userDAO.updateData(userTable, userIDName, userID, props, callback);
+
+  // Modify the callback to change usergame if it's being changed
+  // Assumes a user can't be in 2 games at the same time
+  var cb = callback;
+  if (props.hasOwnProperty('game')) {
+    cb = function(err, res) {
+      assert(err === null, 'Should not have an error accessing database');
+      userDAO.updateData(tables.usergame.tableName, 'user',
+        userID, {'user': userID, 'game': props.game}, callback);
+    };
+  }
+
+  userDAO.updateData(userTable, userIDName, userID, props, cb);
 };
 
 /**
@@ -175,7 +188,7 @@ DAOs.newUser = function(DBConn, user, callback) {
   var props = {};
   utils.extend(props, user);
 
-  // Modify the callback to get the userID
+  // Modify the callback to add a row to usergame
   var cb = callback;
   if (user.hasOwnProperty('game')) {
     cb = function(err, userID) {
@@ -211,4 +224,29 @@ DAOs.getUser = function(DBConn, userID, callback) {
   userDAO.getData(tables.users.tableName, Object.getOwnPropertyNames(Users), queryProps, cb);
 };
 
+/**
+ * Function that gets the users in a game
+ * callback(err, users)
+ * users: array of userIDs
+ */
+ DAOs.getGameUsers = function(DBConn, gameID, callback) {
+  var gameDAO = new DAO(DBConn);
+  var queryProps = {'game': gameID};
+
+  var cb = function(err, res) {
+    if (err) {
+      callback(err, null);
+    } else if (res.length === 0) {
+      callback('Could not find game ' + gameID + ' in database', []);
+    } else {
+      var users = [];
+      for (var i = 0; i < res.length; ++i) {
+        users.push(res[i].user);
+      }
+      callback(err, users);
+    }
+  };
+
+  gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
+ };
 module.exports = DAOs;
