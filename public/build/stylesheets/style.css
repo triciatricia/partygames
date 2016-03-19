@@ -1,5 +1,5 @@
-@import url('bootstrap.css');
-@import url('bootstrap.css');
+@import url('bootstrap.min.css');
+@import url('bootstrap-theme.min.css');
 
 body {
   padding: 50px;
