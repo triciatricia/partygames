@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 var conn = require('./conn');
 var types = require('./types');
@@ -125,14 +125,14 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
  * Function that inserts a game.
  * Callback(err, res)
  */
- DAOs.newGame = function(DBConn, game, callback) {
+DAOs.newGame = function(DBConn, game, callback) {
   var gameDAO = new DAO(DBConn);
   var props = {};
   // Copy all the properties from game to props.
   utils.extend(props, game);
   var gameTable = tables.game.tableName;
   gameDAO.insertData(gameTable, props, callback);
- };
+};
 
 /**
  * Function that retrieves a game.
@@ -229,7 +229,7 @@ DAOs.getUser = function(DBConn, userID, callback) {
  * callback(err, users)
  * users: array of userIDs
  */
- DAOs.getGameUsers = function(DBConn, gameID, callback) {
+DAOs.getGameUsers = function(DBConn, gameID, callback) {
   var gameDAO = new DAO(DBConn);
   var queryProps = {'game': gameID};
 
@@ -248,5 +248,5 @@ DAOs.getUser = function(DBConn, userID, callback) {
   };
 
   gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
- };
+};
 module.exports = DAOs;
