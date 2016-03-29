@@ -19094,26 +19094,199 @@ module.exports = warning;
 module.exports = require('./lib/React');
 
 },{"./lib/React":26}],159:[function(require,module,exports){
+/* Utilities for displaying the game */
+
+module.exports.getInstructions = function (gameInfo, partyInfo) {
+  return 'Read this list out loud and pick your favorite!';
+};
+
+},{}],160:[function(require,module,exports){
+
+/* TODO:
+  Fill in ResponseForm for alternate situations
+  Add missing parts.
+  Also fill in instructions.
+  */
+
 var React = require('react');
 var ReactDOM = require('react-dom');
+var GameUtils = require('./game-utils');
 
-var Hello = React.createClass({
-  displayName: 'Hello',
+var GameStatus = React.createClass({
+  displayName: 'GameStatus',
 
+  propTypes: {
+    round: React.PropTypes.number,
+    score: React.PropTypes.number
+  },
   render: function () {
     return React.createElement(
       'div',
       null,
-      'Hello ',
-      this.props.name,
-      '!'
+      'Round: ',
+      this.props.round,
+      React.createElement('br', null),
+      'Score: ',
+      this.props.score
     );
   }
 });
 
-ReactDOM.render(React.createElement(Hello, { name: 'Tricia' }), document.getElementById('container'));
+var Instructions = React.createClass({
+  displayName: 'Instructions',
 
-},{"react":158,"react-dom":2}]},{},[159])
+  propTypes: {
+    instructions: React.PropTypes.string,
+    image: React.PropTypes.string
+  },
+  render: function () {
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'p',
+        null,
+        this.props.instructions
+      ),
+      React.createElement('img', { src: this.props.image })
+    );
+  }
+});
+
+var ReactionChoice = React.createClass({
+  displayName: 'ReactionChoice',
+
+  propTypes: {
+    choice: React.PropTypes.string,
+    key: React.PropTypes.number
+  },
+  render: function () {
+    return React.createElement(
+      'li',
+      null,
+      this.props.choice
+    );
+  }
+});
+
+var ScenarioList = React.createClass({
+  displayName: 'ScenarioList',
+
+  propTypes: {
+    choices: React.PropTypes.array,
+    reactorNickname: React.PropTypes.string
+  },
+  render: function () {
+    var reactionChoices = [];
+    for (var i = 0; i < this.props.choices.length; ++i) {
+      reactionChoices.push(React.createElement(ReactionChoice, {
+        choice: this.props.choices[i],
+        key: i }));
+    }
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'p',
+        null,
+        this.props.reactorNickname,
+        '\'s response when:'
+      ),
+      React.createElement(
+        'ol',
+        { type: 'A' },
+        reactionChoices
+      )
+    );
+  }
+});
+
+var ResponseForm = React.createClass({
+  displayName: 'ResponseForm',
+
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function () {
+    if (this.props.gameInfo.waitingForScenarios) {
+      return React.createElement('div', null);
+    } else if (this.props.gameInfo.waitingForReactor) {
+      if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
+        return React.createElement(ScenarioList, {
+          choices: this.props.gameInfo.choices,
+          reactorNickname: this.props.gameInfo.reactorNickname });
+      }
+    } else {
+      return React.createElement('div', null);
+    }
+  }
+});
+
+var RoundInfo = React.createClass({
+  displayName: 'RoundInfo',
+
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function () {
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(Instructions, {
+        instructions: GameUtils.getInstructions(this.props.gameInfo, this.props.playerInfo),
+        image: this.props.gameInfo.image }),
+      React.createElement(ResponseForm, {
+        gameInfo: this.props.gameInfo,
+        playerInfo: this.props.playerInfo })
+    );
+  }
+});
+
+var Container = React.createClass({
+  displayName: 'Container',
+
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function () {
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(GameStatus, {
+        round: this.props.gameInfo.round,
+        score: this.props.playerInfo.score }),
+      React.createElement(RoundInfo, {
+        gameInfo: this.props.gameInfo,
+        playerInfo: this.props.playerInfo })
+    );
+  }
+});
+
+var gameInfo = {
+  id: 2,
+  round: 2,
+  image: 'http://i.imgur.com/rxkWqmt.gif',
+  choices: ['he smells banana', 'he is released into the backyard', 'he is jumping off the couch'],
+  waitingForScenarios: false,
+  waitingForReactor: true,
+  reactorID: 3,
+  reactorNickname: 'Cinna'
+};
+
+var playerInfo = {
+  id: 3,
+  nickname: 'Cinna',
+  response: null,
+  score: 1,
+  game: 2
+};
+
+ReactDOM.render(React.createElement(Container, { gameInfo: gameInfo, playerInfo: playerInfo }), document.getElementById('container'));
+
+},{"./game-utils":159,"react":158,"react-dom":2}]},{},[160])
 
 
 //# sourceMappingURL=main.js.map

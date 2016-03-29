@@ -6,6 +6,10 @@ body {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
+div {
+  border: 1px solid #6f6f6f;
+}
+
 a {
   color: #00B7FF;
 }
