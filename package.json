@@ -28,6 +28,9 @@
     "url": "https://github.com/triciatricia/partygames/issues"
   },
   "devDependencies": {
+    "eslint": "^2.4.0",
+    "eslint-plugin-react": "^4.2.3",
+    "flow-bin": "^0.22.1",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-util": "^3.0.7",
