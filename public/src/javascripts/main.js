@@ -16,24 +16,24 @@ var GameStatus = React.createClass({
   },
   render: function() {
     return (
-      <div>
-        Round: {this.props.round}
-        <br />
-        Score: {this.props.score}
+      <div className='row'>
+        <div className='col-md-12'>
+          Round: {this.props.round}
+          <br />
+          Score: {this.props.score}
+        </div>
       </div>
     );
   }
 });
 
-var Instructions = React.createClass({
+var ReactionImage = React.createClass({
   propTypes: {
-    instructions: React.PropTypes.string,
     image: React.PropTypes.string
   },
   render: function() {
     return (
       <div>
-        <p>{this.props.instructions}</p>
         <img src={this.props.image} />
       </div>
     );
@@ -47,7 +47,9 @@ var ReactionChoice = React.createClass({
   },
   render: function() {
     return (
-      <li>{this.props.choice}</li>
+      <div className='radio'>
+        <label><input type='radio' name='scenario'/>{this.props.choice}</label>
+      </div>
     );
   }
 });
@@ -64,15 +66,17 @@ var ScenarioList = React.createClass({
         choice={this.props.choices[i]}
         key={i} />);
     }
-    return (<div>
-      <p>{this.props.reactorNickname}'s response when:</p>
-      <ol type="A">{reactionChoices}</ol>
-      </div>);
+    return (<form>
+        <label>{this.props.reactorNickname}'s response when:</label>
+        {reactionChoices}
+        <button type="submit" className="btn btn-default">Submit</button>
+      </form>);
   }
 });
 
 var ResponseForm = React.createClass({
   propTypes: {
+    instructions: React.PropTypes.string,
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
@@ -81,9 +85,13 @@ var ResponseForm = React.createClass({
       return (<div></div>);
     } else if (this.props.gameInfo.waitingForReactor){
       if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
-        return (<ScenarioList
-          choices={this.props.gameInfo.choices}
-          reactorNickname={this.props.gameInfo.reactorNickname} />);
+        return (
+          <div>
+            <p>{this.props.instructions}</p>
+            <ScenarioList
+            choices={this.props.gameInfo.choices}
+            reactorNickname={this.props.gameInfo.reactorNickname} />
+          </div>);
       }
     } else {
       return (<div></div>);
@@ -98,14 +106,18 @@ var RoundInfo = React.createClass({
   },
   render: function() {
     return (
-      <div>
-        <Instructions
-          instructions={GameUtils.getInstructions(this.props.gameInfo,
-                                                  this.props.playerInfo)}
-          image={this.props.gameInfo.image} />
-        <ResponseForm
-          gameInfo={this.props.gameInfo}
-          playerInfo={this.props.playerInfo} />
+      <div className='row'>
+        <div className='col-md-6'>
+          <ReactionImage
+            image={this.props.gameInfo.image} />
+        </div>
+        <div className='col-md-6'>
+          <ResponseForm
+            instructions={GameUtils.getInstructions(this.props.gameInfo,
+                                                    this.props.playerInfo)}
+            gameInfo={this.props.gameInfo}
+            playerInfo={this.props.playerInfo} />
+        </div>
       </div>
     );
   }

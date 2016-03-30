@@ -19122,32 +19122,30 @@ var GameStatus = React.createClass({
   render: function () {
     return React.createElement(
       'div',
-      null,
-      'Round: ',
-      this.props.round,
-      React.createElement('br', null),
-      'Score: ',
-      this.props.score
+      { className: 'row' },
+      React.createElement(
+        'div',
+        { className: 'col-md-12' },
+        'Round: ',
+        this.props.round,
+        React.createElement('br', null),
+        'Score: ',
+        this.props.score
+      )
     );
   }
 });
 
-var Instructions = React.createClass({
-  displayName: 'Instructions',
+var ReactionImage = React.createClass({
+  displayName: 'ReactionImage',
 
   propTypes: {
-    instructions: React.PropTypes.string,
     image: React.PropTypes.string
   },
   render: function () {
     return React.createElement(
       'div',
       null,
-      React.createElement(
-        'p',
-        null,
-        this.props.instructions
-      ),
       React.createElement('img', { src: this.props.image })
     );
   }
@@ -19162,9 +19160,14 @@ var ReactionChoice = React.createClass({
   },
   render: function () {
     return React.createElement(
-      'li',
-      null,
-      this.props.choice
+      'div',
+      { className: 'radio' },
+      React.createElement(
+        'label',
+        null,
+        React.createElement('input', { type: 'radio', name: 'scenario' }),
+        this.props.choice
+      )
     );
   }
 });
@@ -19184,18 +19187,19 @@ var ScenarioList = React.createClass({
         key: i }));
     }
     return React.createElement(
-      'div',
+      'form',
       null,
       React.createElement(
-        'p',
+        'label',
         null,
         this.props.reactorNickname,
         '\'s response when:'
       ),
+      reactionChoices,
       React.createElement(
-        'ol',
-        { type: 'A' },
-        reactionChoices
+        'button',
+        { type: 'submit', className: 'btn btn-default' },
+        'Submit'
       )
     );
   }
@@ -19205,6 +19209,7 @@ var ResponseForm = React.createClass({
   displayName: 'ResponseForm',
 
   propTypes: {
+    instructions: React.PropTypes.string,
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
@@ -19213,9 +19218,18 @@ var ResponseForm = React.createClass({
       return React.createElement('div', null);
     } else if (this.props.gameInfo.waitingForReactor) {
       if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
-        return React.createElement(ScenarioList, {
-          choices: this.props.gameInfo.choices,
-          reactorNickname: this.props.gameInfo.reactorNickname });
+        return React.createElement(
+          'div',
+          null,
+          React.createElement(
+            'p',
+            null,
+            this.props.instructions
+          ),
+          React.createElement(ScenarioList, {
+            choices: this.props.gameInfo.choices,
+            reactorNickname: this.props.gameInfo.reactorNickname })
+        );
       }
     } else {
       return React.createElement('div', null);
@@ -19233,13 +19247,21 @@ var RoundInfo = React.createClass({
   render: function () {
     return React.createElement(
       'div',
-      null,
-      React.createElement(Instructions, {
-        instructions: GameUtils.getInstructions(this.props.gameInfo, this.props.playerInfo),
-        image: this.props.gameInfo.image }),
-      React.createElement(ResponseForm, {
-        gameInfo: this.props.gameInfo,
-        playerInfo: this.props.playerInfo })
+      { className: 'row' },
+      React.createElement(
+        'div',
+        { className: 'col-md-6' },
+        React.createElement(ReactionImage, {
+          image: this.props.gameInfo.image })
+      ),
+      React.createElement(
+        'div',
+        { className: 'col-md-6' },
+        React.createElement(ResponseForm, {
+          instructions: GameUtils.getInstructions(this.props.gameInfo, this.props.playerInfo),
+          gameInfo: this.props.gameInfo,
+          playerInfo: this.props.playerInfo })
+      )
     );
   }
 });
