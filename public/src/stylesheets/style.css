@@ -13,3 +13,45 @@ div {
 a {
   color: #00B7FF;
 }
+
+.chosen {
+  background-color: #265a88;
+  box-shadow: none;
+  opacity: .65;
+  border-color: #245580;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+  color: #fff;
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.scenario {
+  box-shadow: none;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.2);
+  padding: 6px 12px;
+  /* margin-bottom: 0;*/
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
