@@ -1,16 +1,11 @@
 /* @flow */
-/* TODO:
-  Fill in ResponseForm for alternate situations
-  Add missing parts.
-  Also fill in instructions.
-  */
 
-var React = require('react');
-var ReactDOM = require('react-dom');
-var GameUtils = require('./game-utils');
-var SampleGameScenarios = require('./sample-game-scenarios');
+const React = require('react');
+const ReactDOM = require('react-dom');
+const GameUtils = require('./game-utils');
+const SampleGameScenarios = require('./sample-game-scenarios');
 
-var GameStatus = React.createClass({
+const GameStatus = React.createClass({
   propTypes: {
     round: React.PropTypes.number,
     score: React.PropTypes.number
@@ -28,7 +23,7 @@ var GameStatus = React.createClass({
   }
 });
 
-var ReactionImage = React.createClass({
+const ReactionImage = React.createClass({
   propTypes: {
     image: React.PropTypes.string
   },
@@ -41,7 +36,7 @@ var ReactionImage = React.createClass({
   }
 });
 
-var ReactionChoice = React.createClass({
+const ReactionChoice = React.createClass({
   propTypes: {
     choice: React.PropTypes.string,
     key: React.PropTypes.number
@@ -55,7 +50,7 @@ var ReactionChoice = React.createClass({
   }
 });
 
-var ReactionScenario = React.createClass({
+const ReactionScenario = React.createClass({
   propTypes: {
     choice: React.PropTypes.string,
     key: React.PropTypes.number,
@@ -74,84 +69,121 @@ var ReactionScenario = React.createClass({
           </strong>
         </div>
       );
-    } else {
-      return (
-        <div>
-          <p className="scenario">
-            {this.props.choice}
-          </p>
-        </div>
-      );
     }
+
+    return (
+      <div>
+        <p className="scenario">
+          {this.props.choice}
+        </p>
+      </div>
+    );
   }
 });
 
-var ScenarioList = React.createClass({
+const ScenarioList = React.createClass({
   propTypes: {
     choices: React.PropTypes.arrayOf(React.PropTypes.string),
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
-    winningResponseSubmittedBy: React.PropTypes.string
+    winningResponseSubmittedBy: React.PropTypes.string,
+    isReactor: React.PropTypes.bool
   },
   render: function() {
-    var scenarios = [];
-    var button;
-    if (this.props.winningResponse) {
-      /* winning response has already been decided */
-      for (var i = 0; i < this.props.choices.length; ++i) {
-        var submittedBy;
-        if (i == this.props.winningResponse) {
-          submittedBy = this.props.winningResponseSubmittedBy;
-        }
-        scenarios.push(<ReactionScenario
-          choice={this.props.choices[i]}
-          key={i}
-          wasChosen={i == this.props.winningResponse}
-          submittedBy={submittedBy} />);
-      }
-      button = <button type="submit" className="btn btn-default">Next</button>;
-    } else {
-      for (var j = 0; j < this.props.choices.length; ++j) {
-        scenarios.push(<ReactionChoice
-          choice={this.props.choices[j]}
-          key={j} />);
-      }
+    let scenarios;
+    let button;
+    if (this.props.isReactor && this.props.winningResponse === null) {
+      // have the reactor choose their favorite scenario
+      scenarios = this.props.choices.map(
+        (choice, i) => <ReactionChoice choice={choice} key={i} />
+      );
       button = <button type="submit" className="btn btn-default">Submit</button>;
+    } else {
+      // display the scenarios as a list
+      scenarios = this.props.choices.map(
+        (choice, i) => {
+          let submittedBy;
+          if (i === this.props.winningResponse) {
+            submittedBy = this.props.winningResponseSubmittedBy;
+          }
+          return (
+            <ReactionScenario
+              choice={choice}
+              key={i}
+              wasChosen={i == this.props.winningResponse}
+              submittedBy={submittedBy} />
+          );
+        }
+      );
+      if (this.props.isReactor) {
+        // allow the reactor to move the game to the next round
+        button = <button type="submit" className="btn btn-default">Next</button>;
+      }
     }
-    return (<form>
+    return (
+      <form>
         <label>{this.props.reactorNickname}'s response when:</label>
         {scenarios}
         {button}
-      </form>);
+      </form>
+    );
   }
 });
 
-var ResponseForm = React.createClass({
+const ResponseForm = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
   render: function() {
     if (this.props.gameInfo.waitingForScenarios) {
-      return (<div></div>);
-    } else if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
+      if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
+        return (
+          <div>
+            <p>Waiting for responses. Hold on tight!</p>
+            <button type="submit" className="btn btn-default">Skip Image</button>
+          </div>);
+      }
+
+      let buttonText = 'Submit Response';
+      let helpMessage = '';
+      let placeholder = 'Make up something';
+      if (this.props.playerInfo.submittedScenario) {
+        buttonText = 'Update Response';
+        helpMessage = 'Your response is in!';
+        placeholder = this.props.playerInfo.response;
+      }
       return (
-        <div>
-          <p>{GameUtils.getInstructions(this.props.gameInfo,
-                                        this.props.playerInfo)}</p>
-          <ScenarioList
+        <form>
+          <div className="form-group">
+            <p className='text-success'>{helpMessage}</p>
+            <label>{this.props.gameInfo.reactorNickname}'s response when...</label>
+            <input type="input" className="form-control" id="scenario"
+              placeholder={placeholder} defaultValue={this.props.playerInfo.response}/>
+          </div>
+            <button type="submit" className="btn btn-default">{buttonText}</button>
+        </form>
+      );
+    }
+
+    /* if (this.props.playerInfo.id == this.props.gameInfo.reactorID ||
+        this.props.gameInfo.winningResponse) { */
+    return (
+      <div>
+        <p>{GameUtils.getInstructions(this.props.gameInfo,
+                                      this.props.playerInfo)}</p>
+        <ScenarioList
           choices={this.props.gameInfo.choices}
           reactorNickname={this.props.gameInfo.reactorNickname}
           winningResponse={this.props.gameInfo.winningResponse}
-          winningResponseSubmittedBy={this.props.gameInfo.winningResponseSubmittedBy} />
-        </div>);
-    } else {
-      return (<div></div>);
-    }
+          winningResponseSubmittedBy={this.props.gameInfo.winningResponseSubmittedBy}
+          isReactor={this.props.gameInfo.reactorID == this.props.playerInfo.id} />
+      </div>
+    );
   }
 });
 
-var RoundInfo = React.createClass({
+const RoundInfo = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
@@ -173,27 +205,171 @@ var RoundInfo = React.createClass({
   }
 });
 
-var Container = React.createClass({
+const WaitingToStart = React.createClass({
   propTypes: {
-    gameInfo: React.PropTypes.object,
-    playerInfo: React.PropTypes.object
+    isHost: React.PropTypes.bool,
+    nPlayers: React.PropTypes.number
   },
   render: function() {
+    let button;
+    if (this.props.isHost) {
+      button = (
+        <button type="submit" className="btn btn-default">
+          Start now!
+        </button>
+      );
+    }
     return (
       <div>
-        <GameStatus
-          round={this.props.gameInfo.round}
-          score={this.props.playerInfo.score}/>
-        <RoundInfo
-          gameInfo={this.props.gameInfo}
-          playerInfo={this.props.playerInfo}/>
+        <p>Waiting to start!</p>
+        <p>{this.props.nPlayers} players have joined... </p>
+        {button}
       </div>
     );
   }
 });
 
-var gameInfo = SampleGameScenarios.scenarios[1].gameInfo;
-var playerInfo = SampleGameScenarios.scenarios[1].playerInfo;
+const NewGame = React.createClass({
+  render: function() {
+    return (
+      <div className="jumbotron">
+        <h1>Hello!</h1>
+        <p>Are you ready to react?</p>
+        <form>
+          <div className="row">
+            <div className="form-group col-xs-6">
+              <input type="gameCode" className="form-control" id="gameCode"
+                placeholder="Enter code:" />
+              <button type="submit" className="btn btn-default">
+                Join Game
+              </button>
+            </div>
+          </div>
+          <div className="row">
+            <div className="form-group col-xs-6">
+              <button type="button" className="btn btn-primary btn-lg">
+                <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                 &nbsp;&nbsp;New Game
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    );
+  }
+});
+
+const NewPlayer = React.createClass({
+  render: function() {
+    return (
+      <div className="jumbotron">
+        <form>
+          <div className="row">
+            <div className="form-group col-xs-6">
+              <input type="text" className="form-control" id="nickname"
+                placeholder="What do you want to be called?" />
+            </div>
+          </div>
+          <button type="button" className="btn btn-primary btn-lg">
+            Submit nickname
+          </button>
+        </form>
+      </div>
+    );
+  }
+});
+
+const GameOver = React.createClass({
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function() {
+    /* Display scores in descending order */
+    let scores = this.props.gameInfo.scores;
+    let playersSorted = Object.keys(scores);
+    playersSorted.sort((p1, p2) => (scores[p2] - scores[p1]));
+    let highestScore = scores[playersSorted[0]];
+
+    let scoreTable = playersSorted.map(
+      player => {
+        if (scores[player] == highestScore) {
+          return (
+            <strong key={player}><li>{scores[player]} {player}</li></strong>
+          );
+        } else {
+          return (
+            <li key={player}>{scores[player]} {player}</li>
+          );
+        }
+      }
+    );
+
+    let againButton;
+    if (this.props.playerInfo.id == this.props.gameInfo.hostID) {
+      againButton = (
+        <button type="button" className="btn btn-primary">
+          Again!
+        </button>
+      );
+    }
+
+    return (
+      <div className="jumbotron">
+        <p>And we're done!</p>
+        <ul className="list-unstyled">{scoreTable}</ul>
+        {againButton}
+      </div>
+    );
+  }
+});
+
+const Container = React.createClass({
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function() {
+    if (this.props.gameInfo === null) {
+      return (
+        <NewGame />
+      );
+    }
+    if (this.props.gameInfo.round !== null) {
+      return (
+        <div>
+          <GameStatus
+            round={this.props.gameInfo.round}
+            score={this.props.playerInfo.score} />
+          <RoundInfo
+            gameInfo={this.props.gameInfo}
+            playerInfo={this.props.playerInfo} />
+        </div>
+      );
+    }
+    if (this.props.gameInfo.gameOver) {
+      return (
+        <GameOver
+          gameInfo={this.props.gameInfo}
+          playerInfo={this.props.playerInfo} />
+      );
+    }
+    if (this.props.playerInfo.id !== null) {
+      return (
+        <WaitingToStart
+          isHost={this.props.gameInfo.hostID == this.props.playerInfo.id}
+          nPlayers={Object.keys(this.props.gameInfo.scores).length} />
+      );
+    }
+    /* player hasn't been created */
+    return (
+      <NewPlayer />
+    );
+  }
+});
+
+const gameInfo = SampleGameScenarios.scenarios[8].gameInfo;
+const playerInfo = SampleGameScenarios.scenarios[8].playerInfo;
 
 ReactDOM.render(
   <Container gameInfo={gameInfo} playerInfo={playerInfo} />,

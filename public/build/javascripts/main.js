@@ -19094,25 +19094,26 @@ module.exports = warning;
 module.exports = require('./lib/React');
 
 },{"./lib/React":26}],159:[function(require,module,exports){
+'use strict';
+
 /* Utilities for displaying the game */
 
 module.exports.getInstructions = function (gameInfo, playerInfo) {
   if (gameInfo.reactorID == playerInfo.id) {
-    if (gameInfo.winningResponse) {
+    if (gameInfo.winningResponse !== null) {
       return 'Good choice!';
-    } else {
-      return 'Read this list out loud and pick your favorite!';
     }
+    return playerInfo.nickname + ', read this list out loud and pick your favorite!';
   }
+  if (gameInfo.winningResponse !== null) {
+    return gameInfo.reactorNickname + ' has chosen!';
+  }
+
+  return gameInfo.reactorNickname + ' is choosing their favorite scenario. Hold tight!';
 };
 
 },{}],160:[function(require,module,exports){
-
-/* TODO:
-  Fill in ResponseForm for alternate situations
-  Add missing parts.
-  Also fill in instructions.
-  */
+'use strict';
 
 var React = require('react');
 var ReactDOM = require('react-dom');
@@ -19126,7 +19127,7 @@ var GameStatus = React.createClass({
     round: React.PropTypes.number,
     score: React.PropTypes.number
   },
-  render: function () {
+  render: function render() {
     return React.createElement(
       'div',
       { className: 'row' },
@@ -19149,7 +19150,7 @@ var ReactionImage = React.createClass({
   propTypes: {
     image: React.PropTypes.string
   },
-  render: function () {
+  render: function render() {
     return React.createElement(
       'div',
       null,
@@ -19165,7 +19166,7 @@ var ReactionChoice = React.createClass({
     choice: React.PropTypes.string,
     key: React.PropTypes.number
   },
-  render: function () {
+  render: function render() {
     return React.createElement(
       'div',
       { className: 'radio scenario' },
@@ -19188,7 +19189,7 @@ var ReactionScenario = React.createClass({
     wasChosen: React.PropTypes.bool,
     submittedBy: React.PropTypes.string
   },
-  render: function () {
+  render: function render() {
     if (this.props.wasChosen) {
       return React.createElement(
         'div',
@@ -19205,17 +19206,17 @@ var ReactionScenario = React.createClass({
           ' +1'
         )
       );
-    } else {
-      return React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'p',
-          { className: 'scenario' },
-          this.props.choice
-        )
-      );
     }
+
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'p',
+        { className: 'scenario' },
+        this.props.choice
+      )
+    );
   }
 });
 
@@ -19226,40 +19227,45 @@ var ScenarioList = React.createClass({
     choices: React.PropTypes.arrayOf(React.PropTypes.string),
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
-    winningResponseSubmittedBy: React.PropTypes.string
+    winningResponseSubmittedBy: React.PropTypes.string,
+    isReactor: React.PropTypes.bool
   },
-  render: function () {
-    var scenarios = [];
-    var button;
-    if (this.props.winningResponse) {
-      /* winning response has already been decided */
-      for (var i = 0; i < this.props.choices.length; ++i) {
-        var submittedBy;
-        if (i == this.props.winningResponse) {
-          submittedBy = this.props.winningResponseSubmittedBy;
-        }
-        scenarios.push(React.createElement(ReactionScenario, {
-          choice: this.props.choices[i],
-          key: i,
-          wasChosen: i == this.props.winningResponse,
-          submittedBy: submittedBy }));
-      }
-      button = React.createElement(
-        'button',
-        { type: 'submit', className: 'btn btn-default' },
-        'Next'
-      );
-    } else {
-      for (var j = 0; j < this.props.choices.length; ++j) {
-        scenarios.push(React.createElement(ReactionChoice, {
-          choice: this.props.choices[j],
-          key: j }));
-      }
+  render: function render() {
+    var _this = this;
+
+    var scenarios = void 0;
+    var button = void 0;
+    if (this.props.isReactor && this.props.winningResponse === null) {
+      // have the reactor choose their favorite scenario
+      scenarios = this.props.choices.map(function (choice, i) {
+        return React.createElement(ReactionChoice, { choice: choice, key: i });
+      });
       button = React.createElement(
         'button',
         { type: 'submit', className: 'btn btn-default' },
         'Submit'
       );
+    } else {
+      // display the scenarios as a list
+      scenarios = this.props.choices.map(function (choice, i) {
+        var submittedBy = void 0;
+        if (i === _this.props.winningResponse) {
+          submittedBy = _this.props.winningResponseSubmittedBy;
+        }
+        return React.createElement(ReactionScenario, {
+          choice: choice,
+          key: i,
+          wasChosen: i == _this.props.winningResponse,
+          submittedBy: submittedBy });
+      });
+      if (this.props.isReactor) {
+        // allow the reactor to move the game to the next round
+        button = React.createElement(
+          'button',
+          { type: 'submit', className: 'btn btn-default' },
+          'Next'
+        );
+      }
     }
     return React.createElement(
       'form',
@@ -19283,27 +19289,78 @@ var ResponseForm = React.createClass({
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
-  render: function () {
+  render: function render() {
     if (this.props.gameInfo.waitingForScenarios) {
-      return React.createElement('div', null);
-    } else if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
+      if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
+        return React.createElement(
+          'div',
+          null,
+          React.createElement(
+            'p',
+            null,
+            'Waiting for responses. Hold on tight!'
+          ),
+          React.createElement(
+            'button',
+            { type: 'submit', className: 'btn btn-default' },
+            'Skip Image'
+          )
+        );
+      }
+
+      var buttonText = 'Submit Response';
+      var helpMessage = '';
+      var placeholder = 'Make up something';
+      if (this.props.playerInfo.submittedScenario) {
+        buttonText = 'Update Response';
+        helpMessage = 'Your response is in!';
+        placeholder = this.props.playerInfo.response;
+      }
       return React.createElement(
-        'div',
+        'form',
         null,
         React.createElement(
-          'p',
-          null,
-          GameUtils.getInstructions(this.props.gameInfo, this.props.playerInfo)
+          'div',
+          { className: 'form-group' },
+          React.createElement(
+            'p',
+            { className: 'text-success' },
+            helpMessage
+          ),
+          React.createElement(
+            'label',
+            null,
+            this.props.gameInfo.reactorNickname,
+            '\'s response when...'
+          ),
+          React.createElement('input', { type: 'input', className: 'form-control', id: 'scenario',
+            placeholder: placeholder, defaultValue: this.props.playerInfo.response })
         ),
-        React.createElement(ScenarioList, {
-          choices: this.props.gameInfo.choices,
-          reactorNickname: this.props.gameInfo.reactorNickname,
-          winningResponse: this.props.gameInfo.winningResponse,
-          winningResponseSubmittedBy: this.props.gameInfo.winningResponseSubmittedBy })
+        React.createElement(
+          'button',
+          { type: 'submit', className: 'btn btn-default' },
+          buttonText
+        )
       );
-    } else {
-      return React.createElement('div', null);
     }
+
+    /* if (this.props.playerInfo.id == this.props.gameInfo.reactorID ||
+        this.props.gameInfo.winningResponse) { */
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'p',
+        null,
+        GameUtils.getInstructions(this.props.gameInfo, this.props.playerInfo)
+      ),
+      React.createElement(ScenarioList, {
+        choices: this.props.gameInfo.choices,
+        reactorNickname: this.props.gameInfo.reactorNickname,
+        winningResponse: this.props.gameInfo.winningResponse,
+        winningResponseSubmittedBy: this.props.gameInfo.winningResponseSubmittedBy,
+        isReactor: this.props.gameInfo.reactorID == this.props.playerInfo.id })
+    );
   }
 });
 
@@ -19314,7 +19371,7 @@ var RoundInfo = React.createClass({
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
-  render: function () {
+  render: function render() {
     return React.createElement(
       'div',
       { className: 'row' },
@@ -19335,6 +19392,192 @@ var RoundInfo = React.createClass({
   }
 });
 
+var WaitingToStart = React.createClass({
+  displayName: 'WaitingToStart',
+
+  propTypes: {
+    isHost: React.PropTypes.bool,
+    nPlayers: React.PropTypes.number
+  },
+  render: function render() {
+    var button = void 0;
+    if (this.props.isHost) {
+      button = React.createElement(
+        'button',
+        { type: 'submit', className: 'btn btn-default' },
+        'Start now!'
+      );
+    }
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'p',
+        null,
+        'Waiting to start!'
+      ),
+      React.createElement(
+        'p',
+        null,
+        this.props.nPlayers,
+        ' players have joined... '
+      ),
+      button
+    );
+  }
+});
+
+var NewGame = React.createClass({
+  displayName: 'NewGame',
+
+  render: function render() {
+    return React.createElement(
+      'div',
+      { className: 'jumbotron' },
+      React.createElement(
+        'h1',
+        null,
+        'Hello!'
+      ),
+      React.createElement(
+        'p',
+        null,
+        'Are you ready to react?'
+      ),
+      React.createElement(
+        'form',
+        null,
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(
+            'div',
+            { className: 'form-group col-xs-6' },
+            React.createElement('input', { type: 'gameCode', className: 'form-control', id: 'gameCode',
+              placeholder: 'Enter code:' }),
+            React.createElement(
+              'button',
+              { type: 'submit', className: 'btn btn-default' },
+              'Join Game'
+            )
+          )
+        ),
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(
+            'div',
+            { className: 'form-group col-xs-6' },
+            React.createElement(
+              'button',
+              { type: 'button', className: 'btn btn-primary btn-lg' },
+              React.createElement('span', { className: 'glyphicon glyphicon-plus', 'aria-hidden': 'true' }),
+              '  New Game'
+            )
+          )
+        )
+      )
+    );
+  }
+});
+
+var NewPlayer = React.createClass({
+  displayName: 'NewPlayer',
+
+  render: function render() {
+    return React.createElement(
+      'div',
+      { className: 'jumbotron' },
+      React.createElement(
+        'form',
+        null,
+        React.createElement(
+          'div',
+          { className: 'row' },
+          React.createElement(
+            'div',
+            { className: 'form-group col-xs-6' },
+            React.createElement('input', { type: 'text', className: 'form-control', id: 'nickname',
+              placeholder: 'What do you want to be called?' })
+          )
+        ),
+        React.createElement(
+          'button',
+          { type: 'button', className: 'btn btn-primary btn-lg' },
+          'Submit nickname'
+        )
+      )
+    );
+  }
+});
+
+var GameOver = React.createClass({
+  displayName: 'GameOver',
+
+  propTypes: {
+    gameInfo: React.PropTypes.object,
+    playerInfo: React.PropTypes.object
+  },
+  render: function render() {
+    /* Display scores in descending order */
+    var scores = this.props.gameInfo.scores;
+    var playersSorted = Object.keys(scores);
+    playersSorted.sort(function (p1, p2) {
+      return scores[p2] - scores[p1];
+    });
+    var highestScore = scores[playersSorted[0]];
+
+    var scoreTable = playersSorted.map(function (player) {
+      if (scores[player] == highestScore) {
+        return React.createElement(
+          'strong',
+          { key: player },
+          React.createElement(
+            'li',
+            null,
+            scores[player],
+            ' ',
+            player
+          )
+        );
+      } else {
+        return React.createElement(
+          'li',
+          { key: player },
+          scores[player],
+          ' ',
+          player
+        );
+      }
+    });
+
+    var againButton = void 0;
+    if (this.props.playerInfo.id == this.props.gameInfo.hostID) {
+      againButton = React.createElement(
+        'button',
+        { type: 'button', className: 'btn btn-primary' },
+        'Again!'
+      );
+    }
+
+    return React.createElement(
+      'div',
+      { className: 'jumbotron' },
+      React.createElement(
+        'p',
+        null,
+        'And we\'re done!'
+      ),
+      React.createElement(
+        'ul',
+        { className: 'list-unstyled' },
+        scoreTable
+      ),
+      againButton
+    );
+  }
+});
+
 var Container = React.createClass({
   displayName: 'Container',
 
@@ -19342,26 +19585,45 @@ var Container = React.createClass({
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object
   },
-  render: function () {
-    return React.createElement(
-      'div',
-      null,
-      React.createElement(GameStatus, {
-        round: this.props.gameInfo.round,
-        score: this.props.playerInfo.score }),
-      React.createElement(RoundInfo, {
+  render: function render() {
+    if (this.props.gameInfo === null) {
+      return React.createElement(NewGame, null);
+    }
+    if (this.props.gameInfo.round !== null) {
+      return React.createElement(
+        'div',
+        null,
+        React.createElement(GameStatus, {
+          round: this.props.gameInfo.round,
+          score: this.props.playerInfo.score }),
+        React.createElement(RoundInfo, {
+          gameInfo: this.props.gameInfo,
+          playerInfo: this.props.playerInfo })
+      );
+    }
+    if (this.props.gameInfo.gameOver) {
+      return React.createElement(GameOver, {
         gameInfo: this.props.gameInfo,
-        playerInfo: this.props.playerInfo })
-    );
+        playerInfo: this.props.playerInfo });
+    }
+    if (this.props.playerInfo.id !== null) {
+      return React.createElement(WaitingToStart, {
+        isHost: this.props.gameInfo.hostID == this.props.playerInfo.id,
+        nPlayers: Object.keys(this.props.gameInfo.scores).length });
+    }
+    /* player hasn't been created */
+    return React.createElement(NewPlayer, null);
   }
 });
 
-var gameInfo = SampleGameScenarios.scenarios[1].gameInfo;
-var playerInfo = SampleGameScenarios.scenarios[1].playerInfo;
+var gameInfo = SampleGameScenarios.scenarios[8].gameInfo;
+var playerInfo = SampleGameScenarios.scenarios[8].playerInfo;
 
 ReactDOM.render(React.createElement(Container, { gameInfo: gameInfo, playerInfo: playerInfo }), document.getElementById('container'));
 
 },{"./game-utils":159,"./sample-game-scenarios":161,"react":158,"react-dom":2}],161:[function(require,module,exports){
+'use strict';
+
 /* Example game scenarios
    For testing purposes - put in tests later? */
 
@@ -19372,7 +19634,6 @@ var scenarios = [{ /* 0 */
     image: 'http://i.imgur.com/rxkWqmt.gif',
     choices: ['he smells banana', 'he is released into the backyard', 'he is jumping off the couch'],
     waitingForScenarios: false,
-    submittedScenario: false,
     reactorID: 3,
     reactorNickname: 'Cinna',
     hostID: 2,
@@ -19386,7 +19647,8 @@ var scenarios = [{ /* 0 */
     nickname: 'Cinna',
     response: null,
     score: 1,
-    game: 2
+    game: 2,
+    submittedScenario: false
   }
 }, { /* 1 */
   gameInfo: {
@@ -19395,7 +19657,6 @@ var scenarios = [{ /* 0 */
     image: 'http://i.imgur.com/rxkWqmt.gif',
     choices: ['he smells banana', 'he is released into the backyard', 'he is jumping off the couch'],
     waitingForScenarios: false,
-    submittedScenario: false,
     reactorID: 3,
     reactorNickname: 'Cinna',
     hostID: 2,
@@ -19409,7 +19670,241 @@ var scenarios = [{ /* 0 */
     nickname: 'Cinna',
     response: null,
     score: 1,
-    game: 2
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 2 */
+  gameInfo: {
+    id: 2,
+    round: 2,
+    image: 'http://i.imgur.com/rxkWqmt.gif',
+    choices: ['he smells banana', 'he is released into the backyard', 'he is jumping off the couch'],
+    waitingForScenarios: false,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 1, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: 1,
+    winningResponseSubmittedBy: 'Momo'
+  },
+  playerInfo: {
+    id: 2,
+    nickname: 'Tricia',
+    response: 'he smells banana',
+    score: 1,
+    game: 2,
+    submittedScenario: true
+  }
+}, { /* 3 Reactor - waiting for responses */
+  gameInfo: {
+    id: 2,
+    round: 2,
+    image: 'http://i.imgur.com/rxkWqmt.gif',
+    choices: null,
+    waitingForScenarios: true,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 1, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 3,
+    nickname: 'Cinna',
+    response: null,
+    score: 1,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 4 Other players - submit scenario */
+  gameInfo: {
+    id: 2,
+    round: 2,
+    image: 'http://i.imgur.com/rxkWqmt.gif',
+    choices: null,
+    waitingForScenarios: true,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 1, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 1,
+    nickname: 'Momo',
+    response: null,
+    score: 1,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 5 Other players - reaction submitted */
+  gameInfo: {
+    id: 2,
+    round: 2,
+    image: 'http://i.imgur.com/rxkWqmt.gif',
+    choices: null,
+    waitingForScenarios: true,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 1, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 1,
+    nickname: 'Momo',
+    response: 'he is released into the backyard',
+    score: 1,
+    game: 2,
+    submittedScenario: true
+  }
+}, { /* 6 Host: waiting for players to join */
+  gameInfo: {
+    id: 2,
+    round: null,
+    image: null,
+    choices: null,
+    waitingForScenarios: false,
+    reactorID: null,
+    reactorNickname: null,
+    hostID: 2,
+    scores: { 'Cinna': 0, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 2,
+    nickname: 'Tricia',
+    response: null,
+    score: 0,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 7 waiting to start */
+  gameInfo: {
+    id: 2,
+    round: null,
+    image: null,
+    choices: null,
+    waitingForScenarios: false,
+    reactorID: null,
+    reactorNickname: null,
+    hostID: 2,
+    scores: { 'Cinna': 0, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 3,
+    nickname: 'Cinna',
+    response: null,
+    score: 0,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 8 new game/join game */
+  gameInfo: null,
+  playerInfo: null
+}, { /* 9 submit nickname */
+  gameInfo: {
+    id: 2,
+    round: null,
+    image: null,
+    choices: null,
+    waitingForScenarios: false,
+    reactorID: null,
+    reactorNickname: null,
+    hostID: 2,
+    scores: { 'Cinna': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: null,
+    nickname: null,
+    response: null,
+    score: null,
+    game: null,
+    submittedScenario: false
+  }
+}, { /* 10 Game over - Host */
+  gameInfo: {
+    id: 2,
+    round: null,
+    image: null,
+    choices: null,
+    waitingForScenarios: false,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 3, 'Momo': 2, 'Tricia': 1 },
+    gameOver: true,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 2,
+    nickname: 'Tricia',
+    response: null,
+    score: 1,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 11 Game over - Other players */
+  gameInfo: {
+    id: 2,
+    round: null,
+    image: null,
+    choices: null,
+    waitingForScenarios: false,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 3, 'Momo': 2, 'Tricia': 1 },
+    gameOver: true,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 1,
+    nickname: 'Cinna',
+    response: null,
+    score: 3,
+    game: 2,
+    submittedScenario: false
+  }
+}, { /* 12 Other players - waiting for reactor to choose */
+  gameInfo: {
+    id: 2,
+    round: 2,
+    image: 'http://i.imgur.com/rxkWqmt.gif',
+    choices: ['he smells banana', 'he is released into the backyard', 'he is jumping off the couch'],
+    waitingForScenarios: false,
+    reactorID: 3,
+    reactorNickname: 'Cinna',
+    hostID: 2,
+    scores: { 'Cinna': 1, 'Momo': 0, 'Tricia': 0 },
+    gameOver: false,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  },
+  playerInfo: {
+    id: 2,
+    nickname: 'Tricia',
+    response: 'he smells banana',
+    score: 1,
+    game: 2,
+    submittedScenario: true
   }
 }];
 
