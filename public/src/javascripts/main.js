@@ -3,7 +3,6 @@
 const React = require('react');
 const ReactDOM = require('react-dom');
 const GameUtils = require('./game-utils');
-const SampleGameScenarios = require('./sample-game-scenarios');
 
 const GameStatus = React.createClass({
   propTypes: {
@@ -230,6 +229,23 @@ const WaitingToStart = React.createClass({
 });
 
 const NewGame = React.createClass({
+  propTypes: {
+    joinGame: React.PropTypes.func
+  },
+  getInitialState: function() {
+    return {
+      gameCode: ''
+    };
+  },
+  handleChange: function() {
+    this.setState({
+      gameCode: this.refs.gameCodeInput.value
+    });
+  },
+  joinGame: function() {
+    // TODO: Code validation, Disable button if submitted and not invalid
+    this.props.joinGame(this.refs.gameCodeInput.value);
+  },
   render: function() {
     return (
       <div className="jumbotron">
@@ -239,8 +255,10 @@ const NewGame = React.createClass({
           <div className="row">
             <div className="form-group col-xs-6">
               <input type="gameCode" className="form-control" id="gameCode"
-                placeholder="Enter code:" />
-              <button type="submit" className="btn btn-default">
+                placeholder="Enter code:" value={this.state.gameCode}
+                ref="gameCodeInput" onChange={this.handleChange} />
+              <button type="button" className="btn btn-default"
+                onClick={this.joinGame} >
                 Join Game
               </button>
             </div>
@@ -325,40 +343,59 @@ const GameOver = React.createClass({
 });
 
 const Container = React.createClass({
-  propTypes: {
-    gameInfo: React.PropTypes.object,
-    playerInfo: React.PropTypes.object
+  getInitialState: function() {
+    return {
+      gameInfo: null,
+      playerInfo: null,
+      errorMessage: null
+    };
+  },
+  joinGame: function(gameCode) {
+    GameUtils.log('Joining game', gameCode);
+    GameUtils.joinGame(gameCode, (err, gameInfo, playerInfo) => {
+      if (err) {
+        this.setState({
+          errorMessage: 'Cannot join game'
+        });
+      } else {
+        this.setState({
+          gameInfo: gameInfo,
+          playerInfo: playerInfo,
+          errorMessage: null
+        });
+      }
+    });
   },
   render: function() {
-    if (this.props.gameInfo === null) {
+    if (this.state.gameInfo === null) {
       return (
-        <NewGame />
+        <NewGame joinGame={this.joinGame} />
       );
     }
-    if (this.props.gameInfo.round !== null) {
+    if (this.state.gameInfo.round !== null) {
       return (
         <div>
           <GameStatus
-            round={this.props.gameInfo.round}
-            score={this.props.playerInfo.score} />
+            round={this.state.gameInfo.round}
+            score={this.state.playerInfo.score} />
           <RoundInfo
-            gameInfo={this.props.gameInfo}
-            playerInfo={this.props.playerInfo} />
+            gameInfo={this.state.gameInfo}
+            playerInfo={this.state.playerInfo} />
         </div>
       );
     }
-    if (this.props.gameInfo.gameOver) {
+    if (this.state.gameInfo.gameOver) {
       return (
         <GameOver
-          gameInfo={this.props.gameInfo}
-          playerInfo={this.props.playerInfo} />
+          gameInfo={this.state.gameInfo}
+          playerInfo={this.state.playerInfo} />
       );
     }
-    if (this.props.playerInfo.id !== null) {
+    if (this.state.playerInfo.id !== null) {
       return (
         <WaitingToStart
-          isHost={this.props.gameInfo.hostID == this.props.playerInfo.id}
-          nPlayers={Object.keys(this.props.gameInfo.scores).length} />
+          isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
+          nPlayers={Object.keys(this.state.gameInfo.scores).length} />
       );
     }
     /* player hasn't been created */
@@ -368,10 +405,7 @@ const Container = React.createClass({
   }
 });
 
-const gameInfo = SampleGameScenarios.scenarios[8].gameInfo;
-const playerInfo = SampleGameScenarios.scenarios[8].playerInfo;
-
 ReactDOM.render(
-  <Container gameInfo={gameInfo} playerInfo={playerInfo} />,
+  <Container />,
   document.getElementById('container')
 );

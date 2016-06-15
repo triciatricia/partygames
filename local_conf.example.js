@@ -10,7 +10,8 @@ var conf = {
   dbHost: 'localhost',
   dbUser: 'user',
   dbPass: 'pw',
-  dbName: 'partygames'
+  dbName: 'partygames',
+  isProduction: false
 };
 
 module.exports = conf;
