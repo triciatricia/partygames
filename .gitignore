@@ -19,3 +19,7 @@ build/Release
 # secret settings
 local_conf.js
 .eslintrc.json
+.eslintignore
+
+# build
+**/build/**
