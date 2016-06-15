@@ -239,12 +239,12 @@ const NewGame = React.createClass({
   },
   handleChange: function() {
     this.setState({
-      gameCode: this.refs.gameCodeInput.value
+      gameCode: this.refs.gameCodeInput.value.trim()
     });
   },
   joinGame: function() {
     // TODO: Code validation, Disable button if submitted and not invalid
-    this.props.joinGame(this.refs.gameCodeInput.value);
+    this.props.joinGame(this.refs.gameCodeInput.value.trim());
   },
   render: function() {
     return (

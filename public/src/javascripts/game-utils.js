@@ -1,14 +1,23 @@
 /* Utilities for displaying the game */
 var conf = require('../../../conf');
 
-const defaultPlayerInfo = {
-  id: null,
-  nickname: null,
-  response: null,
-  score: null,
-  game: null,
-  submittedScenario: false
-};
+function postToServer(data, cb) {
+  // Send game info to the server
+  // cb(error, gameInfo, playerInfo)
+  $.post(
+    '/api/game',
+    data,
+    (res, status) => {
+      if (res.result) {
+        cb(null, res.result.gameInfo, res.result.playerInfo);
+      } else if (res.errorMessage) {
+        cb(res.errorMessage, null, null);
+      } else {
+        cb('Error communicating with server', null, null);
+      }
+    }
+  );
+}
 
 module.exports.getInstructions = function(gameInfo, playerInfo) {
   if (gameInfo.reactorID == playerInfo.id) {
@@ -27,23 +36,12 @@ module.exports.getInstructions = function(gameInfo, playerInfo) {
 
 module.exports.joinGame = function(gameCode, cb) {
   // cb(err, gameInfo, playerInfo)
-  // TODO: replace with real thing
-  let gameInfo = {
-    id: 2,
-    round: null,
-    image: null,
-    choices: null,
-    waitingForScenarios: false,
-    reactorID: null,
-    reactorNickname: null,
-    hostID: 2,
-    scores: {'Cinna': 0, 'Tricia': 0},
-    gameOver: false,
-    winningResponse: null,
-    winningResponseSubmittedBy: null
-  };
-  let playerInfo = defaultPlayerInfo;
-  cb(null, gameInfo, playerInfo);
+  // Check if the game is valid and retrieve info
+  // TODO Escape gameCode to make safer?
+  postToServer({
+    'joinGame': gameCode
+  }, cb);
+  // TODO Move defaultPlayerInfo to server side
 };
 
 module.exports.log = function() {
