@@ -7,7 +7,7 @@ function postToServer(data, cb) {
   $.post(
     '/api/game',
     data,
-    (res, status) => {
+    (res) => { // function can also take status
       if (res.result) {
         cb(null, res.result.gameInfo, res.result.playerInfo);
       } else if (res.errorMessage) {
