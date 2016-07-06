@@ -230,7 +230,8 @@ const WaitingToStart = React.createClass({
 
 const NewGame = React.createClass({
   propTypes: {
-    joinGame: React.PropTypes.func
+    joinGame: React.PropTypes.func,
+    createGame: React.PropTypes.func
   },
   getInitialState: function() {
     return {
@@ -245,6 +246,9 @@ const NewGame = React.createClass({
   joinGame: function() {
     // TODO: Code validation, Disable button if submitted and not invalid
     this.props.joinGame(this.refs.gameCodeInput.value.trim());
+  },
+  createGame: function() {
+    this.props.createGame();
   },
   render: function() {
     return (
@@ -265,7 +269,8 @@ const NewGame = React.createClass({
           </div>
           <div className="row">
             <div className="form-group col-xs-6">
-              <button type="button" className="btn btn-primary btn-lg">
+              <button type="button" className="btn btn-primary btn-lg"
+                onClick={this.createGame} >
                 <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
                  &nbsp;&nbsp;New Game
               </button>
@@ -278,17 +283,35 @@ const NewGame = React.createClass({
 });
 
 const NewPlayer = React.createClass({
+  propTypes: {
+    createPlayer: React.PropTypes.func
+  },
+  getInitialState: function() {
+    return {
+      nickname: ''
+    };
+  },
+  handleChange: function() {
+    this.setState({
+      nickname: this.refs.nicknameInput.value
+    });
+  },
+  createPlayer: function() {
+    this.props.createPlayer(this.refs.nicknameInput.value.trim());
+  },
   render: function() {
     return (
       <div className="jumbotron">
         <form>
           <div className="row">
             <div className="form-group col-xs-6">
-              <input type="text" className="form-control" id="nickname"
-                placeholder="What do you want to be called?" />
+              <input type="text" className="form-control" id="nickname" value={this.state.nickname}
+                placeholder="What do you want to be called?" onChange={this.handleChange}
+                ref="nicknameInput" />
             </div>
           </div>
-          <button type="button" className="btn btn-primary btn-lg">
+          <button type="button" className="btn btn-primary btn-lg"
+            onClick={this.createPlayer}>
             Submit nickname
           </button>
         </form>
@@ -366,10 +389,42 @@ const Container = React.createClass({
       }
     });
   },
+  createGame: function() {
+    GameUtils.log('Creating new game');
+    GameUtils.createGame((err, gameInfo, playerInfo) => {
+      if (err) {
+        this.setState({
+          errorMessage: 'Error creating a new game'
+        });
+      } else {
+        this.setState({
+          gameInfo: gameInfo,
+          playerInfo: playerInfo,
+          errorMessage: null
+        });
+      }
+    });
+  },
+  createPlayer: function(nickname) {
+    GameUtils.log('Creating new player');
+    GameUtils.createPlayer(nickname, (err, gameInfo, playerInfo) => {
+      if (err) {
+        this.setState({
+          errorMessage: 'Error creating new player'
+        });
+      } else {
+        this.setState({
+          gameInfo: gameInfo,
+          playerInfo: playerInfo,
+          errorMessage: null
+        });
+      }
+    });
+  },
   render: function() {
     if (this.state.gameInfo === null) {
       return (
-        <NewGame joinGame={this.joinGame} />
+        <NewGame joinGame={this.joinGame} createGame={this.createGame} />
       );
     }
     if (this.state.gameInfo.round !== null) {
@@ -400,7 +455,7 @@ const Container = React.createClass({
     }
     /* player hasn't been created */
     return (
-      <NewPlayer />
+      <NewPlayer createPlayer={this.createPlayer} />
     );
   }
 });

@@ -26,13 +26,19 @@ router.post('/api/game', (req, res) => {
     req.body,
     (err, info) => {
       console.log('Sending info:', info);
-      res.json({
-        result: {
-          gameInfo: info.gameInfo,
-          playerInfo: info.playerInfo
-        },
-        errorMessage: null
-      });
+      if (err) {
+        res.json({
+          errorMessage: err
+        });
+      } else {
+        res.json({
+          result: {
+            gameInfo: info.gameInfo,
+            playerInfo: info.playerInfo
+          },
+          errorMessage: null
+        });
+      }
     }
   );
 });

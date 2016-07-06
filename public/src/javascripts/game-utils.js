@@ -41,7 +41,20 @@ module.exports.joinGame = function(gameCode, cb) {
   postToServer({
     'joinGame': gameCode
   }, cb);
-  // TODO Move defaultPlayerInfo to server side
+};
+
+module.exports.createGame = function(cb) {
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    'createNewGame': true
+  }, cb);
+};
+
+module.exports.createPlayer = function(nickname, cb) {
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    'createPlayer': nickname
+  }, cb);
 };
 
 module.exports.log = function() {
