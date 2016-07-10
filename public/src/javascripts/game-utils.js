@@ -50,10 +50,11 @@ module.exports.createGame = function(cb) {
   }, cb);
 };
 
-module.exports.createPlayer = function(nickname, cb) {
+module.exports.createPlayer = function(nickname, gameID, cb) {
   // cb(err, gameInfo, playerInfo)
   postToServer({
-    'createPlayer': nickname
+    'createPlayer': nickname,
+    'gameID': gameID
   }, cb);
 };
 
@@ -62,6 +63,16 @@ module.exports.getGameInfo = function(id, cb) {
   // cb(err, gameInfo, playerInfo)
   postToServer({
     'getGameInfo': id
+  }, cb);
+};
+
+module.exports.startGame = function(gameID, playerID, cb) {
+  // Start a game if the player is the host of the game
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    'startGame': true,
+    'gameID': gameID,
+    'playerID': playerID
   }, cb);
 };
 

@@ -62,7 +62,7 @@ module.exports.processRequest = (req, cb) => {
       winningResponse: null,
       winningResponseSubmittedBy: null
     };
-  } else if (req.hasOwnProperty('createPlayer')) {
+  } else if (req.hasOwnProperty('createPlayer') && req.gameID == 2) { // TODO check game ID
     // TODO Need to be different depending on whether is host
     gameInfo = {
       id: 2,
@@ -87,6 +87,31 @@ module.exports.processRequest = (req, cb) => {
       submittedScenario: false
     };
     playerInfo.nickname = req.createPlayer;
+  } else if (req.hasOwnProperty('startGame')) {
+    if (req.playerID == 2) {// TODO check if the player is the host, check if game hasn't been started
+      gameInfo = {
+        id: 2,
+        round: 2,
+        image: 'http://i.imgur.com/rxkWqmt.gif',
+        choices: null,
+        waitingForScenarios: true,
+        reactorID: 3,
+        reactorNickname: 'Cinna',
+        hostID: 2,
+        scores: {'Cinna': 1, 'Momo': 0, 'Tricia': 0},
+        gameOver: false,
+        winningResponse: null,
+        winningResponseSubmittedBy: null
+      };
+      playerInfo = {
+        id: 2,
+        nickname: 'Tricia',
+        response: null,
+        score: 0,
+        game: 2,
+        submittedScenario: false
+      };
+    }
   } else {
     return cb('Error while processing your information');
   }

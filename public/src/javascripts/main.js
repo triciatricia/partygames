@@ -207,13 +207,14 @@ const RoundInfo = React.createClass({
 const WaitingToStart = React.createClass({
   propTypes: {
     isHost: React.PropTypes.bool,
-    nPlayers: React.PropTypes.number
+    nPlayers: React.PropTypes.number,
+    startGame: React.PropTypes.func
   },
   render: function() {
     let button;
     if (this.props.isHost) {
       button = (
-        <button type="submit" className="btn btn-default">
+        <button type="button" onClick={this.props.startGame} className="btn btn-default">
           Start now!
         </button>
       );
@@ -407,7 +408,7 @@ const Container = React.createClass({
   },
   createPlayer: function(nickname) {
     GameUtils.log('Creating new player');
-    GameUtils.createPlayer(nickname, (err, gameInfo, playerInfo) => {
+    GameUtils.createPlayer(nickname, this.state.gameInfo.id, (err, gameInfo, playerInfo) => {
       if (err) {
         this.setState({
           errorMessage: 'Error creating new player'
@@ -439,6 +440,18 @@ const Container = React.createClass({
         }
       }
     );
+  },
+  startGame: function() {
+    GameUtils.startGame(
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      (err, gameInfo, playerInfo) => {
+        this.setState({
+          errorMessage: err,
+          gameInfo: gameInfo,
+          playerInfo: playerInfo
+        });
+      });
   },
   componentDidMount: function() {
     this.pollGameInfo();
@@ -473,7 +486,8 @@ const Container = React.createClass({
       return (
         <WaitingToStart
           isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
-          nPlayers={Object.keys(this.state.gameInfo.scores).length} />
+          nPlayers={Object.keys(this.state.gameInfo.scores).length}
+          startGame={this.startGame} />
       );
     }
     /* player hasn't been created */
