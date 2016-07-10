@@ -39,22 +39,24 @@ module.exports.joinGame = function(gameCode, cb) {
   // Check if the game is valid and retrieve info
   // TODO Escape gameCode to make safer?
   postToServer({
-    'joinGame': gameCode
+    'gameCode': gameCode,
+    'action': 'joinGame'
   }, cb);
 };
 
 module.exports.createGame = function(cb) {
   // cb(err, gameInfo, playerInfo)
   postToServer({
-    'createNewGame': true
+    'action': 'createNewGame'
   }, cb);
 };
 
 module.exports.createPlayer = function(nickname, gameID, cb) {
   // cb(err, gameInfo, playerInfo)
   postToServer({
-    'createPlayer': nickname,
-    'gameID': gameID
+    'nickname': nickname,
+    'gameID': gameID,
+    'action': 'createPlayer'
   }, cb);
 };
 
@@ -62,7 +64,8 @@ module.exports.getGameInfo = function(id, cb) {
   // Gets the game info from the server
   // cb(err, gameInfo, playerInfo)
   postToServer({
-    'getGameInfo': id
+    'gameID': id,
+    'action': 'getGameInfo'
   }, cb);
 };
 
@@ -70,9 +73,9 @@ module.exports.startGame = function(gameID, playerID, cb) {
   // Start a game if the player is the host of the game
   // cb(err, gameInfo, playerInfo)
   postToServer({
-    'startGame': true,
     'gameID': gameID,
-    'playerID': playerID
+    'playerID': playerID,
+    'action': 'startGame'
   }, cb);
 };
 

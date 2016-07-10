@@ -423,7 +423,8 @@ const Container = React.createClass({
     });
   },
   pollGameInfo: function() {
-    if (!(this.state.gameInfo && this.state.gameInfo.hasOwnProperty('id') && this.state.gameInfo.id)) {
+    if (!this.state.gameInfo || !this.state.gameInfo.hasOwnProperty('id') ||
+      !this.state.gameInfo.id || !this.state.playerInfo) {
       return;
     }
     GameUtils.getGameInfo(
@@ -482,18 +483,19 @@ const Container = React.createClass({
           playerInfo={this.state.playerInfo} />
       );
     }
-    if (this.state.playerInfo.id !== null) { // Should change to something else indicating waiting to start.
+    if (this.state.playerInfo == null) {
+      /* player hasn't been created */
       return (
-        <WaitingToStart
-          isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
-          nPlayers={Object.keys(this.state.gameInfo.scores).length}
-          startGame={this.startGame} />
+        <NewPlayer createPlayer={this.createPlayer} />
       );
     }
-    /* player hasn't been created */
     return (
-      <NewPlayer createPlayer={this.createPlayer} />
+      <WaitingToStart
+        isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
+        nPlayers={Object.keys(this.state.gameInfo.scores).length}
+        startGame={this.startGame} />
     );
+
   }
 });
 

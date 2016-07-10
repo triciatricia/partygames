@@ -27,6 +27,7 @@ router.post('/api/game', (req, res) => {
     (err, info) => {
       console.log('Sending info:', info);
       if (err) {
+        console.log('Sending error:', err);
         res.json({
           errorMessage: err
         });
