@@ -57,6 +57,14 @@ module.exports.createPlayer = function(nickname, cb) {
   }, cb);
 };
 
+module.exports.getGameInfo = function(id, cb) {
+  // Gets the game info from the server
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    'getGameInfo': id
+  }, cb);
+};
+
 module.exports.log = function() {
   // Log things to the console while developing
   if (~conf.isProduction) {

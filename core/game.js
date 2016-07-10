@@ -17,7 +17,7 @@ module.exports.processRequest = (req, cb) => {
   let playerInfo = null;
   playerInfo = defaultPlayerInfo; // For now TODO change
 
-  if (req.hasOwnProperty('joinGame') && req.joinGame == 'abcde') { // TODO: check if valid code
+  if (req.hasOwnProperty('getGameInfo') && req.getGameInfo == 2) { // TODO Check for game id
     gameInfo = {
       id: 2,
       round: null,
@@ -26,7 +26,22 @@ module.exports.processRequest = (req, cb) => {
       waitingForScenarios: false,
       reactorID: null,
       reactorNickname: null,
-      hostID: 2,
+      hostID: 2,  // change - shouldn't be the host if you just joined the game. For testing purposes.
+      scores: {'Cinna': 0, 'Tricia': 0, 'Momo': 0},
+      gameOver: false,
+      winningResponse: null,
+      winningResponseSubmittedBy: null
+    };
+  } else if (req.hasOwnProperty('joinGame') && req.joinGame == 'abcde') { // TODO: check if valid code
+    gameInfo = {
+      id: 2,
+      round: null,
+      image: null,
+      choices: null,
+      waitingForScenarios: false,
+      reactorID: null,
+      reactorNickname: null,
+      hostID: 2,  // change - shouldn't be the host if you just joined the game. For testing purposes.
       scores: {'Cinna': 0, 'Tricia': 0},
       gameOver: false,
       winningResponse: null,
