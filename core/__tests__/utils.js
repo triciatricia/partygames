@@ -1,3 +1,5 @@
+'use strict';
+
 var utils = require('../utils');
 
 describe('functionThatReturns', function() {
@@ -22,7 +24,7 @@ describe('capitalizeFirst', function() {
 
   it('should not change the original word', function() {
     var toCap = 'abcd';
-    var capped = utils.capitalizeFirst(toCap);
+    utils.capitalizeFirst(toCap);
     expect(toCap).toEqual('abcd');
   });
 
@@ -33,7 +35,7 @@ describe('merge', function() {
     var src1 = {a: 1, b: 2};
     var src2 = {c: 3};
 
-    returned = utils.merge(src1, src2);
+    let returned = utils.merge(src1, src2);
     expect(returned).toEqual({a: 1, b: 2, c: 3});
 
     // Should not change original objects.
