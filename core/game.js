@@ -1,6 +1,8 @@
 'use strict';
 
 var Utils = require('./utils');
+var ConnUtils = require('./data/conn');
+var DAO = require('./data/DAO');
 
 /*
 const defaultPlayerInfo = {
@@ -11,6 +13,17 @@ const defaultPlayerInfo = {
   game: null,
   submittedScenario: false
 }; */
+
+const defaultGame = {
+  round: null,
+  isCompleted: 0,
+  lastImage: null,
+  gameCode: 'abc', // TODO generate
+  timeCreated: 123, // TODO generate
+  host: null,
+  reactor: null,
+  images: null
+};  // TODO change this to a real default
 
 function getGameInfo(req, cb) {
   if (req.gameID == 2) { // TODO Check for game id
@@ -61,23 +74,39 @@ function joinGame(req, cb) {
 }
 
 function createNewGame(req, cb) {
-  let gameInfo = {
-    id: 3,
-    round: null,
-    image: null,
-    choices: null,
-    waitingForScenarios: false,
-    reactorID: null,
-    reactorNickname: null,
-    hostID: null,
-    scores: null,
-    gameOver: false,
-    winningResponse: null,
-    winningResponseSubmittedBy: null
-  };
-  cb(null, {
-    gameInfo: gameInfo
-  });
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.WRITE,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
+
+      DAO.newGame(conn, defaultGame, (err, res) => {
+        if (err) {
+          conn.getConn().end();
+          cb(err);
+          return;
+        }
+
+        console.log('Creating game with ID ' + res.insertId);
+
+        DAO.getGame(conn, res.insertId, (err, res) => {
+          if (err) {
+            conn.getConn().end();
+            cb(err);
+            return;
+          }
+
+          conn.getConn().end();
+          cb(null, {
+            gameInfo: res
+          });
+        });
+      });
+    }
+  );
 }
 
 function createPlayer(req, cb) {
