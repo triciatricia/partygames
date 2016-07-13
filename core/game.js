@@ -18,12 +18,20 @@ const defaultGame = {
   round: null,
   isCompleted: 0,
   lastImage: null,
-  gameCode: 'abc', // TODO generate
+  gameCode: null, // TODO generate
   timeCreated: 123, // TODO generate
   host: null,
   reactor: null,
   images: null
 };  // TODO change this to a real default
+
+function generateGameCode(id) {
+  return id.toString();
+}
+
+function getIDFromGameCode(code) {
+  return parseInt(code);
+}
 
 function getGameInfo(req, cb) {
   if (req.gameID == 2) { // TODO Check for game id
@@ -50,27 +58,29 @@ function getGameInfo(req, cb) {
 }
 
 function joinGame(req, cb) {
-  if (req.gameCode == 'abcde') { // TODO: check if valid code
-    let gameInfo = {
-      id: 2,
-      round: null,
-      image: null,
-      choices: null,
-      waitingForScenarios: false,
-      reactorID: null,
-      reactorNickname: null,
-      hostID: 2,  // change - shouldn't be the host if you just joined the game. For testing purposes.
-      scores: {'Cinna': 0, 'Tricia': 0},
-      gameOver: false,
-      winningResponse: null,
-      winningResponseSubmittedBy: null
-    };
-    cb(null, {
-      gameInfo: gameInfo
+  // Get the gameID of a game and check if it's a valid
+  // game.
+  let gameID = getIDFromGameCode(req.gameCode);
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.READ,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
+
+      DAO.getGame(conn, gameID, (err, res) => {
+        if (err) {
+          cb(err, {});
+        } else {
+          cb(null, {
+            gameInfo: res
+          });
+        }
+        conn.getConn().end();
+      });
     });
-  } else {
-    cb('Invalid game code', {});
-  }
 }
 
 function createNewGame(req, cb) {

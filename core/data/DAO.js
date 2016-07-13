@@ -147,7 +147,7 @@ DAOs.getGame = function(DBConn, gameID, callback) {
     if (err) {
       callback(err, null);
     } else if (res.length === 0) {
-      callback('Could not find game ' + gameID + 'in database', res);
+      callback('Could not find game ' + gameID + ' in database', res);
     } else {
       callback(err, res[0]);
     }
