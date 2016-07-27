@@ -149,7 +149,9 @@ DAOs.getGame = function(DBConn, gameID, callback) {
     } else if (res.length === 0) {
       callback('Could not find game ' + gameID + ' in database', res);
     } else {
-      callback(err, res[0]);
+      let game = res[0];
+      game.scores = {}; // TODO Find actual scores
+      callback(err, game);
     }
   };
 

@@ -15,13 +15,10 @@ const defaultPlayerInfo = {
 
 const defaultGame = {
   round: null,
-  isCompleted: 0,
-  lastImage: null,
-  gameCode: null, // TODO generate
-  timeCreated: 123, // TODO generate
-  host: null,
-  reactor: null,
-  images: null
+  gameOver: 0,
+  image: null,
+  hostID: null,
+  reactorID: null
 };  // TODO change this to a real default
 
 /* function generateGameCode(id) {
