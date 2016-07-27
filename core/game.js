@@ -4,7 +4,6 @@ var Utils = require('./utils');
 var ConnUtils = require('./data/conn');
 var DAO = require('./data/DAO');
 
-/*
 const defaultPlayerInfo = {
   id: null,
   nickname: null,
@@ -12,7 +11,7 @@ const defaultPlayerInfo = {
   score: null,
   game: null,
   submittedScenario: false
-}; */
+};
 
 const defaultGame = {
   round: null,
@@ -25,36 +24,106 @@ const defaultGame = {
   images: null
 };  // TODO change this to a real default
 
-function generateGameCode(id) {
+/* function generateGameCode(id) {
   return id.toString();
-}
+} */
 
 function getIDFromGameCode(code) {
   return parseInt(code);
 }
 
-function getGameInfo(req, cb) {
-  if (req.gameID == 2) { // TODO Check for game id
-    let gameInfo = {
-      id: 2,
-      round: null,
-      image: null,
-      choices: null,
-      waitingForScenarios: false,
-      reactorID: null,
-      reactorNickname: null,
-      hostID: 2,  // change - shouldn't be the host if you just joined the game. For testing purposes.
-      scores: {'Cinna': 0, 'Tricia': 0, 'Momo': 0},
-      gameOver: false,
-      winningResponse: null,
-      winningResponseSubmittedBy: null
-    };
-    cb(null, {
-      gameInfo: gameInfo
-    });
+function getScoresWithConn(conn, userIDs, cb) {
+  // cb(err, scores)
+  // scores = {nickname: score} for the userIDs
+  if (userIDs.length == 0) {
+    cb(null, {});
   } else {
-    cb('Cannot find game record', {});
+    let nextID = userIDs.pop();
+    DAO.getUser(conn, nextID, (err, userInfo) => {
+      if (err) {
+        cb('Cannot find user record.', {});
+        return;
+      }
+
+      getScoresWithConn(conn, userIDs, (err, scores) => {
+        if (err) {
+          cb(err, {});
+          return;
+        }
+
+        scores[userInfo.nickname] = userInfo.score;
+        cb(null, scores);
+      });
+    });
   }
+
+
+}
+
+function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {
+  // cb(err, {gameInfo: blah, playerInfo: blah})
+  DAO.getGame(conn, gameID, (err, gameInfo) => {
+    if (err) {
+      cb('Cannot find game record.', {});
+      return;
+    }
+
+    DAO.getUser(conn, playerID, (err, playerInfo) => {
+      if (err) {
+        cb('Cannot find user record.', {});
+        return;
+      }
+
+      // For now, get every user's scores.
+      // TODO In the future, don't update score info as often if it takes too much time.
+      DAO.getGameUsers(conn, gameID, (err, userIDs) => {
+        if (err) {
+          cb('Cannot find game users in record.', {});
+          return;
+        }
+
+        getScoresWithConn(conn, userIDs, (err, scores) => {
+          // scores = {nickname: score}
+          if (err) {
+            cb('Error retrieving scores', {});
+            return;
+          }
+
+          gameInfo.scores = scores;
+
+          cb(null, {
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+
+        });
+      });
+    });
+  });
+}
+
+function getGameInfo(req, cb) {
+  let gameID = req.gameID;
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.READ,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
+
+      DAO.getGame(conn, gameID, (err, res) => {
+        if (err) {
+          cb('Cannot find game record.', {});
+        } else {
+          cb(null, {
+            gameInfo: res
+          });
+        }
+        conn.getConn().end();
+      });
+    });
 }
 
 function joinGame(req, cb) {
@@ -120,7 +189,49 @@ function createNewGame(req, cb) {
 }
 
 function createPlayer(req, cb) {
-  if (req.gameID == 2) { // TODO check game ID
+  // Create a player called req.nickname
+  // in the game req.gameID
+  let gameID = req.gameID;
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.WRITE,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
+
+      DAO.getGame(conn, gameID, (err) => {
+        if (err) {
+          conn.getConn().end();
+          cb('Cannot find game record.', {});
+          return;
+        }
+
+        // TODO Check if playerInfo is valid?
+        // TODO Check if there is a user with the same nickname in the game
+        let playerInfo = {
+          nickname: req.nickname,
+          game: gameID
+        };
+        Utils.extend(playerInfo, defaultPlayerInfo);
+
+        DAO.newUser(conn, playerInfo, (err, playerID) => {
+          if (err) {
+            conn.getConn().end();
+            cb('Error creating player.', {});
+            return;
+          }
+
+          getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
+            conn.getConn().end();
+            cb(err, info);
+          });
+        });
+      });
+    });
+
+  /* if (req.gameID == 2) { // TODO check game ID
     // TODO Need to be different depending on whether is host
     let gameInfo = {
       id: 2,
@@ -153,7 +264,7 @@ function createPlayer(req, cb) {
 
   } else {
     cb('Cannot find game in records', {});
-  }
+  } */
 }
 
 function startGame(req, cb) {

@@ -3,10 +3,10 @@
  * Make a connection and insert/get data from a test database.
  */
 
- "use strict";
+'use strict';
 
  // Use a custom database configuration for these tests.
- var DBConfig = {
+var DBConfig = {
   host: 'localhost',
   user: 'test',
   password: 'happytesting',
@@ -74,24 +74,26 @@ describe('DatabaseIntegrationTest', function() {
         // DAOs.newGame = function(DBConn, game, callback)
         var game = {
           round: 1,
-          isCompleted: 1,
-          lastImage: 1,
-          gameCode: 'abc',
-          timeCreated: 123,
-          host: 1,
-          reactor: 1,
-          images: 'xyz'
+          image: 'abc',
+          waitingForScenarios: 0,
+          reactorID: 1,
+          reactorNickname: 'Brownie',
+          hostID: 1,
+          gameOver: 0,
+          winningResponse: null,
+          winningResponseSubmittedBy: null
         };
         var expectedRow = {
           id: 1,
           round: 1,
-          isCompleted: 1,
-          lastImage: 1,
-          gameCode: 'abc',
-          timeCreated: 123,
-          host: 1,
-          reactor: 1,
-          images: 'xyz'
+          image: 'abc',
+          waitingForScenarios: 0,
+          reactorID: 1,
+          reactorNickname: 'Brownie',
+          hostID: 1,
+          gameOver: 0,
+          winningResponse: null,
+          winningResponseSubmittedBy: null
         };
 
         expect(err).toBe(null);
@@ -99,14 +101,25 @@ describe('DatabaseIntegrationTest', function() {
         DAO.newGame(wConn, game, function(err, result) {
           expect(wConn.getConn()).toBeDefined();
           expect(err).toBe(null);
-          expect(result.insertId).toEqual(1);
-          expect(result.affectedRows).toEqual(1);
+          expect(result).not.toBe(null);
+          if (result != null) {
+            expect(result.insertId).toBeDefined;
+            expect(result.affectedRows).toBeDefined;
+            if (result.hasOwnProperty('insertId') && result.hasOwnProperty('affectedRows')) {
+              expect(result.insertId).toBe(1);
+              expect(result.affectedRows).toBe(1);
+            }
+          }
 
           connection.query('SELECT * FROM games', function(err, result) {
             expect(err).toBe(null);
-            expect(result.length).toEqual(1);
-            expect(JSON.stringify(result[0])).toEqual(JSON.stringify(expectedRow));
-
+            expect(result).not.toBe(null);
+            if (result != null) {
+              expect(result.length).toBe(1);
+              if (result.length == 1) {
+                expect(JSON.stringify(result[0])).toEqual(JSON.stringify(expectedRow));
+              }
+            }
             // Close database connections
             wConn.getConn().end();
             done();
@@ -126,24 +139,26 @@ describe('DatabaseIntegrationTest', function() {
         // Make a new game
         var game = {
           round: 1,
-          isCompleted: 1,
-          lastImage: 1,
-          gameCode: 'abc',
-          timeCreated: 123,
-          host: 1,
-          reactor: 1,
-          images: 'xyz'
+          image: 'abc',
+          waitingForScenarios: 0,
+          reactorID: 1,
+          reactorNickname: 'Brownie',
+          hostID: 1,
+          gameOver: 0,
+          winningResponse: null,
+          winningResponseSubmittedBy: null
         };
         var expectedRow = {
           id: 1,
           round: 1,
-          isCompleted: 1,
-          lastImage: 1,
-          gameCode: 'abc',
-          timeCreated: 123,
-          host: 1,
-          reactor: 1,
-          images: 'xyz'
+          image: 'abc',
+          waitingForScenarios: 0,
+          reactorID: 1,
+          reactorNickname: 'Brownie',
+          hostID: 1,
+          gameOver: 0,
+          winningResponse: null,
+          winningResponseSubmittedBy: null
         };
 
         expect(err).toBe(null);
@@ -160,7 +175,7 @@ describe('DatabaseIntegrationTest', function() {
             expect(err).toBe(null);
             expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-            DAO.setGame(wConn, 1, {host: 3, round: 2}, function(err, result) {
+            DAO.setGame(wConn, 1, {hostID: 3, round: 2}, function(err, result) {
               expect(err).toBe(null);
               if (!err) {
                 expect(result.affectedRows).toEqual(1);
@@ -170,13 +185,14 @@ describe('DatabaseIntegrationTest', function() {
                 var expectedRow2 = {
                   id: 1,
                   round: 2,
-                  isCompleted: 1,
-                  lastImage: 1,
-                  gameCode: 'abc',
-                  timeCreated: 123,
-                  host: 3,
-                  reactor: 1,
-                  images: 'xyz'
+                  image: 'abc',
+                  waitingForScenarios: 0,
+                  reactorID: 1,
+                  reactorNickname: 'Brownie',
+                  hostID: 3,
+                  gameOver: 0,
+                  winningResponse: null,
+                  winningResponseSubmittedBy: null
                 };
                 expect(err).toBe(null);
                 expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
@@ -206,7 +222,8 @@ describe('DatabaseIntegrationTest', function() {
           roundOfLastResponse: null,
           response: null,
           score: 0,
-          game: 1
+          game: 1,
+          submittedScenario: 0
         };
         var expectedRow = {
           id: 1,
@@ -215,7 +232,8 @@ describe('DatabaseIntegrationTest', function() {
           roundOfLastResponse: null,
           response: null,
           score: 0,
-          game: 1
+          game: 1,
+          submittedScenario: 0
         };
 
         expect(err).toBe(null);
@@ -234,7 +252,7 @@ describe('DatabaseIntegrationTest', function() {
             DAO.setUser(wConn, 1, {}, function(err, result) {
               expect(err).toBe(null);
               expect(result).toBe(null);
-              DAO.setUser(wConn, 1, {score: 3, game: 2}, function(err, result) {
+              DAO.setUser(wConn, 1, {score: 3, game: 2}, function(err) {
                 expect(err).toBe(null);
 
                 DAO.getUser(wConn, 1, function(err, result) {
@@ -245,13 +263,14 @@ describe('DatabaseIntegrationTest', function() {
                     roundOfLastResponse: null,
                     response: null,
                     score: 3,
-                    game: 2
+                    game: 2,
+                    submittedScenario: 0
                   };
                   expect(err).toBe(null);
                   expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
 
-                  DAO.newUser(wConn, user, function(err, id) {
-                    DAO.newUser(wConn, user, function(err, id) {
+                  DAO.newUser(wConn, user, function() {
+                    DAO.newUser(wConn, user, function(err) {
                       expect(err).toBe(null);
                       DAO.getGameUsers(wConn, 2, function(err, users) {
                         expect(err).toBe(null);
@@ -275,6 +294,5 @@ describe('DatabaseIntegrationTest', function() {
       },
       DBConfig);
   });
-
 
 });

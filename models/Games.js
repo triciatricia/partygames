@@ -3,13 +3,14 @@ var DataTypes = require('../core/data/types');
 var Games = {
   id: DataTypes.id(),
   round: DataTypes.int(),
-  isCompleted: DataTypes.boolean(),
-  lastImage: DataTypes.int(),
-  gameCode: DataTypes.char(),
-  timeCreated: DataTypes.time(),
-  host: DataTypes.id(),
-  reactor: DataTypes.id(),
-  images: DataTypes.links()
+  image: DataTypes.link(),
+  waitingForScenarios: DataTypes.boolean(),
+  reactorID: DataTypes.id(),
+  reactorNickname: DataTypes.char(),
+  hostID: DataTypes.id(),
+  gameOver: DataTypes.boolean(),
+  winningResponse: DataTypes.char(),
+  winningResponseSubmittedBy: DataTypes.id()
 };
 
 module.exports = Games;

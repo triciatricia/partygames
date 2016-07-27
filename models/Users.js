@@ -7,7 +7,8 @@ var Users = {
   roundOfLastResponse: DataTypes.unsignedint(),
   response: DataTypes.text(),
   score: DataTypes.int(),
-  game: DataTypes.id()
+  game: DataTypes.id(),
+  submittedScenario: DataTypes.boolean()
 };
 
 module.exports = Users;

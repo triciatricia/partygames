@@ -4,7 +4,7 @@
  * and what type they are in the mysql table ("DBType").
  */
 
-"use strict";
+'use strict';
 
 var utils = require('../utils');
 
@@ -64,7 +64,6 @@ addType(
   },
   ['size']);
 addType('text', utils.functionThatReturns('text'));
-// TODO Need a way to get out links
-addType('links', utils.functionThatReturns('text'));
+addType('link', utils.functionThatReturns('text'));
 
 module.exports = DataTypes;

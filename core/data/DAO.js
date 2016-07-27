@@ -1,13 +1,13 @@
 'use strict';
 
 var conn = require('./conn');
-var types = require('./types');
+// var types = require('./types');
 var assert = require('assert');
 var utils = require('../utils');
 var tables = require('./tables');
 var Games = require('../../models/Games');
 var Users = require('../../models/Users');
-var UserGame = require('../../models/UserGame');
+// var UserGame = require('../../models/UserGame');
 
 // All the data access objects
 var DAOs = {};
@@ -169,7 +169,7 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
   // Assumes a user can't be in 2 games at the same time
   var cb = callback;
   if (props.hasOwnProperty('game')) {
-    cb = function(err, res) {
+    cb = function(err) {
       assert(err === null, 'Should not have an error accessing database');
       userDAO.updateData(tables.usergame.tableName, 'user',
         userID, {'user': userID, 'game': props.game}, callback);
@@ -192,14 +192,27 @@ DAOs.newUser = function(DBConn, user, callback) {
   var cb = callback;
   if (user.hasOwnProperty('game')) {
     cb = function(err, userID) {
-      assert(err === null, 'Should not have an error accessing database');
+      if (err) {
+        console.log(err);
+        callback(err, null);
+        return;
+      }
+      // TODO delete below? If callback above works.
+      // assert(err === null, 'Should not have an error accessing database');
       userDAO.insertData(tables.usergame.tableName,
         {'user': userID, 'game': user.game},
-        function(err, res) {callback(err, userID);});
+        function(err) {callback(err, userID);});
     };
   }
   userDAO.insertData(tables.users.tableName, props,
-    function(err, res) {cb(err, res.insertId);});
+    function(err, res) {
+      if (err) {
+        console.log(err);
+        callback('Error adding user to database', null);
+        return;
+      }
+      cb(err, res.insertId);
+    });
 };
 
 /**
