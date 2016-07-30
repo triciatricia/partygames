@@ -227,41 +227,6 @@ function createPlayer(req, cb) {
         });
       });
     });
-
-  /* if (req.gameID == 2) { // TODO check game ID
-    // TODO Need to be different depending on whether is host
-    let gameInfo = {
-      id: 2,
-      round: null,
-      image: null,
-      choices: null,
-      waitingForScenarios: false,
-      reactorID: null,
-      reactorNickname: null,
-      hostID: 2,
-      scores: {'Cinna': 0, 'Momo': 0, 'Tricia': 0},
-      gameOver: false,
-      winningResponse: null,
-      winningResponseSubmittedBy: null
-    };
-    let playerInfo = {
-      id: 2,
-      nickname: 'Tricia',
-      response: null,
-      score: 0,
-      game: 2,
-      submittedScenario: false
-    };
-    playerInfo.nickname = req.nickname;
-
-    cb(null, {
-      gameInfo: gameInfo,
-      playerInfo: playerInfo
-    });
-
-  } else {
-    cb('Cannot find game in records', {});
-  } */
 }
 
 function startGame(req, cb) {

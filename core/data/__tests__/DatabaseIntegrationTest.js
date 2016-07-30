@@ -158,7 +158,8 @@ describe('DatabaseIntegrationTest', function() {
           hostID: 1,
           gameOver: 0,
           winningResponse: null,
-          winningResponseSubmittedBy: null
+          winningResponseSubmittedBy: null,
+          scores: {}
         };
 
         expect(err).toBe(null);
@@ -192,7 +193,8 @@ describe('DatabaseIntegrationTest', function() {
                   hostID: 3,
                   gameOver: 0,
                   winningResponse: null,
-                  winningResponseSubmittedBy: null
+                  winningResponseSubmittedBy: null,
+                  scores: {}
                 };
                 expect(err).toBe(null);
                 expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
