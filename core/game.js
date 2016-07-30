@@ -8,7 +8,7 @@ const defaultPlayerInfo = {
   id: null,
   nickname: null,
   response: null,
-  score: null,
+  score: 0,
   game: null,
   submittedScenario: false
 };
@@ -99,8 +99,39 @@ function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {
   });
 }
 
+function getGameInfoWithConn(conn, gameID, cb) {
+  // cb(err, {gameInfo: blah})
+  DAO.getGame(conn, gameID, (err, gameInfo) => {
+    if (err) {
+      cb('Cannot find game record.', {});
+      return;
+    }
+
+    DAO.getGameUsers(conn, gameID, (err, userIDs) => {
+      if (err) {
+        cb('Cannot find game users in record.', {});
+        return;
+      }
+
+      getScoresWithConn(conn, userIDs, (err, scores) => {
+        // scores = {nickname: score}
+        if (err) {
+          cb('Error retrieving scores', {});
+          return;
+        }
+
+        gameInfo.scores = scores;
+
+        cb(null, {
+          gameInfo: gameInfo
+        });
+      });
+    });
+  });
+}
+
 function getGameInfo(req, cb) {
-  let gameID = req.gameID;
+  // cb(null, {gameInfo: ...})
   var conn = ConnUtils.getNewConnection(
     ConnUtils.Modes.READ,
     (err) => {
@@ -110,16 +141,14 @@ function getGameInfo(req, cb) {
         return;
       }
 
-      DAO.getGame(conn, gameID, (err, res) => {
-        if (err) {
-          cb('Cannot find game record.', {});
-        } else {
-          cb(null, {
-            gameInfo: res
-          });
-        }
-        conn.getConn().end();
-      });
+      getGameInfoWithConn(conn, req.gameID,
+        (err, info) => {
+          if (err) {
+            conn.getConn().end();
+          } else {
+            cb(null, info);
+          }
+        });
     });
 }
 
@@ -188,7 +217,7 @@ function createNewGame(req, cb) {
 function createPlayer(req, cb) {
   // Create a player called req.nickname
   // in the game req.gameID
-  let gameID = req.gameID;
+  let gameID = getIDFromGameCode(req.gameID);
   var conn = ConnUtils.getNewConnection(
     ConnUtils.Modes.WRITE,
     (err) => {
@@ -198,20 +227,27 @@ function createPlayer(req, cb) {
         return;
       }
 
-      DAO.getGame(conn, gameID, (err) => {
+      getGameInfoWithConn(conn, gameID, (err, info) => {
+        let gameInfo = info.gameInfo;
         if (err) {
           conn.getConn().end();
-          cb('Cannot find game record.', {});
+          cb('Cannot find game record for code ' + gameID + '. ' + err, {});
           return;
         }
 
-        // TODO Check if playerInfo is valid?
-        // TODO Check if there is a user with the same nickname in the game
-        let playerInfo = {
-          nickname: req.nickname,
-          game: gameID
-        };
+        // Check if there is a user with the same nickname in the game
+        for (var name in gameInfo.scores) {
+          if (name == req.nickname) {
+            conn.getConn().end();
+            cb(req.nickname + ' is already taken. Please use another name.', {});
+            return;
+          }
+        }
+
+        let playerInfo = {};
         Utils.extend(playerInfo, defaultPlayerInfo);
+        playerInfo.nickname = req.nickname;
+        playerInfo.game = gameID;
 
         DAO.newUser(conn, playerInfo, (err, playerID) => {
           if (err) {

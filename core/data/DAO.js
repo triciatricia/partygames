@@ -251,8 +251,6 @@ DAOs.getGameUsers = function(DBConn, gameID, callback) {
   var cb = function(err, res) {
     if (err) {
       callback(err, null);
-    } else if (res.length === 0) {
-      callback('Could not find game ' + gameID + ' in database', []);
     } else {
       var users = [];
       for (var i = 0; i < res.length; ++i) {
