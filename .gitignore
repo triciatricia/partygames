@@ -23,3 +23,5 @@ local_conf.js
 
 # build
 **/build/**
+
+.DS_Store
