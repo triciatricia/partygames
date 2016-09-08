@@ -256,47 +256,73 @@ function createPlayer(req, cb) {
             return;
           }
 
-          getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
-            conn.getConn().end();
-            cb(err, info);
-          });
+          if (gameInfo.hostID === null) {
+
+            // Set the host to be the player.
+            DAO.setGame(conn, gameID, {'hostID': playerID}, (err) => {
+              if (err) {
+                console.log('Error setting player ' + playerID + ' as host of game ' + gameID);
+              }
+
+              getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
+                conn.getConn().end();
+                cb(err, info);
+              });
+            });
+
+          } else {
+            getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
+              conn.getConn().end();
+              cb(err, info);
+            });
+          }
         });
       });
     });
 }
 
 function startGame(req, cb) {
-  if (req.playerID == 2) {// TODO check if the player is the host, check if game hasn't been started
-    let gameInfo = {
-      id: 2,
-      round: 2,
-      image: 'http://i.imgur.com/rxkWqmt.gif',
-      choices: null,
-      waitingForScenarios: true,
-      reactorID: 3,
-      reactorNickname: 'Cinna',
-      hostID: 2,
-      scores: {'Cinna': 1, 'Momo': 0, 'Tricia': 0},
-      gameOver: false,
-      winningResponse: null,
-      winningResponseSubmittedBy: null
-    };
-    let playerInfo = {
-      id: 2,
-      nickname: 'Tricia',
-      response: null,
-      score: 0,
-      game: 2,
-      submittedScenario: false
-    };
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.WRITE,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
 
-    cb(null, {
-      gameInfo: gameInfo,
-      playerInfo: playerInfo
+      getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
+        let gameInfo = info.gameInfo;
+        let playerInfo = info.playerInfo;
+
+        let gameChanges = { // TODO: Replace with actual game information
+          round: 1,
+          image: 'http://i.imgur.com/rxkWqmt.gif', // TODO fetch image
+          waitingForScenarios: true,
+          reactorID: req.playerID,
+          reactorNickname: playerInfo.nickname
+        };
+
+        if (req.playerID != gameInfo.hostID) {
+          conn.getConn().end();
+          cb('Error starting game: You\'re not the host. Please wait for the host to start the game.');
+          return;
+        }
+
+        DAO.setGame(conn, req.gameID, gameChanges, (err) => {
+          if (err) {
+            conn.getConn().end();
+            cb('Error starting game');
+            return;
+          }
+
+          cb(null, {
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+        });
+      });
     });
-  } else {
-    cb('Error starting game.', {});
-  }
 }
 
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
