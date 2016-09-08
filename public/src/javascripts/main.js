@@ -232,7 +232,8 @@ const WaitingToStart = React.createClass({
 const NewGame = React.createClass({
   propTypes: {
     joinGame: React.PropTypes.func,
-    createGame: React.PropTypes.func
+    createGame: React.PropTypes.func,
+    errorMessage: React.PropTypes.string
   },
   getInitialState: function() {
     return {
@@ -258,10 +259,11 @@ const NewGame = React.createClass({
         <p>Are you ready to react?</p>
         <form>
           <div className="row">
-            <div className="form-group col-xs-6">
-              <input type="gameCode" className="form-control" id="gameCode"
+            <div className={this.props.errorMessage ? 'form-group col-xs-6 has-error' : 'form-group col-xs-6'}>
+              <input type="gameCode" className='form-control' id="gameCode"
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
+              <p className="help-block">{this.props.errorMessage}</p>
               <button type="button" className="btn btn-default"
                 onClick={this.joinGame} >
                 Join Game
@@ -285,7 +287,8 @@ const NewGame = React.createClass({
 
 const NewPlayer = React.createClass({
   propTypes: {
-    createPlayer: React.PropTypes.func
+    createPlayer: React.PropTypes.func,
+    errorMessage: React.PropTypes.string
   },
   getInitialState: function() {
     return {
@@ -305,16 +308,17 @@ const NewPlayer = React.createClass({
       <div className="jumbotron">
         <form>
           <div className="row">
-            <div className="form-group col-xs-6">
+            <div className={this.props.errorMessage ? 'form-group col-xs-6 has-error' : 'form-group col-xs-6'}>
               <input type="text" className="form-control" id="nickname" value={this.state.nickname}
                 placeholder="What do you want to be called?" onChange={this.handleChange}
                 ref="nicknameInput" />
+              <p className="help-block">{this.props.errorMessage}</p>
+              <button type="button" className="btn btn-primary btn-lg"
+                onClick={this.createPlayer}>
+                Submit nickname
+              </button>
             </div>
           </div>
-          <button type="button" className="btn btn-primary btn-lg"
-            onClick={this.createPlayer}>
-            Submit nickname
-          </button>
         </form>
       </div>
     );
@@ -461,7 +465,10 @@ const Container = React.createClass({
   render: function() {
     if (this.state.gameInfo === null) {
       return (
-        <NewGame joinGame={this.joinGame} createGame={this.createGame} />
+        <NewGame
+          joinGame={this.joinGame}
+          createGame={this.createGame}
+          errorMessage={this.state.errorMessage} />
       );
     }
     if (this.state.gameInfo.round !== null) {
@@ -486,7 +493,7 @@ const Container = React.createClass({
     if (this.state.playerInfo == null) {
       /* player hasn't been created */
       return (
-        <NewPlayer createPlayer={this.createPlayer} />
+        <NewPlayer createPlayer={this.createPlayer} errorMessage={this.state.errorMessage} />
       );
     }
     return (
