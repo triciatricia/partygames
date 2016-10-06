@@ -3,6 +3,7 @@
 var Utils = require('./utils');
 var ConnUtils = require('./data/conn');
 var DAO = require('./data/DAO');
+var Gifs = require('./gifs');
 
 const defaultPlayerInfo = {
   id: null,
@@ -27,6 +28,11 @@ const defaultGame = {
 
 function getIDFromGameCode(code) {
   return parseInt(code);
+}
+
+function getNextImage(cb) {
+  // Return a random reaction image url.
+  Gifs.getRandomGif(cb);
 }
 
 function getScoresWithConn(conn, userIDs, cb) {
@@ -292,33 +298,36 @@ function startGame(req, cb) {
       }
 
       getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
-        let gameInfo = info.gameInfo;
-        let playerInfo = info.playerInfo;
+        getNextImage((image) => {
 
-        let gameChanges = { // TODO: Replace with actual game information
-          round: 1,
-          image: 'http://i.imgur.com/rxkWqmt.gif', // TODO fetch image
-          waitingForScenarios: true,
-          reactorID: req.playerID,
-          reactorNickname: playerInfo.nickname
-        };
+          let gameInfo = info.gameInfo;
+          let playerInfo = info.playerInfo;
 
-        if (req.playerID != gameInfo.hostID) {
-          conn.getConn().end();
-          cb('Error starting game: You\'re not the host. Please wait for the host to start the game.');
-          return;
-        }
+          let gameChanges = {
+            round: 1,
+            image: image,
+            waitingForScenarios: true,
+            reactorID: req.playerID,
+            reactorNickname: playerInfo.nickname
+          };
 
-        DAO.setGame(conn, req.gameID, gameChanges, (err) => {
-          if (err) {
+          if (req.playerID != gameInfo.hostID) {
             conn.getConn().end();
-            cb('Error starting game');
+            cb('Error starting game: You\'re not the host. Please wait for the host to start the game.');
             return;
           }
 
-          cb(null, {
-            gameInfo: gameInfo,
-            playerInfo: playerInfo
+          DAO.setGame(conn, req.gameID, gameChanges, (err) => {
+            if (err) {
+              conn.getConn().end();
+              cb('Error starting game');
+              return;
+            }
+
+            cb(null, {
+              gameInfo: gameInfo,
+              playerInfo: playerInfo
+            });
           });
         });
       });

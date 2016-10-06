@@ -43,3 +43,17 @@ module.exports.extend = function(dest) {
     }
   }
 };
+
+/**
+ * Return a random integer between min and max inclusive
+ */
+module.exports.randInt = function(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+};
+
+/**
+ * Return a random item in an array
+ */
+module.exports.randItem = function(arr) {
+  return arr[this.randInt(0, arr.length - 1)];
+};
