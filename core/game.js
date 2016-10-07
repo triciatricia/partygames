@@ -59,8 +59,36 @@ function getScoresWithConn(conn, userIDs, cb) {
       });
     });
   }
+}
 
+function getScenariosWithConn(conn, userIDs, cb) {
+  // cb(err, scenarios)
+  if (userIDs.length == 0) {
+    cb(null, []);
+  } else {
+    let nextID = userIDs.pop();
+    DAO.getUser(conn, nextID, (err, userInfo) => {
+      if (err) {
+        console.log('Cannot find user record.');
+        cb('Cannot find user record.', []);
+        return;
+      }
 
+      getScenariosWithConn(conn, userIDs, (err, scenarios) => {
+        if (err) {
+          console.log(err);
+          cb(err, []);
+          return;
+        }
+
+        if (userInfo.response) {
+          scenarios.push(userInfo.response);
+        }
+
+        cb(null, scenarios);
+      });
+    });
+  }
 }
 
 function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {
@@ -85,20 +113,31 @@ function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {
           return;
         }
 
-        getScoresWithConn(conn, userIDs, (err, scores) => {
+        getScoresWithConn(conn, userIDs.slice(0), (err, scores) => {
           // scores = {nickname: score}
           if (err) {
             cb('Error retrieving scores', {});
             return;
           }
 
-          gameInfo.scores = scores;
+          getScenariosWithConn(
+            conn,
+            userIDs,
+            (err, choices) => {
+              if (err) {
+                console.log(err);
+                cb(err);
+                return;
+              }
 
-          cb(null, {
-            gameInfo: gameInfo,
-            playerInfo: playerInfo
-          });
+              gameInfo.scores = scores;
+              gameInfo.choices = choices;
 
+              cb(null, {
+                gameInfo: gameInfo,
+                playerInfo: playerInfo
+              });
+            });
         });
       });
     });
@@ -119,18 +158,101 @@ function getGameInfoWithConn(conn, gameID, cb) {
         return;
       }
 
-      getScoresWithConn(conn, userIDs, (err, scores) => {
+      getScoresWithConn(conn, userIDs.slice(0), (err, scores) => {
         // scores = {nickname: score}
         if (err) {
           cb('Error retrieving scores', {});
           return;
         }
 
-        gameInfo.scores = scores;
+        getScenariosWithConn(
+          conn,
+          userIDs,
+          (err, choices) => {
+            if (err) {
+              console.log(err);
+              cb(err);
+              return;
+            }
 
-        cb(null, {
-          gameInfo: gameInfo
-        });
+            gameInfo.scores = scores;
+            gameInfo.choices = choices;
+
+            cb(null, {
+              gameInfo: gameInfo
+            });
+          });
+      });
+    });
+  });
+}
+
+function doneRespondingWithConn(conn, gameID, cb) {
+  // Update the game info since the scenaios are in
+  DAO.setGame(
+    conn,
+    gameID,
+    {
+      waitingForScenarios: false
+    },
+    cb);
+}
+
+function updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, cb) {
+  // Update game info if all the users but the host have responded
+  // cb(err)
+  if (userIDs.length == 0) {
+
+    console.log('Scenarios are in for this round!');
+    doneRespondingWithConn(conn, gameID, cb);
+
+  } else {
+
+    let nextID = userIDs.pop();
+    DAO.getUser(conn, nextID, (err, userInfo) => {
+      if (err) {
+        console.log('Cannot find user record.' + nextID.toString());
+        cb('Cannot find user record.', []);
+        return;
+      }
+
+      // Check if not host and still hasn't submitted scenario
+      if (!userInfo.submittedScenario && nextID != hostID) {
+        cb();
+        return;
+      }
+
+      updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, cb);
+    });
+  }
+}
+
+function checkAllResponsesInWithConn(conn, gameID, cb) {
+  // Update if everyone but reactor done submitting response
+  // cb(err)
+  DAO.getGame(conn, gameID, (err, gameInfo) => {
+    if (err) {
+      console.log('Cannot find game record.');
+      cb('Cannot find game record.');
+      return;
+    }
+
+    let hostID = gameInfo.hostID;
+
+    DAO.getGameUsers(conn, gameID, (err, userIDs) => {
+      if (err) {
+        console.log('Cannot find game users in record.');
+        cb('Cannot find game users in record.');
+        return;
+      }
+
+      updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, (err) => {
+        if (err) {
+          console.log('Error retrieving player info');
+          cb('Error retrieving player info');
+          return;
+        }
+        cb();
       });
     });
   });
@@ -372,19 +494,26 @@ function submitResponse(req, cb) {
             return;
           }
 
-          // TODO: Check if everyone but reactor done submitting response
-          getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
+          checkAllResponsesInWithConn(conn, req.gameID, (err) =>  {
             if (err) {
               conn.getConn().end();
               cb('Error submitting response.');
               return;
             }
 
-            cb(null, {
-              gameInfo: info.gameInfo,
-              playerInfo: info.playerInfo
+            getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
+              if (err) {
+                conn.getConn().end();
+                cb('Error submitting response.');
+                return;
+              }
+
+              cb(null, {
+                gameInfo: info.gameInfo,
+                playerInfo: info.playerInfo
+              });
+              conn.getConn().end();
             });
-            conn.getConn().end();
           });
         });
       });

@@ -82,7 +82,7 @@ const ReactionScenario = React.createClass({
 
 const ScenarioList = React.createClass({
   propTypes: {
-    choices: React.PropTypes.arrayOf(React.PropTypes.string),
+    choices: React.PropTypes.arrayOf(React.PropTypes.string), // TODO randomize choice order
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
     winningResponseSubmittedBy: React.PropTypes.string,
