@@ -152,6 +152,7 @@ function getGameInfo(req, cb) {
           if (err) {
             conn.getConn().end();
           } else {
+            conn.getConn().end();
             cb(null, info);
           }
         });
