@@ -79,6 +79,18 @@ module.exports.startGame = function(gameID, playerID, cb) {
   }, cb);
 };
 
+module.exports.submitResponse = function(response, gameID, playerID, round, cb) {
+  // Submit a player's reaction description
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    gameID: gameID,
+    playerID: playerID,
+    round: round,
+    response: response,
+    action: 'submitResponse'
+  }, cb);
+};
+
 module.exports.log = function() {
   // Log things to the console while developing
   if (~conf.isProduction) {

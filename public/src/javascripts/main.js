@@ -132,7 +132,11 @@ const ScenarioList = React.createClass({
 const ResponseForm = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
-    playerInfo: React.PropTypes.object
+    playerInfo: React.PropTypes.object,
+    submitResponse: React.PropTypes.func
+  },
+  submitResponse: function() {
+    this.props.submitResponse(this.refs.response.value.trim());
   },
   render: function() {
     if (this.props.gameInfo.waitingForScenarios) {
@@ -158,9 +162,10 @@ const ResponseForm = React.createClass({
             <p className='text-success'>{helpMessage}</p>
             <label>{this.props.gameInfo.reactorNickname}'s response when...</label>
             <input type="input" className="form-control" id="scenario"
-              placeholder={placeholder} defaultValue={this.props.playerInfo.response}/>
+              placeholder={placeholder} defaultValue={this.props.playerInfo.response}
+              ref="response" />
           </div>
-            <button type="submit" className="btn btn-default">{buttonText}</button>
+            <button type="button" className="btn btn-default" onClick={this.submitResponse}>{buttonText}</button>
         </form>
       );
     }
@@ -185,7 +190,8 @@ const ResponseForm = React.createClass({
 const RoundInfo = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
-    playerInfo: React.PropTypes.object
+    playerInfo: React.PropTypes.object,
+    submitResponse: React.PropTypes.func
   },
   render: function() {
     return (
@@ -197,7 +203,8 @@ const RoundInfo = React.createClass({
         <div className='col-md-6'>
           <ResponseForm
             gameInfo={this.props.gameInfo}
-            playerInfo={this.props.playerInfo} />
+            playerInfo={this.props.playerInfo}
+            submitResponse={this.props.submitResponse} />
         </div>
       </div>
     );
@@ -415,7 +422,7 @@ const Container = React.createClass({
     GameUtils.createPlayer(nickname, this.state.gameInfo.id, (err, gameInfo, playerInfo) => {
       if (err) {
         this.setState({
-          errorMessage: 'Error creating new player'
+          errorMessage: 'Error creating new player. ' + err
         });
       } else {
         this.setState({
@@ -425,6 +432,28 @@ const Container = React.createClass({
         });
       }
     });
+  },
+  submitResponse: function(response) {
+    GameUtils.log('Submitting response: ' + response);
+    GameUtils.submitResponse(
+      response,
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      this.state.gameInfo.round,
+      (err, gameInfo, playerInfo) => {
+        if (err) {
+          this.setState({
+            errorMessage: 'Error submitting response. ' + err
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo,
+            errorMessage: null
+          });
+        }
+      }
+    );
   },
   pollGameInfo: function() {
     if (!this.state.gameInfo || !this.state.gameInfo.hasOwnProperty('id') ||
@@ -479,7 +508,8 @@ const Container = React.createClass({
             score={this.state.playerInfo.score} />
           <RoundInfo
             gameInfo={this.state.gameInfo}
-            playerInfo={this.state.playerInfo} />
+            playerInfo={this.state.playerInfo}
+            submitResponse={this.submitResponse} />
         </div>
       );
     }

@@ -329,6 +329,62 @@ function startGame(req, cb) {
               gameInfo: gameInfo,
               playerInfo: playerInfo
             });
+            conn.getConn().end();
+          });
+        });
+      });
+    });
+}
+
+function submitResponse(req, cb) {
+  var conn = ConnUtils.getNewConnection(
+    ConnUtils.Modes.WRITE,
+    (err) => {
+      if (err) {
+        conn.getConn().end();
+        cb(err);
+        return;
+      }
+
+      getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
+        if (err) {
+          conn.getConn().end();
+          cb('Error submitting response.');
+          return;
+        }
+
+        if (info.gameInfo.round != req.round) {
+          conn.getConn().end();
+          cb('Error submitting response.');
+          return;
+        }
+
+        let playerChanges = {
+          response: req.response,
+          submittedScenario: true,
+          roundOfLastResponse: req.round
+        };
+
+        DAO.setUser(conn, req.playerID, playerChanges, (err) => {
+          if (err) {
+            conn.getConn().end();
+            cb('Error submitting response.');
+            return;
+          }
+
+          // TODO: Check if everyone but reactor done submitting response
+          getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
+            if (err) {
+              conn.getConn().end();
+              cb('Error submitting response.');
+              return;
+            }
+
+            cb(null, {
+              gameInfo: info.gameInfo,
+              playerInfo: info.playerInfo
+            });
+            conn.getConn().end();
           });
         });
       });
@@ -341,7 +397,8 @@ const actions = {
   joinGame: joinGame,
   createPlayer: createPlayer,
   createNewGame: createNewGame,
-  startGame: startGame
+  startGame: startGame,
+  submitResponse: submitResponse
 };
 
 module.exports.processRequest = (req, cb) => {
