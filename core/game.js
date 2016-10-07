@@ -38,27 +38,19 @@ function getNextImage(cb) {
 function getScoresWithConn(conn, userIDs, cb) {
   // cb(err, scores)
   // scores = {nickname: score} for the userIDs
-  if (userIDs.length == 0) {
-    cb(null, {});
-  } else {
-    let nextID = userIDs.pop();
-    DAO.getUser(conn, nextID, (err, userInfo) => {
-      if (err) {
-        cb('Cannot find user record.', {});
-        return;
-      }
+  DAO.getUsersProp(conn, userIDs, ['nickname', 'score'], (err, info) => {
+    if (err) {
+      cb(err, {});
+      return;
+    }
 
-      getScoresWithConn(conn, userIDs, (err, scores) => {
-        if (err) {
-          cb(err, {});
-          return;
-        }
+    let scores = {};
+    for (var id in info) {
+      scores[info[id].nickname] = info[id].score;
+    }
 
-        scores[userInfo.nickname] = userInfo.score;
-        cb(null, scores);
-      });
-    });
-  }
+    cb(null, scores);
+  });
 }
 
 function getScenariosWithConn(conn, userIDs, cb) {

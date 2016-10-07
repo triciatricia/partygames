@@ -262,4 +262,48 @@ DAOs.getGameUsers = function(DBConn, gameID, callback) {
 
   gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
 };
+
+/**
+ * Function to get properties from all users in an array
+ * Returns an object where the keys are userIDs
+ * cb(err, {userID: {prop: value}})
+ */
+function getUsersPropHelper(DBConn, userIDs, props, cb) {
+  if (userIDs.length == 0) {
+    cb(null, {});
+  } else {
+    let nextID = userIDs.pop();
+    DAOs.getUser(DBConn, nextID, (err, userInfo) => {
+      if (err) {
+        cb('Cannot find user record.', {});
+        return;
+      }
+
+      let userInfoKeep = {};
+      for (var i in props) {
+        userInfoKeep[props[i]] = userInfo[props[i]];
+      }
+
+      getUsersPropHelper(DBConn, userIDs, props, (err, usersInfo) => {
+        if (err) {
+          cb(err, {});
+          return;
+        }
+
+        usersInfo[userInfo.id] = userInfoKeep;
+        cb(null, usersInfo);
+      });
+    });
+  }
+}
+
+/**
+ * Function to get properties from all users in an array
+ * Returns an object where the keys are userIDs
+ * cb(err, {userID: {prop: value}})
+ */
+DAOs.getUsersProp = function(DBConn, userIDs, props, cb) {
+  getUsersPropHelper(DBConn, userIDs.slice(0), props, cb);
+};
+
 module.exports = DAOs;
