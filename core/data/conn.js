@@ -1,5 +1,7 @@
 'use strict';
 
+/* @flow */
+
 /**
  * Currently only creates a mySQL connection
  */
@@ -38,7 +40,7 @@ const ConnectionModes = {
 /**
  * @constructor
  */
-function DBConn(conn, mode) {
+function DBConn(conn, mode: number) {
   this.mode = mode;
   this.conn = conn;
 }
