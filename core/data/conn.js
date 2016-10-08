@@ -1,17 +1,19 @@
+'use strict';
+
 /**
  * Currently only creates a mySQL connection
  */
 
-var conf = require('../../conf');
-var mysql = require('mysql');
-var assert = require('assert');
+const assert = require('assert');
+const conf = require('../../conf');
+const mysql = require('mysql');
 
 function getConnection(callback, customConf) {
   /**
    * customConf is an optional configuration
    * If null, it will use the default in ../../conf.js.
    */
-  var connection;
+  let connection;
   if (customConf) {
     connection = mysql.createConnection(customConf);
   } else {
@@ -28,7 +30,7 @@ function getConnection(callback, customConf) {
   return connection;
 }
 
-var ConnectionModes = {
+const ConnectionModes = {
   READ: 1,
   WRITE: 2
 };
@@ -51,7 +53,7 @@ Object.assign(DBConn.prototype, {
   }
 });
 
-var ConnectionUtils = {
+const ConnectionUtils = {
   getNewConnection: function(mode, callback, customConf) {
     /**
      * customConf is an optional object with parameters

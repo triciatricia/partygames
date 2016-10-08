@@ -1,21 +1,25 @@
-module.exports.id = function(x) {
-  return x;
-};
+'use strict';
 
-module.exports.functionThatReturns = function(x) {
+/* @flow */
+
+function id<T>(x: T): T {
+  return x;
+}
+
+function functionThatReturns<T>(x: T): () => T {
   return function() {
     return x;
   };
-};
+}
 
 /**
  * @param {string} word
  */
-module.exports.capitalizeFirst = function(word) {
+function capitalizeFirst(word: string): string {
   return word.charAt(0).toUpperCase() + word.substr(1);
-};
+}
 
-module.exports.merge = function() {
+function merge(): Object {
   var ret = {};
 
   for (var i = 0; i < arguments.length; ++i) {
@@ -28,18 +32,27 @@ module.exports.merge = function() {
   }
 
   return ret;
-};
+}
 
 /**
  * Return a random integer between min and max inclusive
  */
-module.exports.randInt = function(min, max) {
+function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
-};
+}
 
 /**
  * Return a random item in an array
  */
-module.exports.randItem = function(arr) {
+function randItem<T>(arr: Array<T>): T {
   return arr[this.randInt(0, arr.length - 1)];
+}
+
+module.exports = {
+  id,
+  functionThatReturns,
+  capitalizeFirst,
+  merge,
+  randInt,
+  randItem
 };
