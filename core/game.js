@@ -71,7 +71,7 @@ function getScenariosWithConn(conn, userIDs, cb) {
   });
 }
 
-function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {
+function getPlayerGameInfoWithConn(conn, playerID, gameID, cb: (err: string, info: ?Object) => void) {
   // cb(err, {gameInfo: blah, playerInfo: blah})
   DAO.getGame(conn, gameID, (err, gameInfo) => {
     if (err) {
@@ -336,13 +336,14 @@ function createPlayer(req, cb) {
         return;
       }
 
-      getGameInfoWithConn(conn, gameID, (err, info) => {
-        let gameInfo = info.gameInfo;
+      getGameInfoWithConn(conn, gameID, (err, info: ?Object) => {
         if (err) {
           conn.getConn().end();
           cb('Cannot find game record for code ' + gameID + '. ' + err, {});
           return;
         }
+
+        let gameInfo = info.gameInfo;
 
         // Check if there is a user with the same nickname in the game
         for (var name in gameInfo.scores) {
@@ -400,9 +401,14 @@ function startGame(req, cb) {
         return;
       }
 
-      getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
-        getNextImage((image) => {
+      getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info: ?Object) => {
+        if (err || !info) {
+          conn.getConn().end();
+          cb(err);
+          return;
+        }
 
+        getNextImage((image) => {
           let gameInfo = info.gameInfo;
           let playerInfo = info.playerInfo;
 
@@ -449,7 +455,7 @@ function submitResponse(req, cb) {
       }
 
       getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
-        if (err) {
+        if (err || !info || !info.gameInfo) {
           conn.getConn().end();
           cb('Error submitting response.');
           return;
@@ -510,7 +516,7 @@ const actions = {
   submitResponse
 };
 
-module.exports.processRequest = (req, cb) => {
+function processRequest(req: Object, cb: (err: string, res: ?Object) => void) {
   // Process requests to the server
   // req has the 'action' property to tell it what action to complete
   // cb(err, res)
@@ -529,4 +535,8 @@ module.exports.processRequest = (req, cb) => {
     cb(err, res);
   });
 
+}
+
+module.exports = {
+  processRequest
 };
