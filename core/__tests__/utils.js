@@ -51,8 +51,7 @@ describe('extend', function() {
     var src = {b : 'wtf', d: 'xd'};
     var src2 = {b : 'replacewtf', c : 'thirdthing'};
 
-    // no return value
-    expect(utils.extend(dst, src, src2)).toBeUndefined();
+    Object.assign(dst, src, src2);
 
     // dst modified
     expect(dst).toEqual({

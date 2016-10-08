@@ -31,20 +31,6 @@ module.exports.merge = function() {
 };
 
 /**
- * Copies everything to the first argument
- */
-module.exports.extend = function(dest) {
-  for (var i = 1; i < arguments.length; ++i) {
-    var obj = arguments[i];
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        dest[key] = obj[key];
-      }
-    }
-  }
-};
-
-/**
  * Return a random integer between min and max inclusive
  */
 module.exports.randInt = function(min, max) {

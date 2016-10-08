@@ -3,7 +3,6 @@
  */
 
 var conf = require('../../conf');
-var utils = require('../utils');
 var mysql = require('mysql');
 var assert = require('assert');
 
@@ -42,7 +41,7 @@ function DBConn(conn, mode) {
   this.conn = conn;
 }
 
-utils.extend(DBConn.prototype, {
+Object.assign(DBConn.prototype, {
   getMode: function() {
     return this.mode;
   },

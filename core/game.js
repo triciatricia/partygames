@@ -1,6 +1,5 @@
 'use strict';
 
-var Utils = require('./utils');
 var ConnUtils = require('./data/conn');
 var DAO = require('./data/DAO');
 var Gifs = require('./gifs');
@@ -355,7 +354,7 @@ function createPlayer(req, cb) {
         }
 
         let playerInfo = {};
-        Utils.extend(playerInfo, defaultPlayerInfo);
+        Object.assign(playerInfo, defaultPlayerInfo);
         playerInfo.nickname = req.nickname;
         playerInfo.game = gameID;
 
@@ -503,12 +502,12 @@ function submitResponse(req, cb) {
 
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
-  getGameInfo: getGameInfo,
-  joinGame: joinGame,
-  createPlayer: createPlayer,
-  createNewGame: createNewGame,
-  startGame: startGame,
-  submitResponse: submitResponse
+  getGameInfo,
+  joinGame,
+  createPlayer,
+  createNewGame,
+  startGame,
+  submitResponse
 };
 
 module.exports.processRequest = (req, cb) => {
@@ -526,7 +525,7 @@ module.exports.processRequest = (req, cb) => {
       'gameInfo': null,
       'playerInfo': null
     };
-    Utils.extend(res, info);
+    Object.assign(res, info);
     cb(err, res);
   });
 

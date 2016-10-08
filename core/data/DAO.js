@@ -3,7 +3,6 @@
 var conn = require('./conn');
 // var types = require('./types');
 var assert = require('assert');
-var utils = require('../utils');
 var tables = require('./tables');
 var Games = require('../../models/Games');
 var Users = require('../../models/Users');
@@ -129,7 +128,7 @@ DAOs.newGame = function(DBConn, game, callback) {
   var gameDAO = new DAO(DBConn);
   var props = {};
   // Copy all the properties from game to props.
-  utils.extend(props, game);
+  Object.assign(props, game);
   var gameTable = tables.game.tableName;
   gameDAO.insertData(gameTable, props, callback);
 };
@@ -188,7 +187,7 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
 DAOs.newUser = function(DBConn, user, callback) {
   var userDAO = new DAO(DBConn);
   var props = {};
-  utils.extend(props, user);
+  Object.assign(props, user);
 
   // Modify the callback to add a row to usergame
   var cb = callback;
