@@ -38,12 +38,18 @@ const ReactionImage = React.createClass({
 const ReactionChoice = React.createClass({
   propTypes: {
     choice: React.PropTypes.string,
-    key: React.PropTypes.number
+    id: React.PropTypes.string,
+    isChecked: React.PropTypes.bool,
+    onScenarioSelection: React.PropTypes.func
   },
   render: function() {
     return (
       <div className='radio scenario'>
-        <label><input type='radio' name='scenario'/>{this.props.choice}</label>
+        <label><input
+          type='radio'
+          value={this.props.id}
+          checked={this.props.isChecked}
+          onChange={this.props.onScenarioSelection} />{this.props.choice}</label>
       </div>
     );
   }
@@ -86,7 +92,16 @@ const ScenarioList = React.createClass({
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
     winningResponseSubmittedBy: React.PropTypes.string,
-    isReactor: React.PropTypes.bool
+    isReactor: React.PropTypes.bool,
+    chooseScenario: React.PropTypes.func
+  },
+  getInitialState: function() {
+    return {
+      selectedScenario: null
+    };
+  },
+  chooseScenario: function() {
+    this.props.chooseScenario(this.state.selectedScenario);
   },
   render: function() {
     let scenarios;
@@ -94,9 +109,23 @@ const ScenarioList = React.createClass({
     if (this.props.isReactor && this.props.winningResponse === null) {
       // have the reactor choose their favorite scenario
       scenarios = Object.getOwnPropertyNames(this.props.choices).map(
-        (id) => <ReactionChoice choice={this.props.choices[id]} key={id} />
+        (id) => {
+          return (<ReactionChoice
+            choice={this.props.choices[id]}
+            id={id.toString()}
+            key={id}
+            isChecked={this.state.selectedScenario == id}
+            onScenarioSelection={(event) => {
+              this.setState({
+                selectedScenario: event.target.value
+              });
+            }} />);
+        }
       );
-      button = <button type="submit" className="btn btn-default">Submit</button>;
+      button = <button
+        type="button"
+        className="btn btn-default"
+        onClick={this.chooseScenario} >Submit</button>;
     } else {
       // display the scenarios as a list
       scenarios = Object.getOwnPropertyNames(this.props.choices).map(
@@ -108,6 +137,7 @@ const ScenarioList = React.createClass({
           return (
             <ReactionScenario
               choice={this.props.choices[id]}
+              id={id.toString()}
               key={id}
               wasChosen={id == this.props.winningResponse}
               submittedBy={submittedBy} />
@@ -133,7 +163,8 @@ const ResponseForm = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object,
-    submitResponse: React.PropTypes.func
+    submitResponse: React.PropTypes.func,
+    chooseScenario: React.PropTypes.func
   },
   submitResponse: function() {
     this.props.submitResponse(this.refs.response.value.trim());
@@ -181,7 +212,8 @@ const ResponseForm = React.createClass({
           reactorNickname={this.props.gameInfo.reactorNickname}
           winningResponse={this.props.gameInfo.winningResponse}
           winningResponseSubmittedBy={this.props.gameInfo.winningResponseSubmittedBy}
-          isReactor={this.props.gameInfo.reactorID == this.props.playerInfo.id} />
+          isReactor={this.props.gameInfo.reactorID == this.props.playerInfo.id}
+          chooseScenario={this.props.chooseScenario} />
       </div>
     );
   }
@@ -191,7 +223,8 @@ const RoundInfo = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object,
-    submitResponse: React.PropTypes.func
+    submitResponse: React.PropTypes.func,
+    chooseScenario: React.PropTypes.func
   },
   render: function() {
     return (
@@ -204,7 +237,8 @@ const RoundInfo = React.createClass({
           <ResponseForm
             gameInfo={this.props.gameInfo}
             playerInfo={this.props.playerInfo}
-            submitResponse={this.props.submitResponse} />
+            submitResponse={this.props.submitResponse}
+            chooseScenario={this.props.chooseScenario} />
         </div>
       </div>
     );
@@ -455,6 +489,10 @@ const Container = React.createClass({
       }
     );
   },
+  chooseScenario: function(choiceID) {
+    // Select your favorite response
+    // TODO
+  },
   pollGameInfo: function() {
     if (!this.state.gameInfo || !this.state.gameInfo.hasOwnProperty('id') ||
       !this.state.gameInfo.id || !this.state.playerInfo) {
@@ -509,7 +547,8 @@ const Container = React.createClass({
           <RoundInfo
             gameInfo={this.state.gameInfo}
             playerInfo={this.state.playerInfo}
-            submitResponse={this.submitResponse} />
+            submitResponse={this.submitResponse}
+            chooseScenario={this.chooseScenario} />
         </div>
       );
     }
