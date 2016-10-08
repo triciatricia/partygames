@@ -54,33 +54,22 @@ function getScoresWithConn(conn, userIDs, cb) {
 }
 
 function getScenariosWithConn(conn, userIDs, cb) {
-  // cb(err, scenarios)
-  if (userIDs.length == 0) {
-    cb(null, []);
-  } else {
-    let nextID = userIDs.pop();
-    DAO.getUser(conn, nextID, (err, userInfo) => {
-      if (err) {
-        console.log('Cannot find user record.');
-        cb('Cannot find user record.', []);
-        return;
+  // cb(err, {userID: scenario})
+  DAO.getUsersProp(conn, userIDs, ['response'], (err, info) => {
+    if (err) {
+      cb(err, {});
+      return;
+    }
+
+    let scenarios = {};
+    for (var id in info) {
+      if (info[id].response) {
+        scenarios[id] = info[id].response;
       }
+    }
 
-      getScenariosWithConn(conn, userIDs, (err, scenarios) => {
-        if (err) {
-          console.log(err);
-          cb(err, []);
-          return;
-        }
-
-        if (userInfo.response) {
-          scenarios.push(userInfo.response);
-        }
-
-        cb(null, scenarios);
-      });
-    });
-  }
+    cb(null, scenarios);
+  });
 }
 
 function getPlayerGameInfoWithConn(conn, playerID, gameID, cb) {

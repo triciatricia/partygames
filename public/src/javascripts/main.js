@@ -82,7 +82,7 @@ const ReactionScenario = React.createClass({
 
 const ScenarioList = React.createClass({
   propTypes: {
-    choices: React.PropTypes.arrayOf(React.PropTypes.string), // TODO randomize choice order
+    choices: React.PropTypes.object, // TODO randomize choice order
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
     winningResponseSubmittedBy: React.PropTypes.string,
@@ -93,23 +93,23 @@ const ScenarioList = React.createClass({
     let button;
     if (this.props.isReactor && this.props.winningResponse === null) {
       // have the reactor choose their favorite scenario
-      scenarios = this.props.choices.map(
-        (choice, i) => <ReactionChoice choice={choice} key={i} />
+      scenarios = Object.getOwnPropertyNames(this.props.choices).map(
+        (id) => <ReactionChoice choice={this.props.choices[id]} key={id} />
       );
       button = <button type="submit" className="btn btn-default">Submit</button>;
     } else {
       // display the scenarios as a list
-      scenarios = this.props.choices.map(
-        (choice, i) => {
+      scenarios = Object.getOwnPropertyNames(this.props.choices).map(
+        (id) => {
           let submittedBy;
-          if (i === this.props.winningResponse) {
+          if (id === this.props.winningResponse) {
             submittedBy = this.props.winningResponseSubmittedBy;
           }
           return (
             <ReactionScenario
-              choice={choice}
-              key={i}
-              wasChosen={i == this.props.winningResponse}
+              choice={this.props.choices[id]}
+              key={id}
+              wasChosen={id == this.props.winningResponse}
               submittedBy={submittedBy} />
           );
         }
