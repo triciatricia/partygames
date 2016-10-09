@@ -34,22 +34,16 @@ function getNextImage(cb) {
   Gifs.getRandomGif(cb);
 }
 
-function getScoresWithConn(conn, userIDs, cb) {
-  // cb(err, scores)
-  // scores = {nickname: score} for the userIDs
-  DAO.getUsersProp(conn, userIDs, ['nickname', 'score'], (err, info) => {
-    if (err) {
-      cb(err, {});
-      return;
+/**
+ * Returns a function to close the connection and call the callback
+ */
+function callbackThatClosesConn(conn, cb) {
+  return (err, info) => {
+    if (conn) {
+      conn.getConn().end();
     }
-
-    let scores = {};
-    for (var id in info) {
-      scores[info[id].nickname] = info[id].score;
-    }
-
-    cb(null, scores);
-  });
+    cb(err, info);
+  };
 }
 
 function getScoresWithConnPromise(conn, userIDs) {
@@ -68,25 +62,6 @@ function getScoresWithConnPromise(conn, userIDs) {
 
       resolve(scores);
     });
-  });
-}
-
-function getScenariosWithConn(conn, userIDs, cb) {
-  // cb(err, {userID: scenario})
-  DAO.getUsersProp(conn, userIDs, ['response'], (err, info) => {
-    if (err) {
-      cb(err, {});
-      return;
-    }
-
-    let scenarios = {};
-    for (var id in info) {
-      if (info[id].response) {
-        scenarios[id] = info[id].response;
-      }
-    }
-
-    cb(null, scenarios);
   });
 }
 
@@ -134,6 +109,34 @@ async function getPlayerGameInfoWithConn(conn, playerID, gameID, cb: (err: strin
   }
 }
 
+/**
+ * Returns a promise to return a player info object
+ */
+async function getPlayerGameInfoWithConnPromise(conn, playerID, gameID) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let gameInfo = await DAO.getGamePromise(conn, gameID);
+      let playerInfo = await DAO.getUserPromise(conn, playerID);
+      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+      let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
+      let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+
+      gameInfo.scores = scores;
+      gameInfo.choices = choices;
+
+      resolve({
+        gameInfo: gameInfo,
+        playerInfo: playerInfo
+      });
+    } catch (err) {
+      console.log(err);
+      reject(err);
+      return;
+    }
+  });
+}
+
+
 async function getGameInfoWithConn(conn, gameID, cb) {
   // cb(err, {gameInfo: blah})
   try {
@@ -154,6 +157,30 @@ async function getGameInfoWithConn(conn, gameID, cb) {
     cb(err);
     return;
   }
+}
+
+async function getGameInfoWithConnPromise(conn, gameID) {
+  // Returns a promise to return {gameInfo: {}, playerInfo: null}
+  return new Promise(async (resolve, reject) => {
+    try {
+      let gameInfo = await DAO.getGamePromise(conn, gameID);
+      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+      let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
+      let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+
+      gameInfo.scores = scores;
+      gameInfo.choices = choices;
+
+      resolve({
+        gameInfo: gameInfo,
+        playerInfo: null
+      });
+    } catch (err) {
+      console.log(err);
+      reject(err);
+      return;
+    }
+  });
 }
 
 function doneRespondingWithConn(conn, gameID, cb) {
@@ -227,53 +254,32 @@ function checkAllResponsesInWithConn(conn, gameID, cb) {
   });
 }
 
-function getGameInfo(req, cb) {
+async function getGameInfo(req, cb) {
   // cb(null, {gameInfo: ...})
-  var conn = ConnUtils.getNewConnection(
-    ConnUtils.Modes.READ,
-    (err) => {
-      if (err) {
-        conn.getConn().end();
-        cb(err);
-        return;
-      }
-
-      getGameInfoWithConn(conn, req.gameID,
-        (err, info) => {
-          if (err) {
-            conn.getConn().end();
-          } else {
-            conn.getConn().end();
-            cb(null, info);
-          }
-        });
-    });
+  let conn;
+  let newCb = callbackThatClosesConn(conn, cb);
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
+    let info = await getGameInfoWithConnPromise(conn, req.gameID);
+    newCb(null, info);
+  } catch (err) {
+    newCb(err, {});
+  }
 }
 
-function joinGame(req, cb) {
+async function joinGame(req, cb) {
   // Get the gameID of a game and check if it's a valid
   // game.
   let gameID = getIDFromGameCode(req.gameCode);
-  var conn = ConnUtils.getNewConnection(
-    ConnUtils.Modes.READ,
-    (err) => {
-      if (err) {
-        conn.getConn().end();
-        cb(err);
-        return;
-      }
-
-      DAO.getGame(conn, gameID, (err, res) => {
-        if (err) {
-          cb(err, {});
-        } else {
-          cb(null, {
-            gameInfo: res
-          });
-        }
-        conn.getConn().end();
-      });
-    });
+  let conn;
+  let newCb = callbackThatClosesConn(conn, cb);
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
+    let gameInfo = await DAO.getGamePromise(conn, gameID);
+    newCb(null, {gameInfo});
+  } catch (err) {
+    newCb(err, {});
+  }
 }
 
 function createNewGame(req, cb) {
@@ -312,72 +318,73 @@ function createNewGame(req, cb) {
   );
 }
 
-function createPlayer(req, cb) {
+async function createPlayer(req, cb) {
   // Create a player called req.nickname
   // in the game req.gameID
   let gameID = getIDFromGameCode(req.gameID);
-  var conn = ConnUtils.getNewConnection(
-    ConnUtils.Modes.WRITE,
-    (err) => {
+  let conn;
+  let newCb = (err, info, conn) => {
+    if (conn) {
+      conn.getConn().end();
+    }
+    cb(err, info);
+  };
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
+    getGameInfoWithConn(conn, gameID, (err, info: ?Object) => {
       if (err) {
-        conn.getConn().end();
-        cb(err);
+        newCb('Cannot find game record for code ' + gameID + '. ' + err, {}, conn);
         return;
       }
 
-      getGameInfoWithConn(conn, gameID, (err, info: ?Object) => {
+      let gameInfo = info.gameInfo;
+
+      // Check if there is a user with the same nickname in the game
+      for (var name in gameInfo.scores) {
+        if (name == req.nickname) {
+          newCb(req.nickname + ' is already taken. Please use another name.', {}, conn);
+          return;
+        }
+      }
+
+      let playerInfo = {};
+      Object.assign(playerInfo, defaultPlayerInfo);
+      playerInfo.nickname = req.nickname;
+      playerInfo.game = gameID;
+
+      DAO.newUser(conn, playerInfo, (err, playerID) => {
         if (err) {
-          conn.getConn().end();
-          cb('Cannot find game record for code ' + gameID + '. ' + err, {});
+          newCb('Error creating player.', {}, conn);
           return;
         }
 
-        let gameInfo = info.gameInfo;
+        if (gameInfo.hostID === null) {
 
-        // Check if there is a user with the same nickname in the game
-        for (var name in gameInfo.scores) {
-          if (name == req.nickname) {
-            conn.getConn().end();
-            cb(req.nickname + ' is already taken. Please use another name.', {});
-            return;
-          }
+          // Set the host to be the player.
+          DAO.setGame(conn, gameID, {'hostID': playerID}, async (err) => {
+            if (err) {
+              console.log('Error setting player ' + playerID + ' as host of game ' + gameID);
+            }
+
+            try {
+              let info = await getPlayerGameInfoWithConnPromise(conn, playerID, gameID);
+              newCb(null, info, conn);
+            } catch (err) {
+              newCb(err, null, conn);
+            }
+          });
+
+        } else {
+          getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
+            newCb(err, info, conn);
+          });
         }
-
-        let playerInfo = {};
-        Object.assign(playerInfo, defaultPlayerInfo);
-        playerInfo.nickname = req.nickname;
-        playerInfo.game = gameID;
-
-        DAO.newUser(conn, playerInfo, (err, playerID) => {
-          if (err) {
-            conn.getConn().end();
-            cb('Error creating player.', {});
-            return;
-          }
-
-          if (gameInfo.hostID === null) {
-
-            // Set the host to be the player.
-            DAO.setGame(conn, gameID, {'hostID': playerID}, (err) => {
-              if (err) {
-                console.log('Error setting player ' + playerID + ' as host of game ' + gameID);
-              }
-
-              getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
-                conn.getConn().end();
-                cb(err, info);
-              });
-            });
-
-          } else {
-            getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
-              conn.getConn().end();
-              cb(err, info);
-            });
-          }
-        });
       });
     });
+  } catch (err) {
+    newCb(err, {}, conn);
+    return;
+  }
 }
 
 async function startGame(req, cb) {
