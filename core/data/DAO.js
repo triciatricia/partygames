@@ -240,6 +240,33 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
 };
 
 /**
+ * Function that promises to set a value for a user.
+ * callback(error, result)
+ */
+DAOs.setUserPromise = function(DBConn, userID, props) {
+  return new Promise((resolve, reject) => {
+    var userDAO = new DAO(DBConn);
+    var userTable = tables.users.tableName;
+    var userIDName = tables.users.userIDName;
+
+    // Modify the callback to change usergame if it's being changed
+    // Assumes a user can't be in 2 games at the same time
+    let cb = (err, res) => {err ? reject(err) : resolve(res);};
+    if (props.hasOwnProperty('game')) {
+      cb = function(err) {
+        if (err) { reject(err); }
+        userDAO.updateData(tables.usergame.tableName, 'user',
+          userID, {'user': userID, 'game': props.game}, (err, res) => {
+            err ? reject(err) : resolve(res);
+          });
+      };
+    }
+
+    userDAO.updateData(userTable, userIDName, userID, props, cb);
+  });
+};
+
+/**
  * Function that creates a new user.
  * Callback(err, userID)
  */

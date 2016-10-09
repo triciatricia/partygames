@@ -29,11 +29,6 @@ function getIDFromGameCode(code) {
   return parseInt(code);
 }
 
-function getNextImage(cb) {
-  // Return a random reaction image url.
-  Gifs.getRandomGif(cb);
-}
-
 /**
  * Promise to return a random reaction image url.
  */
@@ -103,29 +98,6 @@ function getScenariosWithConnPromise(conn, userIDs) {
   });
 }
 
-async function getPlayerGameInfoWithConn(conn, playerID, gameID, cb: (err: string, info: ?Object) => void) {
-  // cb(err, {gameInfo: blah, playerInfo: blah})
-  try {
-    let gameInfo = await DAO.getGamePromise(conn, gameID);
-    let playerInfo = await DAO.getUserPromise(conn, playerID);
-    let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-    let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-    let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
-
-    gameInfo.scores = scores;
-    gameInfo.choices = choices;
-
-    cb(null, {
-      gameInfo: gameInfo,
-      playerInfo: playerInfo
-    });
-  } catch (err) {
-    console.log(err);
-    cb(err);
-    return;
-  }
-}
-
 /**
  * Returns a promise to return a player info object
  */
@@ -153,29 +125,6 @@ async function getPlayerGameInfoWithConnPromise(conn, playerID, gameID) {
   });
 }
 
-
-async function getGameInfoWithConn(conn, gameID, cb) {
-  // cb(err, {gameInfo: blah})
-  try {
-    let gameInfo = await DAO.getGamePromise(conn, gameID);
-    let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-    let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-    let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
-
-    gameInfo.scores = scores;
-    gameInfo.choices = choices;
-
-    cb(null, {
-      gameInfo: gameInfo,
-      playerInfo: null
-    });
-  } catch (err) {
-    console.log(err);
-    cb(err);
-    return;
-  }
-}
-
 async function getGameInfoWithConnPromise(conn, gameID) {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
   return new Promise(async (resolve, reject) => {
@@ -200,74 +149,62 @@ async function getGameInfoWithConnPromise(conn, gameID) {
   });
 }
 
-function doneRespondingWithConn(conn, gameID, cb) {
-  // Update the game info since the scenaios are in
-  DAO.setGame(
-    conn,
-    gameID,
-    {
-      waitingForScenarios: false
-    },
-    cb);
-}
-
-function updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, cb) {
+function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID) {
   // Update game info if all the users but the host have responded
   // cb(err)
-  if (userIDs.length == 0) {
+  return new Promise(async (resolve, reject) => {
+    if (userIDs.length == 0) {
 
-    console.log('Scenarios are in for this round!');
-    doneRespondingWithConn(conn, gameID, cb);
+      console.log('Scenarios are in for this round!');
+      try {
+        let res = await DAO.setGamePromise(conn, gameID, {waitingForScenarios: false});
+        if (!res) {
+          reject('Error checking game status');
+        } else {
+          resolve(null);
+        }
+      } catch (err) {
+        reject(err);
+      }
 
-  } else {
+    } else {
 
-    let nextID = userIDs.pop();
-    DAO.getUser(conn, nextID, (err, userInfo) => {
-      if (err) {
+      let nextID = userIDs.pop();
+      let userInfo;
+      try {
+        userInfo = await DAO.getUserPromise(conn, nextID);
+
+        // Check if not host and still hasn't submitted scenario
+        if (!userInfo.submittedScenario && nextID != hostID) {
+          resolve();
+        } else {
+          await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
+        }
+
+      } catch (err) {
         console.log('Cannot find user record.' + nextID.toString());
-        cb('Cannot find user record.', []);
+        reject('Cannot find user record.');
         return;
       }
-
-      // Check if not host and still hasn't submitted scenario
-      if (!userInfo.submittedScenario && nextID != hostID) {
-        cb();
-        return;
-      }
-
-      updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, cb);
-    });
-  }
+    }
+  });
 }
 
-function checkAllResponsesInWithConn(conn, gameID, cb) {
+async function checkAllResponsesInWithConnPromise(conn, gameID) {
   // Update if everyone but reactor done submitting response
-  // cb(err)
-  DAO.getGame(conn, gameID, (err, gameInfo) => {
-    if (err) {
-      console.log('Cannot find game record.');
-      cb('Cannot find game record.');
-      return;
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      let gameInfo = await DAO.getGamePromise(conn, gameID);
+      let hostID = gameInfo.hostID;
+
+      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+      let res = await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
+      resolve(res);
+
+    } catch (err) {
+      reject(err);
     }
-
-    let hostID = gameInfo.hostID;
-
-    DAO.getGameUsers(conn, gameID, (err, userIDs) => {
-      if (err) {
-        console.log('Cannot find game users in record.');
-        cb('Cannot find game users in record.');
-        return;
-      }
-
-      updateIfDoneRespondingWithConn(conn, gameID, userIDs, hostID, (err) => {
-        if (err) {
-          console.log('Error retrieving player info');
-          cb('Error retrieving player info');
-          return;
-        }
-        cb();
-      });
-    });
   });
 }
 
@@ -395,66 +332,42 @@ async function startGame(req, cb) {
   }
 }
 
-function submitResponse(req, cb) {
-  var conn = ConnUtils.getNewConnection(
-    ConnUtils.Modes.WRITE,
-    (err) => {
-      if (err) {
-        conn.getConn().end();
-        cb(err);
-        return;
-      }
+async function submitResponse(req, cb) {
+  let conn;
+  let newCb = callbackThatClosesConn(conn, cb);
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
 
-      getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
-        if (err || !info || !info.gameInfo) {
-          conn.getConn().end();
-          cb('Error submitting response.');
-          return;
-        }
+    let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
+      newCb('Error submitting response. Try again', {});
+      return;
+    }
 
-        if (info.gameInfo.round != req.round) {
-          conn.getConn().end();
-          cb('Error submitting response.');
-          return;
-        }
+    let playerChanges = {
+      response: req.response,
+      submittedScenario: true,
+      roundOfLastResponse: req.round
+    };
 
-        let playerChanges = {
-          response: req.response,
-          submittedScenario: true,
-          roundOfLastResponse: req.round
-        };
+    let res = await DAO.setUserPromise(conn, req.playerID, playerChanges);
+    if (!res) {
+      newCb('Error submitting response.', {});
+      return;
+    }
 
-        DAO.setUser(conn, req.playerID, playerChanges, (err) => {
-          if (err) {
-            conn.getConn().end();
-            cb('Error submitting response.');
-            return;
-          }
-
-          checkAllResponsesInWithConn(conn, req.gameID, (err) =>  {
-            if (err) {
-              conn.getConn().end();
-              cb('Error submitting response.');
-              return;
-            }
-
-            getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info) => {
-              if (err) {
-                conn.getConn().end();
-                cb('Error submitting response.');
-                return;
-              }
-
-              cb(null, {
-                gameInfo: info.gameInfo,
-                playerInfo: info.playerInfo
-              });
-              conn.getConn().end();
-            });
-          });
-        });
+    let res2 = await checkAllResponsesInWithConnPromise(conn, req.gameID);
+    // res2 should be null
+    if (!res2) {
+      let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+      newCb(null, {
+        gameInfo: info.gameInfo,
+        playerInfo: info.playerInfo
       });
-    });
+    }
+  } catch (err) {
+    newCb('Error submitting response', {});
+  }
 }
 
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
