@@ -5,12 +5,12 @@ var router = express.Router();
 const game = require('../core/game.js');
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function(req, res) {
   res.render('index', { title: 'MRW' });
 });
 
 /* POST for game api */
-router.post('/api/game', (req, res) => {
+router.post('/api/game', async (req, res) => {
   console.log('Game API request:', req.body);
   let error = null; // TODO validate
 
@@ -22,6 +22,23 @@ router.post('/api/game', (req, res) => {
     });
   }
 
+  try {
+    let info = await game.processRequest(req.body);
+    console.log('Sending info:', info);
+    res.json({
+      result: {
+        gameInfo: info.gameInfo,
+        playerInfo: info.playerInfo
+      },
+      errorMessage: null
+    });
+  } catch(err) {
+    console.log('Sending error:', err);
+    res.json({
+      errorMessage: err
+    });
+  }
+  /*
   game.processRequest(
     req.body,
     (err, info) => {
@@ -32,16 +49,10 @@ router.post('/api/game', (req, res) => {
           errorMessage: err
         });
       } else {
-        res.json({
-          result: {
-            gameInfo: info.gameInfo,
-            playerInfo: info.playerInfo
-          },
-          errorMessage: null
-        });
+
       }
     }
-  );
+  ); */
 });
 
 module.exports = router;
