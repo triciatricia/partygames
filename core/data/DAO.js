@@ -134,6 +134,28 @@ DAOs.newGame = function(DBConn, game, callback) {
 };
 
 /**
+ * Function that returns a promise that returns the result from inserting a game
+ * into the database.
+ */
+DAOs.newGamePromise = function(DBConn, game) {
+  return new Promise((resolve, reject) => {
+    let gameDAO = new DAO(DBConn);
+    let props = {};
+    // Copy all the properties from game to props.
+    Object.assign(props, game);
+    let gameTable = tables.game.tableName;
+
+    gameDAO.insertData(gameTable, props, (err, res) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(res);
+      }
+    });
+  });
+};
+
+/**
  * Function that retrieves a game.
  * Callback(err, game)
  */

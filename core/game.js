@@ -282,40 +282,21 @@ async function joinGame(req, cb) {
   }
 }
 
-function createNewGame(req, cb) {
-  var conn = ConnUtils.getNewConnection(
-    ConnUtils.Modes.WRITE,
-    (err) => {
-      if (err) {
-        conn.getConn().end();
-        cb(err);
-        return;
-      }
-
-      DAO.newGame(conn, defaultGame, (err, res) => {
-        if (err) {
-          conn.getConn().end();
-          cb(err);
-          return;
-        }
-
-        console.log('Creating game with ID ' + res.insertId);
-
-        DAO.getGame(conn, res.insertId, (err, res) => {
-          if (err) {
-            conn.getConn().end();
-            cb(err);
-            return;
-          }
-
-          conn.getConn().end();
-          cb(null, {
-            gameInfo: res
-          });
-        });
-      });
-    }
-  );
+/**
+ * Create a new game
+ */
+async function createNewGame(req, cb) {
+  let conn;
+  let newCb = callbackThatClosesConn(conn, cb);
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
+    let res = await DAO.newGamePromise(conn, defaultGame);
+    console.log('Creating game with ID ' + res.insertId);
+    let gameInfo = await DAO.getGamePromise(conn, res.insertId);
+    newCb(null, {gameInfo});
+  } catch (err) {
+    newCb(err, {});
+  }
 }
 
 async function createPlayer(req, cb) {
