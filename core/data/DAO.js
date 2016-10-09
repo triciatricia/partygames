@@ -120,6 +120,18 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
   gameDAO.updateData(gameTable, gameIDName, gameID, props, callback);
 };
 
+// Function that returns a promise to set a value for a game.
+DAOs.setGamePromise = function(DBConn, gameID, props) {
+  return new Promise((resolve, reject) => {
+    var gameDAO = new DAO(DBConn);
+    var gameTable = tables.game.tableName;
+    var gameIDName = tables.game.gameIDName;
+    gameDAO.updateData(gameTable, gameIDName, gameID, props, (err, res) => {
+      (err ? reject(err) : resolve(res));
+    });
+  });
+};
+
 /**
  * Function that inserts a game.
  * Callback(err, res)
@@ -261,6 +273,45 @@ DAOs.newUser = function(DBConn, user, callback) {
       }
       cb(err, res.insertId);
     });
+};
+
+/**
+ * Function that returns a promise to create a new user and to return the userID
+ * from creating a new user.
+ */
+DAOs.newUserPromise = function(DBConn, user) {
+  return new Promise((resolve, reject) => {
+    var userDAO = new DAO(DBConn);
+    var props = {};
+    Object.assign(props, user);
+
+    let cb = (err, userID) => {
+      if (err) {
+        console.log(err);
+        reject(err);
+        return;
+      }
+      if (!user.hasOwnProperty('game')) {
+        resolve(userID);
+        return;
+      }
+      // Add a row to usergame if the user is in a game
+      // TODO delete below? If callback above works.
+      userDAO.insertData(tables.usergame.tableName,
+        {'user': userID, 'game': user.game},
+        (err) => {err ? reject(err) : resolve(userID);});
+    };
+
+    userDAO.insertData(tables.users.tableName, props,
+      function(err, res) {
+        if (err) {
+          console.log(err);
+          reject('Error adding user to database');
+          return;
+        }
+        cb(err, res.insertId);
+      });
+  });
 };
 
 /**

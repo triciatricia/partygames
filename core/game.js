@@ -304,67 +304,39 @@ async function createPlayer(req, cb) {
   // in the game req.gameID
   let gameID = getIDFromGameCode(req.gameID);
   let conn;
-  let newCb = (err, info, conn) => {
-    if (conn) {
-      conn.getConn().end();
-    }
-    cb(err, info);
-  };
+  let newCb = callbackThatClosesConn(conn, cb);
   try {
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-    getGameInfoWithConn(conn, gameID, (err, info: ?Object) => {
-      if (err) {
-        newCb('Cannot find game record for code ' + gameID + '. ' + err, {}, conn);
+    let info = await getGameInfoWithConnPromise(conn, gameID);
+    let gameInfo = info.gameInfo;
+
+    // Check if there is a user with the same nickname in the game
+    for (var name in gameInfo.scores) {
+      if (name == req.nickname) {
+        newCb(req.nickname + ' is already taken. Please use another name.', {});
         return;
       }
+    }
 
-      let gameInfo = info.gameInfo;
+    let playerInfo = {};
+    Object.assign(playerInfo, defaultPlayerInfo);
+    playerInfo.nickname = req.nickname;
+    playerInfo.game = gameID;
 
-      // Check if there is a user with the same nickname in the game
-      for (var name in gameInfo.scores) {
-        if (name == req.nickname) {
-          newCb(req.nickname + ' is already taken. Please use another name.', {}, conn);
-          return;
-        }
+    let playerID = await DAO.newUserPromise(conn, playerInfo);
+
+    if (gameInfo.hostID === null) {
+      // Set the host to be the player.
+      let res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
+      if (!res.changedRows) {
+        newCb('Error setting ' + playerID.toString() + ' as host.', {});
+        return;
       }
+    }
 
-      let playerInfo = {};
-      Object.assign(playerInfo, defaultPlayerInfo);
-      playerInfo.nickname = req.nickname;
-      playerInfo.game = gameID;
-
-      DAO.newUser(conn, playerInfo, (err, playerID) => {
-        if (err) {
-          newCb('Error creating player.', {}, conn);
-          return;
-        }
-
-        if (gameInfo.hostID === null) {
-
-          // Set the host to be the player.
-          DAO.setGame(conn, gameID, {'hostID': playerID}, async (err) => {
-            if (err) {
-              console.log('Error setting player ' + playerID + ' as host of game ' + gameID);
-            }
-
-            try {
-              let info = await getPlayerGameInfoWithConnPromise(conn, playerID, gameID);
-              newCb(null, info, conn);
-            } catch (err) {
-              newCb(err, null, conn);
-            }
-          });
-
-        } else {
-          getPlayerGameInfoWithConn(conn, playerID, gameID, (err, info) => {
-            newCb(err, info, conn);
-          });
-        }
-      });
-    });
+    newCb(null, await getPlayerGameInfoWithConnPromise(conn, playerID, gameID));
   } catch (err) {
-    newCb(err, {}, conn);
-    return;
+    newCb(err, {});
   }
 }
 
