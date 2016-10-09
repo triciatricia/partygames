@@ -32,6 +32,28 @@ function getConnection(callback, customConf) {
   return connection;
 }
 
+function getConnection2(callback, customConf) {
+  /**
+   * customConf is an optional configuration
+   * If null, it will use the default in ../../conf.js.
+   */
+  let connection;
+  if (customConf) {
+    connection = mysql.createConnection(customConf);
+  } else {
+    connection = mysql.createConnection({
+      host: conf.dbHost,
+      user: conf.dbUser,
+      password: conf.dbPass,
+      database: conf.dbName
+    });
+  }
+
+  connection.connect((err) => {
+    callback(err, connection);
+  });
+}
+
 const ConnectionModes = {
   READ: 1,
   WRITE: 2
@@ -71,7 +93,16 @@ const ConnectionUtils = {
     return new DBConn(connection, mode);
   },
 
-  Modes: ConnectionModes
+  Modes: ConnectionModes,
+
+  getNewConnectionPromise: function(mode: number, customConf: Object) {
+    return new Promise(function(resolve, reject) {
+      getConnection2(
+        (err, conn) => (err ? reject(err) : resolve(new DBConn(conn, mode))),
+        customConf
+      );
+    });
+  }
 };
 
 module.exports = ConnectionUtils;

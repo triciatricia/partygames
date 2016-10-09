@@ -1,6 +1,29 @@
 /**
+ * Helper for testing async Functions
+ * See https://github.com/jasmine/jasmine/issues/923
+ */
+function testAsync(runAsync) {
+  return (done) => {
+    runAsync().then(done, done.fail);
+  };
+}
+
+/**
  * Actually tests that we can successfully make a DB connection
  */
+describe ('Test async connection', function() {
+  it('should be able to make a connection', testAsync(
+    async function() {
+      let connUtils = require('../conn');
+      let rConn;
+      try {
+        rConn = await connUtils.getNewConnectionPromise(connUtils.Modes.READ);
+        rConn.getConn().end();
+      } catch (err) {
+        expect(err).toBeNull();
+      }
+    }));
+});
 
 describe('MakeConnectionIntegrationTest', function() {
   /**
@@ -33,4 +56,3 @@ describe('MakeConnectionIntegrationTest', function() {
   });
 
 });
-
