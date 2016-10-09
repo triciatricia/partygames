@@ -158,6 +158,31 @@ DAOs.getGame = function(DBConn, gameID, callback) {
 };
 
 /**
+ * Function that returns a promise to return a game.
+ */
+DAOs.getGamePromise = function(DBConn, gameID) {
+  return new Promise((resolve, reject) => {
+    var gameDAO = new DAO(DBConn);
+    var queryProps = {};
+    queryProps[tables.game.gameIDName] = gameID;
+
+    var cb = function(err, res) {
+      if (err) {
+        reject(err);
+      } else if (res.length === 0) {
+        reject('Could not find game ' + gameID + ' in database');
+      } else {
+        let game = res[0];
+        game.scores = {}; // TODO Placeholder for actual scores - need to organize better
+        resolve(game);
+      }
+    };
+
+    gameDAO.getData(tables.game.tableName, Object.getOwnPropertyNames(Games), queryProps, cb);
+  });
+};
+
+/**
  * Function that sets a value for a user.
  * callback(error, result)
  */
@@ -239,6 +264,30 @@ DAOs.getUser = function(DBConn, userID, callback) {
 };
 
 /**
+ * Function that returns a promise to return a user.
+ */
+DAOs.getUserPromise = function(DBConn, userID) {
+  return new Promise((resolve, reject) => {
+    var userDAO = new DAO(DBConn);
+    var queryProps = {};
+    queryProps[tables.users.userIDName] = userID;
+
+    var cb = function(err, res) {
+      if (err) {
+        reject(err);
+      } else if (res.length === 0) {
+        reject('Could not find user ' + userID + ' in database');
+      } else {
+        resolve(res[0]);
+      }
+    };
+
+    userDAO.getData(tables.users.tableName, Object.getOwnPropertyNames(Users), queryProps, cb);
+
+  });
+};
+
+/**
  * Function that gets the users in a game
  * callback(err, users)
  * users: array of userIDs
@@ -260,6 +309,31 @@ DAOs.getGameUsers = function(DBConn, gameID, callback) {
   };
 
   gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
+};
+
+/**
+ * Function that returns a promise to get the users in a game
+ * users: array of userIDs
+ */
+DAOs.getGameUsersPromise = function(DBConn, gameID) {
+  return new Promise((resolve, reject) => {
+    var gameDAO = new DAO(DBConn);
+    var queryProps = {'game': gameID};
+
+    var cb = (err, res) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      var users = [];
+      for (var i = 0; i < res.length; ++i) {
+        users.push(res[i].user);
+      }
+      resolve(users);
+    };
+
+    gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
+  });
 };
 
 /**
