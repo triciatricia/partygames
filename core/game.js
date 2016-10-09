@@ -35,6 +35,23 @@ function getNextImage(cb) {
 }
 
 /**
+ * Promise to return a random reaction image url.
+ */
+function getNextImagePromise() {
+  return new Promise((reject, resolve) => {
+    Gifs.getRandomGif((err, gifUrl) => {
+      if (err) {
+        reject(err);
+      } else if (!gifUrl) {
+        reject('Cannot find a gif');
+      } else {
+        resolve(gifUrl);
+      }
+    });
+  });
+}
+
+/**
  * Returns a function to close the connection and call the callback
  */
 function callbackThatClosesConn(conn, cb) {
@@ -342,55 +359,40 @@ async function createPlayer(req, cb) {
 
 async function startGame(req, cb) {
   let conn;
+  let newCb = callbackThatClosesConn(conn, cb);
   try {
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
 
-    getPlayerGameInfoWithConn(conn, req.playerID, req.gameID, (err, info: ?Object) => {
-      if (err || !info) {
-        conn.getConn().end();
-        cb(err);
-        return;
-      }
+    let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    let image = await getNextImagePromise();
+    let gameInfo = info.gameInfo;
+    let playerInfo = info.playerInfo;
 
-      getNextImage((image) => {
-        let gameInfo = info.gameInfo;
-        let playerInfo = info.playerInfo;
+    let gameChanges = {
+      round: 1,
+      image: image,
+      waitingForScenarios: true,
+      reactorID: req.playerID,
+      reactorNickname: playerInfo.nickname
+    };
 
-        let gameChanges = {
-          round: 1,
-          image: image,
-          waitingForScenarios: true,
-          reactorID: req.playerID,
-          reactorNickname: playerInfo.nickname
-        };
+    if (req.playerID != gameInfo.hostID) {
+      newCb('Error starting game: You\'re not the host. Please wait for the host to start the game.');
+      return;
+    }
 
-        if (req.playerID != gameInfo.hostID) {
-          conn.getConn().end();
-          cb('Error starting game: You\'re not the host. Please wait for the host to start the game.');
-          return;
-        }
-
-        DAO.setGame(conn, req.gameID, gameChanges, (err) => {
-          if (err) {
-            conn.getConn().end();
-            cb('Error starting game');
-            return;
-          }
-
-          cb(null, {
-            gameInfo: gameInfo,
-            playerInfo: playerInfo
-          });
-          conn.getConn().end();
-        });
+    let res = await DAO.setGamePromise(conn, req.gameID, gameChanges);
+    if (!res) {
+      newCb('Error starting game');
+    } else {
+      newCb(null, {
+        gameInfo: gameInfo,
+        playerInfo: playerInfo
       });
-    });
+    }
   } catch (err) {
-    conn.getConn().end();
-    cb(err);
-    return;
+    newCb(err.toString(), {});
   }
-
 }
 
 function submitResponse(req, cb) {
