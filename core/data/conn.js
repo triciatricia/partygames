@@ -102,7 +102,9 @@ const ConnectionUtils = {
         customConf
       );
     });
-  }
+  },
+
+  DBConn: DBConn
 };
 
 module.exports = ConnectionUtils;

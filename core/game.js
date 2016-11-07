@@ -1,6 +1,6 @@
 'use strict';
 
-
+/* @flow */
 
 var ConnUtils = require('./data/conn');
 var DAO = require('./data/DAO');
@@ -91,7 +91,7 @@ function getScenariosWithConnPromise(conn, userIDs) {
 /**
  * Returns a promise to return a player info object
  */
-async function getPlayerGameInfoWithConnPromise(conn, playerID, gameID) {
+async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID: number, gameID) {
   let gameInfo = await DAO.getGamePromise(conn, gameID);
   let playerInfo = await DAO.getUserPromise(conn, playerID);
   let userIDs = await DAO.getGameUsersPromise(conn, gameID);
