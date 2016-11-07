@@ -91,7 +91,7 @@ function getScenariosWithConnPromise(conn, userIDs) {
 /**
  * Returns a promise to return a player info object
  */
-async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID: number, gameID) {
+async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID: number, gameID: number): Promise<Object> {
   let gameInfo = await DAO.getGamePromise(conn, gameID);
   let playerInfo = await DAO.getUserPromise(conn, playerID);
   let userIDs = await DAO.getGameUsersPromise(conn, gameID);
@@ -250,7 +250,7 @@ function nameAlreadyTaken(name, gameInfo) {
 function setHostWithConnPromise(conn, gameID, playerID) {
   return new Promise(async (resolve, reject) => {
     let res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
-    if (!res.changedRows) {
+    if (!res || !res.changedRows) {
       reject('Error setting ' + playerID.toString() + ' as host.');
     } else {
       resolve(res);

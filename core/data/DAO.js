@@ -245,7 +245,7 @@ DAOs.setUser = function(DBConn: conn.DBConn, userID: number, props: Object, call
 /**
  * Function that promises to set a value for a user.
  */
-DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
+DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var userTable = tables.users.tableName;
@@ -253,13 +253,13 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
 
     // Modify the callback to change usergame if it's being changed
     // Assumes a user can't be in 2 games at the same time
-    let cb = (err, res) => {err ? reject(err) : resolve(res);};
+    let cb = (err, res) => {(err || !res) ? reject(err) : resolve(res);};
     if (props.hasOwnProperty('game')) {
       cb = function(err) {
         if (err) { reject(err); }
         userDAO.updateData(tables.usergame.tableName, 'user',
           userID, {'user': userID, 'game': props.game}, (err, res) => {
-            err ? reject(err) : resolve(res);
+            (err || !res) ? reject(err) : resolve(res);
           });
       };
     }
@@ -308,7 +308,7 @@ DAOs.newUser = function(DBConn: conn.DBConn, user: Object, callback: (err: ?stri
  * Function that returns a promise to create a new user and to return the userID
  * from creating a new user.
  */
-DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<?number> {
+DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<number> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var props = {};
@@ -368,7 +368,7 @@ DAOs.getUser = function(DBConn: conn.DBConn, userID: number, callback: (err: ?st
 /**
  * Function that returns a promise to return a user.
  */
-DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<?Object> {
+DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Object> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var queryProps = {};
@@ -417,7 +417,7 @@ DAOs.getGameUsers = function(DBConn: conn.DBConn, gameID: number, callback: (err
  * Function that returns a promise to get the users in a game
  * users: array of userIDs
  */
-DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promise<?number[]> {
+DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promise<number[]> {
   return new Promise((resolve, reject) => {
     var gameDAO = new DAO(DBConn);
     var queryProps = {'game': gameID};

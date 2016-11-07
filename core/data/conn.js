@@ -95,7 +95,7 @@ const ConnectionUtils = {
 
   Modes: ConnectionModes,
 
-  getNewConnectionPromise: function(mode: number, customConf: Object) {
+  getNewConnectionPromise: function(mode: number, customConf?: Object): Promise<DBConn> {
     return new Promise(function(resolve, reject) {
       getConnection2(
         (err, conn) => (err ? reject(err) : resolve(new DBConn(conn, mode))),
