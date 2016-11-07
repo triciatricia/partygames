@@ -78,7 +78,7 @@ Object.assign(DBConn.prototype, {
 });
 
 const ConnectionUtils = {
-  getNewConnection: function(mode, callback, customConf) {
+  getNewConnection: function(mode: number, callback: (conn: mysql.Connection, cb: Function) => void, customConf: Object) {
     /**
      * customConf is an optional object with parameters
      * host, user, password, and database.

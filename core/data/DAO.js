@@ -1,5 +1,8 @@
 'use strict';
 
+/* @flow */
+
+var mysql = require('mysql');
 var conn = require('./conn');
 // var types = require('./types');
 var assert = require('assert');
@@ -113,7 +116,7 @@ function DAO(DBConn) {
 }
 
 // Function that sets a value for a game.
-DAOs.setGame = function(DBConn, gameID, props, callback) {
+DAOs.setGame = function(DBConn: mysql.Connection, gameID: number, props: Object, callback: (err: ?string, res: ?Object, fields?: any) => void) {
   var gameDAO = new DAO(DBConn);
   var gameTable = tables.game.tableName;
   var gameIDName = tables.game.gameIDName;
@@ -121,7 +124,7 @@ DAOs.setGame = function(DBConn, gameID, props, callback) {
 };
 
 // Function that returns a promise to set a value for a game.
-DAOs.setGamePromise = function(DBConn, gameID, props) {
+DAOs.setGamePromise = function(DBConn: mysql.Connection, gameID: number, props: Object) {
   return new Promise((resolve, reject) => {
     var gameDAO = new DAO(DBConn);
     var gameTable = tables.game.tableName;
@@ -136,7 +139,7 @@ DAOs.setGamePromise = function(DBConn, gameID, props) {
  * Function that inserts a game.
  * Callback(err, res)
  */
-DAOs.newGame = function(DBConn, game, callback) {
+DAOs.newGame = function(DBConn: mysql.Connection, game: Object, callback: (err: ?string, res: ?Object) => void) {
   var gameDAO = new DAO(DBConn);
   var props = {};
   // Copy all the properties from game to props.
@@ -149,7 +152,7 @@ DAOs.newGame = function(DBConn, game, callback) {
  * Function that returns a promise that returns the result from inserting a game
  * into the database.
  */
-DAOs.newGamePromise = function(DBConn, game) {
+DAOs.newGamePromise = function(DBConn: mysql.Connection, game: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
     let gameDAO = new DAO(DBConn);
     let props = {};
@@ -171,7 +174,7 @@ DAOs.newGamePromise = function(DBConn, game) {
  * Function that retrieves a game.
  * Callback(err, game)
  */
-DAOs.getGame = function(DBConn, gameID, callback) {
+DAOs.getGame = function(DBConn: mysql.Connection, gameID: number, callback: (err: ?string, game: ?Object) => void): void {
   var gameDAO = new DAO(DBConn);
   var queryProps = {};
   queryProps[tables.game.gameIDName] = gameID;
@@ -194,7 +197,7 @@ DAOs.getGame = function(DBConn, gameID, callback) {
 /**
  * Function that returns a promise to return a game.
  */
-DAOs.getGamePromise = function(DBConn, gameID) {
+DAOs.getGamePromise = function(DBConn: mysql.Connection, gameID: number): Promise<Object> {
   return new Promise((resolve, reject) => {
     var gameDAO = new DAO(DBConn);
     var queryProps = {};
@@ -220,7 +223,7 @@ DAOs.getGamePromise = function(DBConn, gameID) {
  * Function that sets a value for a user.
  * callback(error, result)
  */
-DAOs.setUser = function(DBConn, userID, props, callback) {
+DAOs.setUser = function(DBConn: mysql.Connection, userID: number, props: Object, callback: (err: ?string, res: ?Object) => void): void {
   var userDAO = new DAO(DBConn);
   var userTable = tables.users.tableName;
   var userIDName = tables.users.userIDName;
@@ -241,9 +244,8 @@ DAOs.setUser = function(DBConn, userID, props, callback) {
 
 /**
  * Function that promises to set a value for a user.
- * callback(error, result)
  */
-DAOs.setUserPromise = function(DBConn, userID, props) {
+DAOs.setUserPromise = function(DBConn: mysql.Connection, userID: number, props: Object): Promise<?Object> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var userTable = tables.users.tableName;
@@ -270,7 +272,7 @@ DAOs.setUserPromise = function(DBConn, userID, props) {
  * Function that creates a new user.
  * Callback(err, userID)
  */
-DAOs.newUser = function(DBConn, user, callback) {
+DAOs.newUser = function(DBConn: mysql.Connection, user: Object, callback: (err: ?string, id: ?number) => void): void {
   var userDAO = new DAO(DBConn);
   var props = {};
   Object.assign(props, user);
@@ -306,7 +308,7 @@ DAOs.newUser = function(DBConn, user, callback) {
  * Function that returns a promise to create a new user and to return the userID
  * from creating a new user.
  */
-DAOs.newUserPromise = function(DBConn, user) {
+DAOs.newUserPromise = function(DBConn: mysql.Connection, user: Object): Promise<?number> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var props = {};
@@ -345,7 +347,7 @@ DAOs.newUserPromise = function(DBConn, user) {
  * Function that retrieves a user.
  * Callback(err, user)
  */
-DAOs.getUser = function(DBConn, userID, callback) {
+DAOs.getUser = function(DBConn: mysql.Connection, userID: number, callback: (err: ?string, user: ?Object) => void): void {
   var userDAO = new DAO(DBConn);
   var queryProps = {};
   queryProps[tables.users.userIDName] = userID;
@@ -366,7 +368,7 @@ DAOs.getUser = function(DBConn, userID, callback) {
 /**
  * Function that returns a promise to return a user.
  */
-DAOs.getUserPromise = function(DBConn, userID) {
+DAOs.getUserPromise = function(DBConn: mysql.Connection, userID: number): Promise<?Object> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var queryProps = {};
@@ -392,7 +394,7 @@ DAOs.getUserPromise = function(DBConn, userID) {
  * callback(err, users)
  * users: array of userIDs
  */
-DAOs.getGameUsers = function(DBConn, gameID, callback) {
+DAOs.getGameUsers = function(DBConn: mysql.Connection, gameID: number, callback: (err: ?string, users: ?number[]) => void): void {
   var gameDAO = new DAO(DBConn);
   var queryProps = {'game': gameID};
 
@@ -415,7 +417,7 @@ DAOs.getGameUsers = function(DBConn, gameID, callback) {
  * Function that returns a promise to get the users in a game
  * users: array of userIDs
  */
-DAOs.getGameUsersPromise = function(DBConn, gameID) {
+DAOs.getGameUsersPromise = function(DBConn: mysql.Connection, gameID: number): Promise<?number[]> {
   return new Promise((resolve, reject) => {
     var gameDAO = new DAO(DBConn);
     var queryProps = {'game': gameID};
@@ -441,25 +443,30 @@ DAOs.getGameUsersPromise = function(DBConn, gameID) {
  * Returns an object where the keys are userIDs
  * cb(err, {userID: {prop: value}})
  */
-function getUsersPropHelper(DBConn, userIDs, props, cb) {
+function getUsersPropHelper(DBConn: mysql.Connection, userIDs: number[], props: string[], cb: (err: ?string, info: ?Object) => void): void {
   if (userIDs.length == 0) {
     cb(null, {});
   } else {
     let nextID = userIDs.pop();
     DAOs.getUser(DBConn, nextID, (err, userInfo) => {
-      if (err) {
+      if (err || !userInfo) {
         cb('Cannot find user record.', {});
         return;
       }
 
       let userInfoKeep = {};
-      for (var i in props) {
+      for (var i = 0; i < props.length; ++i) {
         userInfoKeep[props[i]] = userInfo[props[i]];
       }
 
       getUsersPropHelper(DBConn, userIDs, props, (err, usersInfo) => {
         if (err) {
           cb(err, {});
+          return;
+        }
+
+        if ( !usersInfo || !userInfo || !(userInfo.hasOwnProperty('id')) ) {
+          cb('Error looking up user in database', {});
           return;
         }
 
@@ -475,7 +482,7 @@ function getUsersPropHelper(DBConn, userIDs, props, cb) {
  * Returns an object where the keys are userIDs
  * cb(err, {userID: {prop: value}})
  */
-DAOs.getUsersProp = function(DBConn, userIDs, props, cb) {
+DAOs.getUsersProp = function(DBConn: mysql.Connection, userIDs: number[], props: string[], cb: (err: ?string, info: ?Object) => void): void {
   getUsersPropHelper(DBConn, userIDs.slice(0), props, cb);
 };
 

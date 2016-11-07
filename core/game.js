@@ -1,5 +1,7 @@
 'use strict';
 
+
+
 var ConnUtils = require('./data/conn');
 var DAO = require('./data/DAO');
 var Gifs = require('./gifs');
@@ -90,92 +92,61 @@ function getScenariosWithConnPromise(conn, userIDs) {
  * Returns a promise to return a player info object
  */
 async function getPlayerGameInfoWithConnPromise(conn, playerID, gameID) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let gameInfo = await DAO.getGamePromise(conn, gameID);
-      let playerInfo = await DAO.getUserPromise(conn, playerID);
-      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-      let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-      let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+  let gameInfo = await DAO.getGamePromise(conn, gameID);
+  let playerInfo = await DAO.getUserPromise(conn, playerID);
+  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+  let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
+  let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
 
-      gameInfo.scores = scores;
-      gameInfo.choices = choices;
+  gameInfo.scores = scores;
+  gameInfo.choices = choices;
 
-      resolve({
-        gameInfo: gameInfo,
-        playerInfo: playerInfo
-      });
-    } catch (err) {
-      console.log(err);
-      reject(err);
-      return;
-    }
+  return({
+    gameInfo: gameInfo,
+    playerInfo: playerInfo
   });
 }
 
 async function getGameInfoWithConnPromise(conn, gameID) {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
-  return new Promise(async (resolve, reject) => {
-    try {
-      let gameInfo = await DAO.getGamePromise(conn, gameID);
-      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-      let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-      let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+  let gameInfo = await DAO.getGamePromise(conn, gameID);
+  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+  let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
+  let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
 
-      gameInfo.scores = scores;
-      gameInfo.choices = choices;
+  gameInfo.scores = scores;
+  gameInfo.choices = choices;
 
-      resolve({
-        gameInfo: gameInfo,
-        playerInfo: null
-      });
-    } catch (err) {
-      console.log(err);
-      reject(err);
-      return;
-    }
+  return({
+    gameInfo: gameInfo,
+    playerInfo: null
   });
 }
 
-function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID) {
+async function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID) {
   // Update game info if all the users but the host have responded
   // cb(err)
-  return new Promise(async (resolve, reject) => {
-    if (userIDs.length == 0) {
+  if (userIDs.length == 0) {
+    console.log('Scenarios are in for this round!');
 
-      console.log('Scenarios are in for this round!');
-      try {
-        let res = await DAO.setGamePromise(conn, gameID, {waitingForScenarios: false});
-        if (!res) {
-          reject('Error checking game status');
-        } else {
-          resolve(null);
-        }
-      } catch (err) {
-        reject(err);
-      }
-
-    } else {
-
-      let nextID = userIDs.pop();
-      let userInfo;
-      try {
-        userInfo = await DAO.getUserPromise(conn, nextID);
-
-        // Check if not host and still hasn't submitted scenario
-        if (!userInfo.submittedScenario && nextID != hostID) {
-          resolve();
-        } else {
-          await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
-        }
-
-      } catch (err) {
-        console.log('Cannot find user record.' + nextID.toString());
-        reject('Cannot find user record.');
-        return;
-      }
+    let res = await DAO.setGamePromise(conn, gameID, {waitingForScenarios: false});
+    if (!res) {
+      return 'Error checking game status';
     }
-  });
+    return;
+
+  } else {
+
+    let nextID = userIDs.pop();
+    let userInfo = await DAO.getUserPromise(conn, nextID);
+
+    // Check if not host and still hasn't submitted scenario
+    if (!userInfo.submittedScenario && nextID != hostID) {
+      return;
+    } else {
+      await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
+    }
+  }
 }
 
 async function checkAllResponsesInWithConnPromise(conn, gameID) {
