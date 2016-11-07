@@ -2,14 +2,14 @@
 
 /* @flow */
 
-var mysql = require('mysql');
-var conn = require('./conn');
-// var types = require('./types');
-var assert = require('assert');
-var tables = require('./tables');
-var Games = require('../../models/Games');
-var Users = require('../../models/Users');
-// var UserGame = require('../../models/UserGame');
+const mysql = require('mysql');
+const conn = require('./conn');
+// const types = require('./types');
+const assert = require('assert');
+const tables = require('./tables');
+const Games = require('../../models/Games');
+const Users = require('../../models/Users');
+// const UserGame = require('../../models/UserGame');
 
 // All the data access objects
 var DAOs = {};

@@ -2,9 +2,9 @@
 
 /* @flow */
 
-var ConnUtils = require('./data/conn');
-var DAO = require('./data/DAO');
-var Gifs = require('./gifs');
+const ConnUtils = require('./data/conn');
+const DAO = require('./data/DAO');
+const Gifs = require('./gifs');
 
 const defaultPlayerInfo = {
   id: null,
