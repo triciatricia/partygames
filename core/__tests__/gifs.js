@@ -3,6 +3,12 @@
 var gifs = require('../gifs');
 
 describe('fetchData', function() {
+  var originalTimeout;
+  beforeEach(function() {
+    originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  });
+  
   it('should return something', function(done) {
     gifs.fetchData(function(posts, lastPostRetrieved) {
       expect(posts).toBeDefined();
@@ -15,6 +21,10 @@ describe('fetchData', function() {
         done();
       }, lastPostRetrieved);
     });
+  });
+
+  afterEach(function() {
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
   });
 
 });
