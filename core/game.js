@@ -151,67 +151,50 @@ async function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, host
 
 async function checkAllResponsesInWithConnPromise(conn, gameID) {
   // Update if everyone but reactor done submitting response
-  return new Promise(async (resolve, reject) => {
-    try {
 
-      let gameInfo = await DAO.getGamePromise(conn, gameID);
-      let hostID = gameInfo.hostID;
+  let gameInfo = await DAO.getGamePromise(conn, gameID);
+  let hostID = gameInfo.hostID;
+  // await gameInfo and userIDs in parallel
 
-      let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-      let res = await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
-      resolve(res);
-
-    } catch (err) {
-      reject(err);
-    }
-  });
+  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
+  return await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
 }
 
 async function getGameInfoPromise(req) {
   // Promise to return game info
-  return new Promise(async (resolve, reject) => {
-    let conn;
+  let conn;
 
-    try {
-      conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
-      let info = await getGameInfoWithConnPromise(conn, req.gameID);
-      resolve(info);
-    } catch (err) {
-      reject('Error retrieving game info.');
-    } finally {
-      if (conn && conn.getConn) {
-        conn.getConn().end();
-      }
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
+    return await getGameInfoWithConnPromise(conn, req.gameID);
+
+  } finally {
+    if (conn && conn.getConn) {
+      conn.getConn().end();
     }
-  });
+  }
 }
 
 async function joinGamePromise(req) {
   // Get the gameID of a game and check if it's a valid
   // game.
-  return new Promise(async (resolve, reject) => {
-    let gameID = getIDFromGameCode(req.gameCode);
-    let conn;
+  let gameID = getIDFromGameCode(req.gameCode);
+  let conn;
 
-    try {
-      conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
-      let gameInfo = await DAO.getGamePromise(conn, gameID);
-      resolve({gameInfo});
-    } catch (err) {
-      reject('Error joining game.');
-    } finally {
-      if (conn && conn.getConn) {
-        conn.getConn().end();
-      }
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.READ);
+    return {gameInfo: await DAO.getGamePromise(conn, gameID)};
+  } finally {
+    if (conn && conn.getConn) {
+      conn.getConn().end();
     }
-  });
+  }
 }
 
 /**
  * Create a new game
  */
 async function createNewGamePromise() {
-  return new Promise(async (resolve, reject) => {
     let conn;
 
     try {
@@ -220,20 +203,13 @@ async function createNewGamePromise() {
       let res = await DAO.newGamePromise(conn, defaultGame);
       console.log('Creating game with ID ' + res.insertId);
       let gameInfo = await DAO.getGamePromise(conn, res.insertId);
-      resolve({gameInfo, playerInfo: null});
-
-    } catch (err) {
-
-      reject('Error creating game. Please try again.');
+      return {gameInfo, playerInfo: null};
 
     } finally {
-
       if (conn && conn.getConn) {
         conn.getConn().end();
       }
-
     }
-  });
 }
 
 function nameAlreadyTaken(name, gameInfo) {
