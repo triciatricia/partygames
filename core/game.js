@@ -223,168 +223,133 @@ function nameAlreadyTaken(name, gameInfo) {
   return false;
 }
 
-function setHostWithConnPromise(conn, gameID, playerID) {
-  return new Promise(async (resolve, reject) => {
-    let res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
-    if (!res || !res.changedRows) {
-      reject('Error setting ' + playerID.toString() + ' as host.');
-    } else {
-      resolve(res);
-    }
-  });
+async function setHostWithConnPromise(conn, gameID, playerID) {
+  let res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
+  if (!res || !res.changedRows) {
+    return('Error setting ' + playerID.toString() + ' as host.');
+  }
+  return res;
 }
 
 /**
  * Returns a promise to make a new player and return the playerID
  */
-function addNewPlayerWithConnPromise(conn, gameID, gameInfo, nickname) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      if (nameAlreadyTaken(nickname, gameInfo)) {
-        reject(nickname + ' is already taken. Please use another name.');
-        return;
-      }
+async function addNewPlayerWithConnPromise(conn, gameID, gameInfo, nickname) {
+  if (nameAlreadyTaken(nickname, gameInfo)) {
+    return(nickname + ' is already taken. Please use another name.');
+  }
 
-      let playerInfo = {};
-      Object.assign(playerInfo, defaultPlayerInfo);
-      playerInfo.nickname = nickname;
-      playerInfo.game = gameID;
+  let playerInfo = {};
+  Object.assign(playerInfo, defaultPlayerInfo);
+  playerInfo.nickname = nickname;
+  playerInfo.game = gameID;
 
-      let playerID = await DAO.newUserPromise(conn, playerInfo);
-      resolve(playerID);
-    } catch (err) {
-      reject('Error creating new player in database.');
-    }
-  });
+  let playerID = await DAO.newUserPromise(conn, playerInfo);
+  return playerID;
 }
 
 async function createPlayerPromise(req) {
   // Create a player called req.nickname
   // in the game req.gameID
-  return new Promise(async (resolve, reject) => {
-    let gameID = getIDFromGameCode(req.gameID);
-    let conn;
+  let gameID = getIDFromGameCode(req.gameID);
+  let conn;
 
-    try {
+  try {
 
-      conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-      let gameInfo = (await getGameInfoWithConnPromise(conn, gameID)).gameInfo;
-      let playerID = await addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
+    let gameInfo = (await getGameInfoWithConnPromise(conn, gameID)).gameInfo;
+    let playerID = await addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
 
-      if (gameInfo.hostID === null) {
-        // Set the host to be the player.
-        await setHostWithConnPromise(conn, gameID, playerID);
-      }
-
-      resolve(await getPlayerGameInfoWithConnPromise(conn, playerID, gameID));
-
-    } catch (err) {
-
-      console.log(err);
-      reject('Error creating a new user. Please try again. ' + err.toString());
-
-    } finally {
-
-      if (conn && conn.getConn) {
-        conn.getConn().end();
-      }
-
+    if (gameInfo.hostID === null) {
+      // Set the host to be the player.
+      await setHostWithConnPromise(conn, gameID, playerID);
     }
-  });
+    return(await getPlayerGameInfoWithConnPromise(conn, playerID, gameID));
 
+  } finally {
+    if (conn && conn.getConn) {
+      conn.getConn().end();
+    }
+  }
 }
 
 /**
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
 async function startGamePromise(req) {
-  return new Promise(async (resolve, reject) => {
-    let conn;
+  let conn;
 
-    try {
-      conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
+  try {
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
 
-      let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-      let image = await getNextImagePromise();
-      let gameInfo = info.gameInfo;
-      let playerInfo = info.playerInfo;
+    let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    let image = await getNextImagePromise();
+    let gameInfo = info.gameInfo;
+    let playerInfo = info.playerInfo;
 
-      let gameChanges = {
-        round: 1,
-        image: image,
-        waitingForScenarios: true,
-        reactorID: req.playerID,
-        reactorNickname: playerInfo.nickname
-      };
+    let gameChanges = {
+      round: 1,
+      image: image,
+      waitingForScenarios: true,
+      reactorID: req.playerID,
+      reactorNickname: playerInfo.nickname
+    };
 
-      if (req.playerID != gameInfo.hostID) {
-        reject('Error starting game: You\'re not the host. Please wait for the host to start the game.');
-        return;
-      }
-
-      let res = await DAO.setGamePromise(conn, req.gameID, gameChanges);
-      if (!res) {
-        reject('Error starting game');
-      } else {
-        resolve({
-          gameInfo: gameInfo,
-          playerInfo: playerInfo
-        });
-      }
-    } catch (err) {
-
-      reject(err.toString());
-
-    } finally {
-
-      if (conn && conn.getConn) {
-        conn.getConn().end();
-      }
-
+    if (req.playerID != gameInfo.hostID) {
+      return 'Error starting game: You\'re not the host. Please wait for the host to start the game.';
     }
-  });
+
+    let res = await DAO.setGamePromise(conn, req.gameID, gameChanges);
+    if (!res) {
+      return 'Error starting game';
+    } else {
+      return({
+        gameInfo: gameInfo,
+        playerInfo: playerInfo
+      });
+    }
+  } finally {
+
+    if (conn && conn.getConn) {
+      conn.getConn().end();
+    }
+
+  }
 }
 
 /**
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
 async function submitResponsePromise(req) {
-  return new Promise(async (resolve, reject) => {
-    let conn;
+  let conn;
 
-    try {
+  try {
 
-      conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
+    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
 
-      let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-      if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
-        reject('Error submitting response. Try again');
-        return;
-      }
-
-      let playerChanges = {
-        response: req.response,
-        submittedScenario: true,
-        roundOfLastResponse: req.round
-      };
-
-      await DAO.setUserPromise(conn, req.playerID, playerChanges);
-      await checkAllResponsesInWithConnPromise(conn, req.gameID);
-      let newInfo = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-      resolve(newInfo);
-
-    } catch (err) {
-
-      reject('Error submitting response');
-
-    } finally {
-
-      if (conn && conn.getConn) {
-        conn.getConn().end();
-      }
-
+    let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
+      return 'Error submitting response. Try again';
     }
-  });
+
+    let playerChanges = {
+      response: req.response,
+      submittedScenario: true,
+      roundOfLastResponse: req.round
+    };
+
+    await DAO.setUserPromise(conn, req.playerID, playerChanges);
+    await checkAllResponsesInWithConnPromise(conn, req.gameID);
+    let newInfo = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    return newInfo;
+
+  } finally {
+
+    if (conn && conn.getConn) {
+      conn.getConn().end();
+    }
+
+  }
 }
 
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
@@ -402,19 +367,11 @@ const actions = {
  * req has the 'action' property to tell it what action to complete
  * Returns a promise to return {gameInfo: {}, playerInfo: {}}
  */
-function processRequest(req: Object) {
-  return new Promise(async (resolve, reject) => {
+async function processRequest(req: Object) {
     if (!req.hasOwnProperty('action') || !actions.hasOwnProperty(req.action)) {
-      reject('Error while processing your information');
-      return;
+      return('Error while processing your information');
     }
-
-    try {
-      resolve(await actions[req.action](req));
-    } catch (err) {
-      reject(err);
-    }
-  });
+    return(await actions[req.action](req));
 }
 
 module.exports = {
