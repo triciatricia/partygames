@@ -92,11 +92,15 @@ function getScenariosWithConnPromise(conn, userIDs) {
  * Returns a promise to return a player info object
  */
 async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID: number, gameID: number): Promise<Object> {
-  let gameInfo = await DAO.getGamePromise(conn, gameID);
-  let playerInfo = await DAO.getUserPromise(conn, playerID);
-  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-  let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-  let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+  let [gameInfo, playerInfo, userIDs] = await Promise.all([
+    DAO.getGamePromise(conn, gameID),
+    DAO.getUserPromise(conn, playerID),
+    DAO.getGameUsersPromise(conn, playerID)
+  ]);
+  let [scores, choices] = await Promise.all([
+    getScoresWithConnPromise(conn, userIDs.slice(0)),
+    getScenariosWithConnPromise(conn, userIDs.slice(0))
+  ]);
 
   gameInfo.scores = scores;
   gameInfo.choices = choices;
@@ -109,10 +113,14 @@ async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID
 
 async function getGameInfoWithConnPromise(conn, gameID) {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
-  let gameInfo = await DAO.getGamePromise(conn, gameID);
-  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
-  let scores = await getScoresWithConnPromise(conn, userIDs.slice(0));
-  let choices = await getScenariosWithConnPromise(conn, userIDs.slice(0));
+  let [gameInfo, userIDs] = await Promise.all([
+    DAO.getGamePromise(conn, gameID),
+    DAO.getGameUsersPromise(conn, gameID)
+  ]);
+  let [scores, choices] = await Promise.all([
+    getScoresWithConnPromise(conn, userIDs.slice(0)),
+    getScenariosWithConnPromise(conn, userIDs.slice(0))
+  ]);
 
   gameInfo.scores = scores;
   gameInfo.choices = choices;
@@ -152,11 +160,11 @@ async function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, host
 async function checkAllResponsesInWithConnPromise(conn, gameID) {
   // Update if everyone but reactor done submitting response
 
-  let gameInfo = await DAO.getGamePromise(conn, gameID);
+  let [gameInfo, userIDs] = await Promise.all([
+    DAO.getGamePromise(conn, gameID),
+    DAO.getGameUsersPromise(conn, gameID)
+  ]);
   let hostID = gameInfo.hostID;
-  // await gameInfo and userIDs in parallel
-
-  let userIDs = await DAO.getGameUsersPromise(conn, gameID);
   return await updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
 }
 
@@ -282,10 +290,11 @@ async function startGamePromise(req) {
   try {
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
 
-    let info = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-    let image = await getNextImagePromise();
-    let gameInfo = info.gameInfo;
-    let playerInfo = info.playerInfo;
+    let [info, image] = await Promise.all([
+      getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
+      getNextImagePromise()
+    ]);
+    let [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
     let gameChanges = {
       round: 1,
@@ -340,8 +349,7 @@ async function submitResponsePromise(req) {
 
     await DAO.setUserPromise(conn, req.playerID, playerChanges);
     await checkAllResponsesInWithConnPromise(conn, req.gameID);
-    let newInfo = await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-    return newInfo;
+    return await getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 
   } finally {
 
