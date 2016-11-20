@@ -11,6 +11,21 @@ const Games = require('../../models/Games');
 const Users = require('../../models/Users');
 // const UserGame = require('../../models/UserGame');
 
+export type GameInfo = {
+  id: number,
+  round: number,
+  image: string,
+  waitingForScenarios: boolean,
+  reactorID: number,
+  reactorNickname: string,
+  hostID: number,
+  gameOver: boolean,
+  winningResponse: string,
+  winningResponseSubmittedBy: number,
+  scores: Object,
+  choices: Object
+};
+
 // All the data access objects
 var DAOs = {};
 
@@ -174,7 +189,7 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
  * Function that retrieves a game.
  * Callback(err, game)
  */
-DAOs.getGame = function(DBConn: conn.DBConn, gameID: number, callback: (err: ?string, game: ?Object) => void): void {
+DAOs.getGame = function(DBConn: conn.DBConn, gameID: number, callback: (err: ?string, game: ?GameInfo) => void): void {
   var gameDAO = new DAO(DBConn);
   var queryProps = {};
   queryProps[tables.game.gameIDName] = gameID;

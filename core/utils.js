@@ -45,7 +45,7 @@ function randInt(min: number, max: number): number {
  * Return a random item in an array
  */
 function randItem<T>(arr: Array<T>): T {
-  return arr[this.randInt(0, arr.length - 1)];
+  return arr[randInt(0, arr.length - 1)];
 }
 
 module.exports = {

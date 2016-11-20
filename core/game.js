@@ -6,6 +6,8 @@ const ConnUtils = require('./data/conn');
 const DAO = require('./data/DAO');
 const Gifs = require('./gifs');
 
+import type {GameInfo} from './data/DAO';
+
 const defaultPlayerInfo = {
   id: null,
   nickname: null,
@@ -27,15 +29,15 @@ const defaultGame = {
   return id.toString();
 } */
 
-function getIDFromGameCode(code) {
+function getIDFromGameCode(code: string): number {
   return parseInt(code);
 }
 
 /**
  * Promise to return a random reaction image url.
  */
-function getNextImagePromise() {
-  return new Promise((reject, resolve) => {
+function getNextImagePromise(): Promise<string> {
+  return new Promise((resolve, reject) => {
     Gifs.getRandomGif((err, gifUrl) => {
       if (err) {
         reject(err);
@@ -48,7 +50,7 @@ function getNextImagePromise() {
   });
 }
 
-function getScoresWithConnPromise(conn, userIDs) {
+function getScoresWithConnPromise(conn: ConnUtils.DBConn, userIDs: Array<number>): Promise<Object> {
   // return scores = {nickname: score} for the userIDs given
   return new Promise((resolve, reject) => {
     DAO.getUsersProp(conn, userIDs, ['nickname', 'score'], (err, info) => {
@@ -67,7 +69,7 @@ function getScoresWithConnPromise(conn, userIDs) {
   });
 }
 
-function getScenariosWithConnPromise(conn, userIDs) {
+function getScenariosWithConnPromise(conn: ConnUtils.DBConn, userIDs: Array<number>): Promise<Object> {
   return new Promise(function(resolve, reject) {
     // return scenarios, as in: {userID: scenario}
     DAO.getUsersProp(conn, userIDs, ['response'], (err, info) => {
@@ -111,7 +113,10 @@ async function getPlayerGameInfoWithConnPromise(conn: ConnUtils.DBConn, playerID
   });
 }
 
-async function getGameInfoWithConnPromise(conn, gameID) {
+async function getGameInfoWithConnPromise(
+  conn: ConnUtils.DBConn,
+  gameID: number
+): Promise<{gameInfo: GameInfo, playerInfo: null}> {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
   let [gameInfo, userIDs] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
@@ -131,7 +136,7 @@ async function getGameInfoWithConnPromise(conn, gameID) {
   });
 }
 
-async function updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID) {
+async function updateIfDoneRespondingWithConnPromise(conn: ConnUtils.DBConn, gameID: number, userIDs: Array<number>, hostID: number): Promise<?string> {
   // Update game info if all the users but the host have responded
   // cb(err)
   if (userIDs.length == 0) {
@@ -220,7 +225,7 @@ async function createNewGamePromise() {
     }
 }
 
-function nameAlreadyTaken(name, gameInfo) {
+function nameAlreadyTaken(name: string, gameInfo: GameInfo) {
   // Check if there is a user with the same nickname in the game
   for (var n in gameInfo.scores) {
     if (n == name) {
@@ -242,7 +247,7 @@ async function setHostWithConnPromise(conn, gameID, playerID) {
 /**
  * Returns a promise to make a new player and return the playerID
  */
-async function addNewPlayerWithConnPromise(conn, gameID, gameInfo, nickname) {
+async function addNewPlayerWithConnPromise(conn, gameID, gameInfo: GameInfo, nickname) {
   if (nameAlreadyTaken(nickname, gameInfo)) {
     return(nickname + ' is already taken. Please use another name.');
   }
@@ -265,7 +270,7 @@ async function createPlayerPromise(req) {
   try {
 
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-    let gameInfo = (await getGameInfoWithConnPromise(conn, gameID)).gameInfo;
+    let gameInfo: GameInfo = (await getGameInfoWithConnPromise(conn, gameID)).gameInfo;
     let playerID = await addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
 
     if (gameInfo.hostID === null) {

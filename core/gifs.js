@@ -1,5 +1,7 @@
 'use strict';
 
+/* @flow */
+
 var https = require('https');
 var utils = require('./utils');
 
@@ -7,13 +9,13 @@ const POST_LIMIT = 10;
 const HOSTNAME = 'www.reddit.com';
 const PATH_BASE = '/r/reactiongifs/hot.json';
 
-function linkIsGif(url) {
+function linkIsGif(url: string): boolean {
   // Return whether the url ends in '.gif'
   var gifSuffix = '.gif';
   return (url.indexOf(gifSuffix, url.length - gifSuffix.length) > -1);
 }
 
-let filterPosts = (posts) => {
+function filterPosts(posts: Array<{data: {url: string}}>): Array<string> {
   // Filter posts for gifs
   var filteredPosts = [];
   for (var i = 0; i < posts.length; i++ ) {
@@ -24,7 +26,7 @@ let filterPosts = (posts) => {
   return filteredPosts;
 };
 
-let fetchData = (cb, lastPostRetrieved) => {
+function fetchData(cb: (urls: Array<string>, lastPostRetrieved: string) => void, lastPostRetrieved?: string): void {
   // Grab some gif urls from reddit
   // cb(urls, ID of lastPostRetrieved)
   // TODO Check for error
@@ -43,33 +45,33 @@ let fetchData = (cb, lastPostRetrieved) => {
   https.get(
     httpsOptions,
     (res) => {
-      var data = '';
-      res.on('data', (d) => {
+      let data = '';
+      res.on('data', (d: string) => {
         data += d;
       });
       res.on('end', () => {
-        data = JSON.parse(data);
-        let posts = data.data.children;
-        let lastPostRetrieved = data.data.after;
+        let parsedData = JSON.parse(data);
+        let posts = parsedData.data.children;
+        let lastPostRetrieved = parsedData.data.after;
         cb(filterPosts(posts), lastPostRetrieved);
       });
     }
   );
 };
 
-module.exports.getRandomGif = (cb) => {
-  fetchData((posts) => {
+module.exports.getRandomGif = (cb: (err: ?string, url: string) => void) => {
+  fetchData((posts: Array<string>) => {
     // TODO Change to callback
     if(posts.length >= 1) {
-      cb(utils.randItem(posts));
+      cb(null, utils.randItem(posts));
     } else {
       // Try again
       fetchData((posts) => {
         if(posts.length >= 1) {
-          cb(utils.randItem(posts));
+          cb(null, utils.randItem(posts));
         } else {
           // If no suitable gif is found, return the default.
-          cb('http://i.imgur.com/rxkWqmt.gif');
+          cb(null, 'http://i.imgur.com/rxkWqmt.gif');
         }
       });
     }
