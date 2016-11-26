@@ -29,14 +29,14 @@ const defaultGame = {
   return id.toString();
 } */
 
-function getIDFromGameCode(code: string): number {
+function _getIDFromGameCode(code: string): number {
   return parseInt(code);
 }
 
 /**
  * Promise to return a random reaction image url.
  */
-function getNextImagePromise(): Promise<string> {
+function _getNextImagePromise(): Promise<string> {
   return new Promise((resolve, reject) => {
     Gifs.getRandomGif((err, gifUrl) => {
       if (err) {
@@ -191,7 +191,7 @@ async function getGameInfoPromise(req) {
 async function joinGamePromise(req) {
   // Get the gameID of a game and check if it's a valid
   // game.
-  let gameID = getIDFromGameCode(req.gameCode);
+  let gameID = _getIDFromGameCode(req.gameCode);
   let conn;
 
   try {
@@ -264,7 +264,7 @@ async function addNewPlayerWithConnPromise(conn, gameID, gameInfo: GameInfo, nic
 async function createPlayerPromise(req) {
   // Create a player called req.nickname
   // in the game req.gameID
-  let gameID = getIDFromGameCode(req.gameID);
+  let gameID = _getIDFromGameCode(req.gameID);
   let conn;
 
   try {
@@ -297,7 +297,7 @@ async function startGamePromise(req) {
 
     let [info, image] = await Promise.all([
       getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
-      getNextImagePromise()
+      _getNextImagePromise()
     ]);
     let [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
@@ -388,5 +388,7 @@ async function processRequest(req: Object) {
 }
 
 module.exports = {
-  processRequest
+  processRequest,
+  _getIDFromGameCode,
+  _getNextImagePromise
 };
