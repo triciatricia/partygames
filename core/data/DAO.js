@@ -130,14 +130,6 @@ function DAO(DBConn) {
   };
 }
 
-// Function that sets a value for a game.
-DAOs.setGame = function(DBConn: conn.DBConn, gameID: number, props: Object, callback: (err: ?string, res: ?Object, fields?: any) => void) {
-  var gameDAO = new DAO(DBConn);
-  var gameTable = tables.game.tableName;
-  var gameIDName = tables.game.gameIDName;
-  gameDAO.updateData(gameTable, gameIDName, gameID, props, callback);
-};
-
 // Function that returns a promise to set a value for a game.
 DAOs.setGamePromise = function(DBConn: conn.DBConn, gameID: number, props: Object) {
   return new Promise((resolve, reject) => {
@@ -148,19 +140,6 @@ DAOs.setGamePromise = function(DBConn: conn.DBConn, gameID: number, props: Objec
       (err ? reject(err) : resolve(res));
     });
   });
-};
-
-/**
- * Function that inserts a game.
- * Callback(err, res)
- */
-DAOs.newGame = function(DBConn: conn.DBConn, game: Object, callback: (err: ?string, res: ?Object) => void) {
-  var gameDAO = new DAO(DBConn);
-  var props = {};
-  // Copy all the properties from game to props.
-  Object.assign(props, game);
-  var gameTable = tables.game.tableName;
-  gameDAO.insertData(gameTable, props, callback);
 };
 
 /**
@@ -183,30 +162,6 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
       }
     });
   });
-};
-
-/**
- * Function that retrieves a game.
- * Callback(err, game)
- */
-DAOs.getGame = function(DBConn: conn.DBConn, gameID: number, callback: (err: ?string, game: ?GameInfo) => void): void {
-  var gameDAO = new DAO(DBConn);
-  var queryProps = {};
-  queryProps[tables.game.gameIDName] = gameID;
-
-  var cb = function(err, res) {
-    if (err) {
-      callback(err, null);
-    } else if (res.length === 0) {
-      callback('Could not find game ' + gameID + ' in database', res);
-    } else {
-      let game = res[0];
-      game.scores = {}; // TODO Find actual scores
-      callback(err, game);
-    }
-  };
-
-  gameDAO.getData(tables.game.tableName, Object.getOwnPropertyNames(Games), queryProps, cb);
 };
 
 /**
@@ -235,29 +190,6 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
 };
 
 /**
- * Function that sets a value for a user.
- * callback(error, result)
- */
-DAOs.setUser = function(DBConn: conn.DBConn, userID: number, props: Object, callback: (err: ?string, res: ?Object) => void): void {
-  var userDAO = new DAO(DBConn);
-  var userTable = tables.users.tableName;
-  var userIDName = tables.users.userIDName;
-
-  // Modify the callback to change usergame if it's being changed
-  // Assumes a user can't be in 2 games at the same time
-  var cb = callback;
-  if (props.hasOwnProperty('game')) {
-    cb = function(err) {
-      assert(err === null, 'Should not have an error accessing database');
-      userDAO.updateData(tables.usergame.tableName, 'user',
-        userID, {'user': userID, 'game': props.game}, callback);
-    };
-  }
-
-  userDAO.updateData(userTable, userIDName, userID, props, cb);
-};
-
-/**
  * Function that promises to set a value for a user.
  */
 DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<Object> {
@@ -281,42 +213,6 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
 
     userDAO.updateData(userTable, userIDName, userID, props, cb);
   });
-};
-
-/**
- * Function that creates a new user.
- * Callback(err, userID)
- */
-DAOs.newUser = function(DBConn: conn.DBConn, user: Object, callback: (err: ?string, id: ?number) => void): void {
-  var userDAO = new DAO(DBConn);
-  var props = {};
-  Object.assign(props, user);
-
-  // Modify the callback to add a row to usergame
-  var cb = callback;
-  if (user.hasOwnProperty('game')) {
-    cb = function(err, userID) {
-      if (err) {
-        console.log(err);
-        callback(err, null);
-        return;
-      }
-      // TODO delete below? If callback above works.
-      // assert(err === null, 'Should not have an error accessing database');
-      userDAO.insertData(tables.usergame.tableName,
-        {'user': userID, 'game': user.game},
-        function(err) {callback(err, userID);});
-    };
-  }
-  userDAO.insertData(tables.users.tableName, props,
-    function(err, res) {
-      if (err) {
-        console.log(err);
-        callback('Error adding user to database', null);
-        return;
-      }
-      cb(err, res.insertId);
-    });
 };
 
 /**
@@ -359,28 +255,6 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
 };
 
 /**
- * Function that retrieves a user.
- * Callback(err, user)
- */
-DAOs.getUser = function(DBConn: conn.DBConn, userID: number, callback: (err: ?string, user: ?Object) => void): void {
-  var userDAO = new DAO(DBConn);
-  var queryProps = {};
-  queryProps[tables.users.userIDName] = userID;
-
-  var cb = function(err, res) {
-    if (err) {
-      callback(err, null);
-    } else if (res.length === 0) {
-      callback('Could not find user ' + userID + ' in database', res);
-    } else {
-      callback(err, res[0]);
-    }
-  };
-
-  userDAO.getData(tables.users.tableName, Object.getOwnPropertyNames(Users), queryProps, cb);
-};
-
-/**
  * Function that returns a promise to return a user.
  */
 DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Object> {
@@ -402,30 +276,6 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
     userDAO.getData(tables.users.tableName, Object.getOwnPropertyNames(Users), queryProps, cb);
 
   });
-};
-
-/**
- * Function that gets the users in a game
- * callback(err, users)
- * users: array of userIDs
- */
-DAOs.getGameUsers = function(DBConn: conn.DBConn, gameID: number, callback: (err: ?string, users: ?number[]) => void): void {
-  var gameDAO = new DAO(DBConn);
-  var queryProps = {'game': gameID};
-
-  var cb = function(err, res) {
-    if (err) {
-      callback(err, null);
-    } else {
-      var users = [];
-      for (var i = 0; i < res.length; ++i) {
-        users.push(res[i].user);
-      }
-      callback(err, users);
-    }
-  };
-
-  gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
 };
 
 /**
@@ -458,47 +308,46 @@ DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promis
  * Returns an object where the keys are userIDs
  * cb(err, {userID: {prop: value}})
  */
-function getUsersPropHelper(DBConn: conn.DBConn, userIDs: number[], props: string[], cb: (err: ?string, info: ?Object) => void): void {
+const getUsersPropHelper = async (
+  DBConn: conn.DBConn,
+  userIDs: number[],
+  props: string[],
+): Promise<Object> => {
   if (userIDs.length == 0) {
-    cb(null, {});
-  } else {
-    let nextID = userIDs.pop();
-    DAOs.getUser(DBConn, nextID, (err, userInfo) => {
-      if (err || !userInfo) {
-        cb('Cannot find user record.', {});
-        return;
-      }
-
-      let userInfoKeep = {};
-      for (var i = 0; i < props.length; ++i) {
-        userInfoKeep[props[i]] = userInfo[props[i]];
-      }
-
-      getUsersPropHelper(DBConn, userIDs, props, (err, usersInfo) => {
-        if (err) {
-          cb(err, {});
-          return;
-        }
-
-        if ( !usersInfo || !userInfo || !(userInfo.hasOwnProperty('id')) ) {
-          cb('Error looking up user in database', {});
-          return;
-        }
-
-        usersInfo[userInfo.id] = userInfoKeep;
-        cb(null, usersInfo);
-      });
-    });
+    return {};
   }
-}
+
+  let nextID = userIDs.pop();
+  let userInfo = await DAOs.getUserPromise(DBConn, nextID);
+  if (!userInfo) {
+    throw new Error('Cannot find user record.');
+  }
+
+  let userInfoKeep = {};
+  for (var i = 0; i < props.length; ++i) {
+    userInfoKeep[props[i]] = userInfo[props[i]];
+  }
+
+  let usersInfo = await getUsersPropHelper(DBConn, userIDs, props);
+  if ( !usersInfo || !(userInfo.hasOwnProperty('id')) ) {
+    throw new Error('Error looking up user in database');
+  }
+
+  usersInfo[userInfo.id] = userInfoKeep;
+  return usersInfo;
+};
 
 /**
  * Function to get properties from all users in an array
  * Returns an object where the keys are userIDs
  * cb(err, {userID: {prop: value}})
  */
-DAOs.getUsersProp = function(DBConn: conn.DBConn, userIDs: number[], props: string[], cb: (err: ?string, info: ?Object) => void): void {
-  getUsersPropHelper(DBConn, userIDs.slice(0), props, cb);
+DAOs.getUsersPropPromise = (
+  DBConn: conn.DBConn,
+  userIDs: number[],
+  props: string[]
+): Promise<Object> => {
+  return getUsersPropHelper(DBConn, userIDs.slice(0), props);
 };
 
 module.exports = DAOs;

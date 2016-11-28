@@ -52,50 +52,36 @@ Game._getNextImagePromise = (): Promise<string> => {
   });
 };
 
-Game._getScoresWithConnPromise = (
+Game._getScoresWithConnPromise = async (
   conn: ConnUtils.DBConn,
   userIDs: Array<number>
 ): Promise<Object> => {
   // return scores = {nickname: score} for the userIDs given
-  return new Promise((resolve, reject) => {
-    DAO.getUsersProp(conn, userIDs, ['nickname', 'score'], (err, info) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+  let info = await DAO.getUsersPropPromise(conn, userIDs, ['nickname', 'score']);
 
-      let scores = {};
-      for (var id in info) {
-        scores[info[id].nickname] = info[id].score;
-      }
+  let scores = {};
+  for (var id in info) {
+    scores[info[id].nickname] = info[id].score;
+  }
 
-      resolve(scores);
-    });
-  });
+  return scores;
 };
 
-Game._getScenariosWithConnPromise = (
+Game._getScenariosWithConnPromise = async (
   conn: ConnUtils.DBConn,
   userIDs: Array<number>
 ): Promise<Object> => {
-  return new Promise(function(resolve, reject) {
-    // return scenarios, as in: {userID: scenario}
-    DAO.getUsersProp(conn, userIDs, ['response'], (err, info) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+  // return scenarios, as in: {userID: scenario}
+  let info = await DAO.getUsersPropPromise(conn, userIDs, ['response']);
 
-      let scenarios = {};
-      for (var id in info) {
-        if (info[id].response) {
-          scenarios[id] = info[id].response;
-        }
-      }
+  let scenarios = {};
+  for (var id in info) {
+    if (info[id].response) {
+      scenarios[id] = info[id].response;
+    }
+  }
 
-      resolve(scenarios);
-    });
-  });
+  return scenarios;
 };
 
 /**
