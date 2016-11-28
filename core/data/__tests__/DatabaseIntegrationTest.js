@@ -3,7 +3,13 @@
  * Make a connection and insert/get data from a test database.
  */
 
+ /* @flow */
+
 'use strict';
+
+var connUtils = require('../conn');
+var DAO = require('../DAO');
+var mysql = require('mysql');
 
  // Use a custom database configuration for these tests.
 var DBConfig = {
@@ -18,9 +24,8 @@ describe('DatabaseIntegrationTest', function() {
   // mysql database connection for integration test
   var connection;
 
-  beforeEach(function(done) {
+  function truncateTables(done, cb) {
     // Setup: Connect to games table
-    var mysql = require('mysql');
     connection = mysql.createConnection(DBConfig);
     connection.connect(function(err) {
       if (err) {
@@ -52,249 +57,261 @@ describe('DatabaseIntegrationTest', function() {
               done();
               return;
             }
-            done();
+            cb(done);
           });
         });
       });
     });
+  }
+
+  beforeEach((done) => {
+    truncateTables(done, (done) => {done();});
   });
 
-  afterEach(function() {
-    connection.end();
+  afterEach((done) => {
+    truncateTables(done, (done) => {
+      connection.end();
+      done();
+    });
   });
 
   it('should be able to insert a game', function(done) {
+    // Try to make a new game
+    // DAOs.newGame = function(DBConn, game, callback)
+    let game = {
+      round: 1,
+      image: 'abc',
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null
+    };
+    let expectedRow = {
+      id: 1,
+      round: 1,
+      image: 'abc',
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null
+    };
+
+    let wConn
+
     // Connect to the database for the integration test
-    var connUtils = require('../conn');
-    var DAO = require('../DAO');
-    var wConn = connUtils.getNewConnection(
-      connUtils.Modes.WRITE,
-      function(err) {
-        // Try to make a new game
-        // DAOs.newGame = function(DBConn, game, callback)
-        var game = {
-          round: 1,
-          image: 'abc',
-          waitingForScenarios: 0,
-          reactorID: 1,
-          reactorNickname: 'Brownie',
-          hostID: 1,
-          gameOver: 0,
-          winningResponse: null,
-          winningResponseSubmittedBy: null
-        };
-        var expectedRow = {
-          id: 1,
-          round: 1,
-          image: 'abc',
-          waitingForScenarios: 0,
-          reactorID: 1,
-          reactorNickname: 'Brownie',
-          hostID: 1,
-          gameOver: 0,
-          winningResponse: null,
-          winningResponseSubmittedBy: null
-        };
+    async function testGame() {
+      wConn = await connUtils.getNewConnectionPromise(
+        connUtils.Modes.WRITE,
+        DBConfig
+      );
+      let result = await DAO.newGamePromise(wConn, game);
+      expect(wConn.getConn()).toBeDefined();
+      expect(result).not.toBe(null);
+      expect(result.insertId).toBeDefined;
+      expect(result.affectedRows).toBeDefined;
+      expect(result.insertId).toBe(1);
+      expect(result.affectedRows).toBe(1);
+    }
 
+    function checkInserted() {
+      connection.query('SELECT * FROM games', function(err, result) {
         expect(err).toBe(null);
-
-        DAO.newGame(wConn, game, function(err, result) {
-          expect(wConn.getConn()).toBeDefined();
-          expect(err).toBe(null);
-          expect(result).not.toBe(null);
-          if (result != null) {
-            expect(result.insertId).toBeDefined;
-            expect(result.affectedRows).toBeDefined;
-            if (result.hasOwnProperty('insertId') && result.hasOwnProperty('affectedRows')) {
-              expect(result.insertId).toBe(1);
-              expect(result.affectedRows).toBe(1);
-            }
+        expect(result).not.toBe(null);
+        if (result != null) {
+          expect(result.length).toBe(1);
+          if (result.length == 1) {
+            expect(JSON.stringify(result[0])).toEqual(JSON.stringify(expectedRow));
           }
+        }
+      });
+    }
 
-          connection.query('SELECT * FROM games', function(err, result) {
-            expect(err).toBe(null);
-            expect(result).not.toBe(null);
-            if (result != null) {
-              expect(result.length).toBe(1);
-              if (result.length == 1) {
-                expect(JSON.stringify(result[0])).toEqual(JSON.stringify(expectedRow));
-              }
-            }
-            // Close database connections
-            wConn.getConn().end();
-            done();
-          });
-        });
-      },
-      DBConfig);
+    function fail() {
+      if (wConn && wConn.hasOwnProperty('getConn')) {
+        wConn.getConn().end();
+      }
+      expect(true).toBe(false);
+      done();
+    }
+
+    testGame()
+      .then(checkInserted)
+      .catch(fail)
+      .then(() => {
+        wConn.getConn().end();
+        done();
+      });
   });
+
 
   it('should be able to make, set, and get a game', function(done) {
     // Connect to the database for the integration test
-    var connUtils = require('../conn');
-    var DAO = require('../DAO');
-    var wConn = connUtils.getNewConnection(
-      connUtils.Modes.WRITE,
-      function(err) {
-        // Make a new game
-        var game = {
-          round: 1,
-          image: 'abc',
-          waitingForScenarios: 0,
-          reactorID: 1,
-          reactorNickname: 'Brownie',
-          hostID: 1,
-          gameOver: 0,
-          winningResponse: null,
-          winningResponseSubmittedBy: null
-        };
-        var expectedRow = {
-          id: 1,
-          round: 1,
-          image: 'abc',
-          waitingForScenarios: 0,
-          reactorID: 1,
-          reactorNickname: 'Brownie',
-          hostID: 1,
-          gameOver: 0,
-          winningResponse: null,
-          winningResponseSubmittedBy: null,
-          scores: {}
-        };
+    var game = {
+      round: 1,
+      image: 'abc',
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null
+    };
 
-        expect(err).toBe(null);
+    var expectedRow = {
+      id: 1,
+      round: 1,
+      image: 'abc',
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null,
+      scores: {}
+    };
 
-        DAO.newGame(wConn, game, function(err, result) {
-          expect(wConn.getConn()).toBeDefined();
-          expect(err).toBe(null);
-          if (!err) {
-            expect(result.insertId).toEqual(1);
-            expect(result.affectedRows).toEqual(1);
-          }
+    var expectedRow2 = {
+      id: 1,
+      round: 2,
+      image: 'abc',
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 3,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null,
+      scores: {}
+    };
 
-          DAO.getGame(wConn, 1, function(err, result) {
-            expect(err).toBe(null);
-            expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
+    let wConn;
 
-            DAO.setGame(wConn, 1, {hostID: 3, round: 2}, function(err, result) {
-              expect(err).toBe(null);
-              if (!err) {
-                expect(result.affectedRows).toEqual(1);
-              }
+    async function testGame() {
+      wConn = await connUtils.getNewConnectionPromise(
+        connUtils.Modes.WRITE,
+        DBConfig
+      );
+      let result = await DAO.newGamePromise(wConn, game);
+      expect(wConn.getConn()).toBeDefined();
+      expect(result.insertId).toEqual(1);
+      expect(result.affectedRows).toEqual(1);
 
-              DAO.getGame(wConn, 1, function(err, result) {
-                var expectedRow2 = {
-                  id: 1,
-                  round: 2,
-                  image: 'abc',
-                  waitingForScenarios: 0,
-                  reactorID: 1,
-                  reactorNickname: 'Brownie',
-                  hostID: 3,
-                  gameOver: 0,
-                  winningResponse: null,
-                  winningResponseSubmittedBy: null,
-                  scores: {}
-                };
-                expect(err).toBe(null);
-                expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
+      result = await DAO.getGamePromise(wConn, 1);
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-                // Close database connections
-                wConn.getConn().end();
-                done();
-              });
-            });
-          });
-        });
-      },
-      DBConfig);
+      result = await DAO.setGamePromise(wConn, 1, {hostID: 3, round: 2});
+      expect(result).toBeDefined();
+      if (result) {
+        expect(result.hasOwnProperty('affectedRows')).toBe(true);
+      }
+      if (result && result.hasOwnProperty('affectedRows')) {
+        expect(result.affectedRows).toEqual(1);
+      }
+
+      result = await DAO.getGamePromise(wConn, 1);
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
+    }
+
+    function fail() {
+      if (wConn && wConn.hasOwnProperty('getConn')) {
+        wConn.getConn().end();
+      }
+      expect(true).toBe(false);
+      done();
+    }
+
+    testGame()
+      .catch(fail)
+      .then(() => {
+        wConn.getConn().end();
+        done();
+      });
   });
 
   it('should be able to make and get a user', function(done) {
-    // Connect to the database for the integration test
-    var connUtils = require('../conn');
-    var DAO = require('../DAO');
-    var wConn = connUtils.getNewConnection(
-      connUtils.Modes.WRITE,
-      function(err) {
-        // Make a new game
-        var user = {
-          nickname: 'testuser',
-          accessToken: 'secret',
-          roundOfLastResponse: null,
-          response: null,
-          score: 0,
-          game: 1,
-          submittedScenario: 0
-        };
-        var expectedRow = {
-          id: 1,
-          nickname: 'testuser',
-          accessToken: 'secret',
-          roundOfLastResponse: null,
-          response: null,
-          score: 0,
-          game: 1,
-          submittedScenario: 0
-        };
+    var user = {
+      nickname: 'testuser',
+      accessToken: 'secret',
+      roundOfLastResponse: null,
+      response: null,
+      score: 0,
+      game: 1,
+      submittedScenario: 0
+    };
+    var expectedRow = {
+      id: 1,
+      nickname: 'testuser',
+      accessToken: 'secret',
+      roundOfLastResponse: null,
+      response: null,
+      score: 0,
+      game: 1,
+      submittedScenario: 0
+    };
+    var expectedRow2 = {
+      id: 1,
+      nickname: 'testuser',
+      accessToken: 'secret',
+      roundOfLastResponse: null,
+      response: null,
+      score: 3,
+      game: 2,
+      submittedScenario: 0
+    };
 
-        expect(err).toBe(null);
+    let wConn;
 
-        DAO.newUser(wConn, user, function(err, id) {
-          expect(wConn.getConn()).toBeDefined();
-          expect(err).toBe(null);
-          if (!err) {
-            expect(id).toEqual(1);
-          }
+    async function testUser() {
+      wConn = await connUtils.getNewConnectionPromise(
+        connUtils.Modes.WRITE,
+        DBConfig
+      );
 
-          DAO.getUser(wConn, 1, function(err, result) {
-            expect(err).toBe(null);
-            expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
+      let id = await DAO.newUserPromise(wConn, user);
+      expect(wConn.getConn()).toBeDefined();
+      expect(id).toEqual(1);
 
-            DAO.setUser(wConn, 1, {}, function(err, result) {
-              expect(err).toBe(null);
-              expect(result).toBe(null);
-              DAO.setUser(wConn, 1, {score: 3, game: 2}, function(err) {
-                expect(err).toBe(null);
+      let result = await DAO.getUserPromise(wConn, 1);
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-                DAO.getUser(wConn, 1, function(err, result) {
-                  var expectedRow2 = {
-                    id: 1,
-                    nickname: 'testuser',
-                    accessToken: 'secret',
-                    roundOfLastResponse: null,
-                    response: null,
-                    score: 3,
-                    game: 2,
-                    submittedScenario: 0
-                  };
-                  expect(err).toBe(null);
-                  expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
+      result = await DAO.setUserPromise(wConn, 1, {});
+      expect(result).toBe(null);
 
-                  DAO.newUser(wConn, user, function() {
-                    DAO.newUser(wConn, user, function(err) {
-                      expect(err).toBe(null);
-                      DAO.getGameUsers(wConn, 2, function(err, users) {
-                        expect(err).toBe(null);
-                        expect(users).toEqual([1]);
-                        DAO.getGameUsers(wConn, 1, function(err, users) {
-                          expect(err).toBe(null);
-                          expect(users).toEqual([2, 3]);
+      result = await DAO.setUserPromise(wConn, 1, {score: 3, game: 2});
+      result = await DAO.getUserPromise(wConn, 1);
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
 
-                          // Close database connections
-                          wConn.getConn().end();
-                          done();
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      },
-      DBConfig);
-  });
+      await DAO.newUserPromise(wConn, user);
+      await DAO.newUserPromise(wConn, user);
+      let users = await DAO.getGameUsersPromise(wConn, 2);
+      expect(users).toEqual([1]);
 
+      users = await DAO.getGameUsersPromise(wConn, 1);
+      expect(users).toEqual([2, 3]);
+    }
+
+    function fail(err) {
+      console.log(err);
+      if (wConn && wConn.hasOwnProperty('getConn')) {
+        wConn.getConn().end();
+      }
+      expect(true).toBe(false);
+      done();
+    }
+
+    testUser()
+      .catch(fail)
+      .then(() => {
+        wConn.getConn().end();
+        done();
+      });
+    });
 });

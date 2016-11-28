@@ -131,7 +131,11 @@ function DAO(DBConn) {
 }
 
 // Function that returns a promise to set a value for a game.
-DAOs.setGamePromise = function(DBConn: conn.DBConn, gameID: number, props: Object) {
+DAOs.setGamePromise = function(
+  DBConn: conn.DBConn,
+  gameID: number,
+  props: Object
+): Promise<?Object> {
   return new Promise((resolve, reject) => {
     var gameDAO = new DAO(DBConn);
     var gameTable = tables.game.tableName;
@@ -192,7 +196,7 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
 /**
  * Function that promises to set a value for a user.
  */
-DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<Object> {
+DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
   return new Promise((resolve, reject) => {
     var userDAO = new DAO(DBConn);
     var userTable = tables.users.tableName;
@@ -200,13 +204,13 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
 
     // Modify the callback to change usergame if it's being changed
     // Assumes a user can't be in 2 games at the same time
-    let cb = (err, res) => {(err || !res) ? reject(err) : resolve(res);};
+    let cb = (err, res) => {(err) ? reject(err) : resolve(res);};
     if (props.hasOwnProperty('game')) {
       cb = function(err) {
         if (err) { reject(err); }
         userDAO.updateData(tables.usergame.tableName, 'user',
           userID, {'user': userID, 'game': props.game}, (err, res) => {
-            (err || !res) ? reject(err) : resolve(res);
+            (err) ? reject(err) : resolve(res);
           });
       };
     }
