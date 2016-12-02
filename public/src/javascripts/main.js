@@ -249,7 +249,8 @@ const WaitingToStart = React.createClass({
   propTypes: {
     isHost: React.PropTypes.bool,
     nPlayers: React.PropTypes.number,
-    startGame: React.PropTypes.func
+    startGame: React.PropTypes.func,
+    gameID: React.PropTypes.number
   },
   render: function() {
     let button;
@@ -263,6 +264,7 @@ const WaitingToStart = React.createClass({
     return (
       <div>
         <p>Waiting to start!</p>
+        <p>Enter this code to join the game: <span id="gameCode">{this.props.gameID}</span></p>
         <p>{this.props.nPlayers} players have joined... </p>
         {button}
       </div>
@@ -305,7 +307,7 @@ const NewGame = React.createClass({
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
               <p className="help-block">{this.props.errorMessage}</p>
-              <button type="button" className="btn btn-default"
+              <button id="joinGameButton" type="button" className="btn btn-default"
                 onClick={this.joinGame} >
                 Join Game
               </button>
@@ -313,7 +315,7 @@ const NewGame = React.createClass({
           </div>
           <div className="row">
             <div className="form-group col-xs-6">
-              <button type="button" className="btn btn-primary btn-lg"
+              <button id="newGameButton" type="button" className="btn btn-primary btn-lg"
                 onClick={this.createGame} >
                 <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
                  &nbsp;&nbsp;New Game
@@ -354,7 +356,7 @@ const NewPlayer = React.createClass({
                 placeholder="What do you want to be called?" onChange={this.handleChange}
                 ref="nicknameInput" />
               <p className="help-block">{this.props.errorMessage}</p>
-              <button type="button" className="btn btn-primary btn-lg"
+              <button type="button" id="submitNicknameButton" className="btn btn-primary btn-lg"
                 onClick={this.createPlayer}>
                 Submit nickname
               </button>
@@ -403,7 +405,7 @@ const GameOver = React.createClass({
 
     return (
       <div className="jumbotron">
-        <p>And we're done!</p>
+        <p>And we are done!</p>
         <ul className="list-unstyled">{scoreTable}</ul>
         {againButton}
       </div>
@@ -569,7 +571,8 @@ const Container = React.createClass({
       <WaitingToStart
         isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
         nPlayers={Object.keys(this.state.gameInfo.scores).length}
-        startGame={this.startGame} />
+        startGame={this.startGame}
+        gameID={this.state.gameInfo.id} />
     );
 
   }
