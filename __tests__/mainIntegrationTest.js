@@ -53,7 +53,33 @@ describe('website', function() {
           expect(siteCode).toEqual(code);
           console.log(nickname + ' joined game');
         });
-      };
+    };
+
+    let clientStartGame = (browserClient) => {
+      return browserClient
+        .waitForExist('#nPlayers', 1000)
+        .getText('#nPlayers')
+        .then((nPlayers) => {
+          expect(nPlayers).toEqual('3');
+        })
+        .waitForExist('#startNowButton', 1000)
+        .click('#startNowButton')
+        .waitForExist('#round', 5000)
+        .getText('#round')
+        .then((round) => {
+          expect(round).toEqual('1');
+        })
+        .waitForExist('#score', 1000)
+        .getText('#score')
+        .then((score) => {
+          expect(score).toEqual('0');
+        })
+        .waitForExist('.img', 5000)
+        .getAttribute('.img', 'src')
+        .then((src) => {
+          expect(src).toMatch('http://.+\.gif')
+        });
+    };
 
     client
       .url('http://localhost:3000')
@@ -69,7 +95,13 @@ describe('website', function() {
     clientCreateGame(client1, 'user1')
       .then(() => {
         clientJoinGame(client2, 'user2', gameCode)
-        .then(done);
+          .then(() => {
+            clientJoinGame(client3, 'user3', gameCode)
+              .then(() => {
+                clientStartGame(client1);
+                done();
+              });
+          });
       });
 
   });

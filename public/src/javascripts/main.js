@@ -13,9 +13,9 @@ const GameStatus = React.createClass({
     return (
       <div className='row'>
         <div className='col-md-12'>
-          Round: {this.props.round}
+          Round: <span id="round" >{this.props.round}</span>
           <br />
-          Score: {this.props.score}
+          Score: <span id="score">{this.props.score}</score>
         </div>
       </div>
     );
@@ -256,7 +256,7 @@ const WaitingToStart = React.createClass({
     let button;
     if (this.props.isHost) {
       button = (
-        <button type="button" onClick={this.props.startGame} className="btn btn-default">
+        <button id="startNowButton" type="button" onClick={this.props.startGame} className="btn btn-default">
           Start now!
         </button>
       );
@@ -265,7 +265,7 @@ const WaitingToStart = React.createClass({
       <div>
         <p>Waiting to start!</p>
         <p>Enter this code to join the game: <span id="gameCode">{this.props.gameID}</span></p>
-        <p>{this.props.nPlayers} players have joined... </p>
+        <p><span id="nPlayers">{this.props.nPlayers}</span> players have joined... </p>
         {button}
       </div>
     );
