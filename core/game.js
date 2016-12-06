@@ -95,7 +95,7 @@ Game._getPlayerGameInfoWithConnPromise = async (
   let [gameInfo, playerInfo, userIDs] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
     DAO.getUserPromise(conn, playerID),
-    DAO.getGameUsersPromise(conn, playerID)
+    DAO.getGameUsersPromise(conn, gameID)
   ]);
   let [scores, choices] = await Promise.all([
     Game._getScoresWithConnPromise(conn, userIDs.slice(0)),
