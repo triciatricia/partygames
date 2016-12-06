@@ -50,6 +50,7 @@
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
     "watchify": "^3.7.0",
+    "wdio-dot-reporter": "0.0.6",
     "wdio-jasmine-framework": "^0.2.16",
     "webdriverio": "^4.4.0"
   }

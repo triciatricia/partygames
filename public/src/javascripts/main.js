@@ -15,7 +15,7 @@ const GameStatus = React.createClass({
         <div className='col-md-12'>
           Round: <span id="round" >{this.props.round}</span>
           <br />
-          Score: <span id="score">{this.props.score}</score>
+          Score: <span id="score">{this.props.score}</span>
         </div>
       </div>
     );
@@ -29,7 +29,7 @@ const ReactionImage = React.createClass({
   render: function() {
     return (
       <div>
-        <img src={this.props.image} />
+        <img id="gif" src={this.props.image} />
       </div>
     );
   }
@@ -151,7 +151,7 @@ const ScenarioList = React.createClass({
     }
     return (
       <form>
-        <label>{this.props.reactorNickname}'s response when:</label>
+        <label>{this.props.reactorNickname}&#39;s response when:</label>
         {scenarios}
         {button}
       </form>
@@ -191,12 +191,12 @@ const ResponseForm = React.createClass({
         <form>
           <div className="form-group">
             <p className='text-success'>{helpMessage}</p>
-            <label>{this.props.gameInfo.reactorNickname}'s response when...</label>
+            <label>{this.props.gameInfo.reactorNickname}&#39;s response when...</label>
             <input type="input" className="form-control" id="scenario"
               placeholder={placeholder} defaultValue={this.props.playerInfo.response}
               ref="response" />
           </div>
-            <button type="button" className="btn btn-default" onClick={this.submitResponse}>{buttonText}</button>
+            <button id="submitResponseButton" type="button" className="btn btn-default" onClick={this.submitResponse}>{buttonText}</button>
         </form>
       );
     }
