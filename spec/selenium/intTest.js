@@ -49,18 +49,67 @@ describe('website', () => {
 
     // Start game
     user1.waitForExist('#startNowButton');
-    console.log('1');
     user1.click('#startNowButton');
     user1.waitForExist('#round');
     expect(user1.getText('#round')).toEqual('1');
     user1.waitForExist('#score');
-    console.log('2');
     expect(user1.getText('#score')).toEqual('0');
     user1.waitForExist('#gif');
-    console.log('3');
     let gif = user1.getAttribute('#gif', 'src');
-    expect(gif).toMatch('http://.+\.gif');
+    expect(gif).toMatch('https?://.+\.gif');
     console.log('started game');
+
+    // Submit responses
+    user2.waitForExist('#score');
+    expect(user2.getText('#score')).toEqual('0');
+    user2.waitForExist('#round');
+    expect(user2.getText('#round')).toEqual('1');
+    user2.waitForExist('#gif');
+    expect(user2.getAttribute('#gif', 'src')).toEqual(gif);
+    user2.waitForExist('#scenario');
+    user2.setValue('#scenario', 'response A user2');
+    user2.click('#submitResponseButton');
+    console.log('Submitted response');
+
+    // Change response
+    user2.waitUntil(() => {
+      return user2.getText('.text-success') == 'Your response is in!';
+    }, 1000, 'Expect feedback after response submitted.');
+    expect(user2.getText('#submitResponseButton')).toEqual('Update Response');
+    user2.setValue('#scenario', 'response B user2');
+    user2.click('#submitResponseButton');
+    console.log('Submitted response');
+
+    // Submit responses
+    user3.waitForExist('#score');
+    expect(user3.getText('#score')).toEqual('0');
+    user3.waitForExist('#round');
+    expect(user3.getText('#round')).toEqual('1');
+    user3.waitForExist('#gif');
+    expect(user3.getAttribute('#gif', 'src')).toEqual(gif);
+    user3.waitForExist('#scenario');
+    user3.setValue('#scenario', 'response user3');
+    user3.click('#submitResponseButton');
+    console.log('Submitted response');
+
+    // Choosing favorite
+    user1.waitForExist('div.radio.scenario');
+    let scenarios = user1.getText('div.radio.scenario');
+    expect(scenarios).toContain('response B user2');
+    expect(scenarios).toContain('response user3');
+    expect(scenarios.length).toEqual(2);
+    user2.waitForExist('p.scenario');
+    expect(user2.getText('p.scenario')).toEqual(scenarios);
+    user3.waitForExist('p.scenario');
+    expect(user3.getText('p.scenario')).toEqual(scenarios);
+    user2.waitForExist('p*=is choosing their favorite scenario');
+    expect(user2.getText('p*=is choosing their favorite scenario'))
+      .toEqual('user1 is choosing their favorite scenario. Hold tight!');
+    let idx = scenarios.indexOf('response user3') + 2;
+    user1.click('div.radio.scenario:nth-child(' + idx.toString() + ') label input');
+    console.log(user1.getText('div.radio.scenario:nth-child(' + idx.toString() + ') label span'));
+    user1.click('button=Submit');
+    console.log('Chose response');
 
   });
 });
