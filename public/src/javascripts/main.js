@@ -493,7 +493,25 @@ const Container = React.createClass({
   },
   chooseScenario: function(choiceID) {
     // Select your favorite response
-    // TODO
+    GameUtils.chooseScenario(
+      choiceID,
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      this.state.gameInfo.round,
+      (err, gameInfo, playerInfo) => {
+        if (err) {
+          this.setState({
+            errorMessage: 'Error submitting response. Please try again.'
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo,
+            errorMessage: null
+          });
+        }
+      }
+    );
   },
   pollGameInfo: function() {
     if (!this.state.gameInfo || !this.state.gameInfo.hasOwnProperty('id') ||
@@ -502,14 +520,16 @@ const Container = React.createClass({
     }
     GameUtils.getGameInfo(
       this.state.gameInfo.id,
-      (err, res) => {
+      this.state.playerInfo.id,
+      (err, gameInfo, playerInfo) => {
         if (err) {
           this.setState({
             errorMessage: err
           });
         } else {
           this.setState({
-            gameInfo: res
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
           });
         }
       }

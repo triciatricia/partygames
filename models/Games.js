@@ -9,8 +9,8 @@ var Games = {
   reactorNickname: DataTypes.char(),
   hostID: DataTypes.id(),
   gameOver: DataTypes.boolean(),
-  winningResponse: DataTypes.char(),
-  winningResponseSubmittedBy: DataTypes.id()
+  winningResponse: DataTypes.id(),
+  winningResponseSubmittedBy: DataTypes.char()
 };
 
 module.exports = Games;

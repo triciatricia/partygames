@@ -60,13 +60,21 @@ module.exports.createPlayer = function(nickname, gameID, cb) {
   }, cb);
 };
 
-module.exports.getGameInfo = function(id, cb) {
+module.exports.getGameInfo = function(gameID, playerID, cb) {
   // Gets the game info from the server
   // cb(err, gameInfo, playerInfo)
-  postToServer({
-    'gameID': id,
-    'action': 'getGameInfo'
-  }, cb);
+  if (playerID) {
+    postToServer({
+      'gameID': gameID,
+      'playerID': playerID,
+      'action': 'getGameInfo'
+    }, cb);
+  } else {
+    postToServer({
+      'gameID': gameID,
+      'action': 'getGameInfo'
+    }, cb);
+  }
 };
 
 module.exports.startGame = function(gameID, playerID, cb) {
@@ -88,6 +96,18 @@ module.exports.submitResponse = function(response, gameID, playerID, round, cb) 
     round: round,
     response: response,
     action: 'submitResponse'
+  }, cb);
+};
+
+module.exports.chooseScenario = function(choiceID, gameID, playerID, round, cb) {
+  // Submit the winning scenario
+  // cb(err, gameInfo, playerInfo)
+  postToServer({
+    gameID: gameID,
+    playerID: playerID,
+    round: round,
+    choiceID: choiceID,
+    action: 'chooseScenario'
   }, cb);
 };
 

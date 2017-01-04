@@ -180,7 +180,10 @@ Game._checkAllResponsesInWithConnPromise = async (
 };
 
 Game._getGameInfoPromise = async (req: Object, conn: ConnUtils.DBConn) => {
-  // Promise to return game info
+  // Promise to return game info (and player info if the player ID is given)
+  if (req.playerID) {
+    return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  }
   return await Game._getGameInfoWithConnPromise(conn, req.gameID);
 };
 
@@ -329,6 +332,39 @@ Game._submitResponsePromise = async (
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
+/**
+ * Choose the scenario.
+ **/
+Game._chooseScenarioPromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+
+  if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
+    throw new Error('Error submitting response. Try again');
+  }
+  if (info.gameInfo.reactorID != info.playerInfo.id) {
+    throw new Error('Please wait for the reactor to choose their favorite scenario.');
+  }
+
+  let userIDs = await DAO.getGameUsersPromise(conn, req.gameID);
+  if (userIDs.indexOf(parseInt(req.choiceID)) == -1 || req.playerID == req.choiceID) {
+    throw new Error('Error submitting response.');
+  }
+
+  let winnerInfo = await DAO.getUserPromise(conn, req.choiceID);
+  await DAO.setUserPromise(conn, req.choiceID, {
+    score: winnerInfo.score + 1
+  });
+  await DAO.setGamePromise(conn, info.gameInfo.id, {
+    winningResponseSubmittedBy: winnerInfo.nickname,
+    winningResponse: req.choiceID
+  });
+
+  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+};
+
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
   getGameInfo: Game._getGameInfoPromise,
@@ -336,7 +372,8 @@ const actions = {
   createPlayer: Game._createPlayerPromise,
   createNewGame: Game._createNewGamePromise,
   startGame: Game._startGamePromise,
-  submitResponse: Game._submitResponsePromise
+  submitResponse: Game._submitResponsePromise,
+  chooseScenario: Game._chooseScenarioPromise
 };
 
 /**

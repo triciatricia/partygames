@@ -107,9 +107,27 @@ describe('website', () => {
       .toEqual('user1 is choosing their favorite scenario. Hold tight!');
     let idx = scenarios.indexOf('response user3') + 2;
     user1.click('div.radio.scenario:nth-child(' + idx.toString() + ') label input');
+    let chosenResponse = user1.getText('div.radio.scenario:nth-child(' + idx.toString() + ') label span');
     console.log(user1.getText('div.radio.scenario:nth-child(' + idx.toString() + ') label span'));
     user1.click('button=Submit');
     console.log('Chose response');
+
+    // See the chosen response and score updates
+    user1.waitForExist('p.chosen');
+    expect(user1.getText('p.chosen')).toEqual(chosenResponse);
+    user1.waitForExist('button=Next');
+    user2.waitForExist('p.chosen');
+    expect(user2.getText('p.chosen')).toEqual(chosenResponse);
+    user3.waitForExist('p.chosen');
+    expect(user3.getText('p.chosen')).toEqual(chosenResponse);
+    expect(user1.getText('#score')).toEqual('0');
+    if (chosenResponse == 'response B user2') {
+      expect(user2.getText('#score')).toEqual('1');
+      expect(user3.getText('#score')).toEqual('0');
+    } else {
+      expect(user3.getText('#score')).toEqual('1');
+      expect(user2.getText('#score')).toEqual('0');
+    }
 
   });
 });
