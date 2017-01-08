@@ -138,7 +138,7 @@ Game._updateIfDoneRespondingWithConnPromise = async (
   conn: ConnUtils.DBConn,
   gameID: number,
   userIDs: Array<number>,
-  hostID: number
+  reactorID: number
 ): Promise<?string> => {
   // Update game info if all the users but the host have responded
   // cb(err)
@@ -156,11 +156,11 @@ Game._updateIfDoneRespondingWithConnPromise = async (
     let nextID = userIDs.pop();
     let userInfo = await DAO.getUserPromise(conn, nextID);
 
-    // Check if not host and still hasn't submitted scenario
-    if (!userInfo.submittedScenario && nextID != hostID) {
+    // Check if not reactor and still hasn't submitted scenario
+    if (!userInfo.submittedScenario && nextID != reactorID) {
       return;
     } else {
-      await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
+      await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID);
     }
   }
 };
@@ -175,8 +175,8 @@ Game._checkAllResponsesInWithConnPromise = async (
     DAO.getGamePromise(conn, gameID),
     DAO.getGameUsersPromise(conn, gameID)
   ]);
-  let hostID = gameInfo.hostID;
-  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, hostID);
+  let reactorID = gameInfo.reactorID;
+  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID);
 };
 
 Game._getGameInfoPromise = async (req: Object, conn: ConnUtils.DBConn) => {
