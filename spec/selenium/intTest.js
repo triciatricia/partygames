@@ -136,5 +136,49 @@ describe('website', () => {
     user1.waitForExist('#round');
     expect(user1.getText('#round')).toEqual('2', 'Get to next round');
 
+    // Submit responses
+    user1.waitForExist('#scenario');
+    user1.setValue('#scenario', 'response user1');
+    user1.click('#submitResponseButton');
+    console.log('Submitted response');
+
+    user3.waitForExist('#scenario');
+    user3.setValue('#scenario', 'response user3');
+    user3.click('#submitResponseButton');
+    console.log('Submitted response');
+
+    // Choosing favorite
+    user2.waitForExist('div.radio.scenario');
+    scenarios = user2.getText('div.radio.scenario');
+    expect(scenarios).toContain('response user1', 'Should have user1\'s response');
+    expect(scenarios).toContain('response user3', 'Should have user3\'s response');
+    expect(scenarios.length).toEqual(2);
+    user1.waitForExist('p.scenario');
+    expect(user1.getText('p.scenario')).toEqual(scenarios);
+    user3.waitForExist('p.scenario');
+    expect(user3.getText('p.scenario')).toEqual(scenarios);
+    user1.waitForExist('p*=is choosing their favorite scenario');
+    expect(user1.getText('p*=is choosing their favorite scenario'))
+      .toEqual('user2 is choosing their favorite scenario. Hold tight!');
+    idx = scenarios.indexOf('response user1') + 2;
+    user2.click('div.radio.scenario:nth-child(' + idx.toString() + ') label input');
+    chosenResponse = user2.getText('div.radio.scenario:nth-child(' + idx.toString() + ') label span');
+    user2.click('button=Submit');
+    console.log('Chose response');
+
+    // See the chosen response and score updates
+    user2.waitForExist('p.chosen');
+    expect(user2.getText('p.chosen')).toEqual(chosenResponse);
+    user2.waitForExist('button=Next');
+    user1.waitForExist('p.chosen');
+    user3.waitForExist('p.chosen');
+    expect(user1.getText('#score')).toEqual('1');
+    expect(user2.getText('#score')).toEqual('0');
+    expect(user3.getText('#score')).toEqual('1');
+
+    // End game
+    user2.waitForExist('button=End');
+    user2.click('button=End');
+
   });
 });
