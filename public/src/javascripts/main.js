@@ -93,7 +93,8 @@ const ScenarioList = React.createClass({
     winningResponse: React.PropTypes.number,
     winningResponseSubmittedBy: React.PropTypes.string,
     isReactor: React.PropTypes.bool,
-    chooseScenario: React.PropTypes.func
+    chooseScenario: React.PropTypes.func,
+    nextRound: React.PropTypes.func
   },
   getInitialState: function() {
     return {
@@ -146,7 +147,10 @@ const ScenarioList = React.createClass({
       );
       if (this.props.isReactor) {
         // allow the reactor to move the game to the next round
-        button = <button type="submit" className="btn btn-default">Next</button>;
+        button = <button
+          type="button"
+          className="btn btn-default"
+          onClick={this.props.nextRound} >Next</button>;
       }
     }
     return (
@@ -164,7 +168,8 @@ const ResponseForm = React.createClass({
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object,
     submitResponse: React.PropTypes.func,
-    chooseScenario: React.PropTypes.func
+    chooseScenario: React.PropTypes.func,
+    nextRound: React.PropTypes.func
   },
   submitResponse: function() {
     this.props.submitResponse(this.refs.response.value.trim());
@@ -213,7 +218,8 @@ const ResponseForm = React.createClass({
           winningResponse={this.props.gameInfo.winningResponse}
           winningResponseSubmittedBy={this.props.gameInfo.winningResponseSubmittedBy}
           isReactor={this.props.gameInfo.reactorID == this.props.playerInfo.id}
-          chooseScenario={this.props.chooseScenario} />
+          chooseScenario={this.props.chooseScenario}
+          nextRound={this.props.nextRound} />
       </div>
     );
   }
@@ -224,7 +230,8 @@ const RoundInfo = React.createClass({
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object,
     submitResponse: React.PropTypes.func,
-    chooseScenario: React.PropTypes.func
+    chooseScenario: React.PropTypes.func,
+    nextRound: React.PropTypes.func
   },
   render: function() {
     return (
@@ -238,7 +245,8 @@ const RoundInfo = React.createClass({
             gameInfo={this.props.gameInfo}
             playerInfo={this.props.playerInfo}
             submitResponse={this.props.submitResponse}
-            chooseScenario={this.props.chooseScenario} />
+            chooseScenario={this.props.chooseScenario}
+            nextRound={this.props.nextRound} />
         </div>
       </div>
     );
@@ -547,6 +555,18 @@ const Container = React.createClass({
         });
       });
   },
+  nextRound: function() {
+    GameUtils.nextRound(
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      (err, gameInfo, playerInfo) => {
+        this.setState({
+          errorMessage: err,
+          gameInfo: gameInfo,
+          playerInfo: playerInfo
+        });
+      });
+  },
   componentDidMount: function() {
     this.pollGameInfo();
     setInterval(this.pollGameInfo, 1000);
@@ -570,7 +590,8 @@ const Container = React.createClass({
             gameInfo={this.state.gameInfo}
             playerInfo={this.state.playerInfo}
             submitResponse={this.submitResponse}
-            chooseScenario={this.chooseScenario} />
+            chooseScenario={this.chooseScenario}
+            nextRound={this.nextRound} />
         </div>
       );
     }

@@ -111,6 +111,14 @@ module.exports.chooseScenario = function(choiceID, gameID, playerID, round, cb) 
   }, cb);
 };
 
+module.exports.nextRound = function(gameID, playerID, cb) {
+  postToServer({
+    gameID: gameID,
+    playerID: playerID,
+    action: 'nextRound'
+  }, cb);
+};
+
 module.exports.log = function() {
   // Log things to the console while developing
   if (~conf.isProduction) {

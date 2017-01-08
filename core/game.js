@@ -128,10 +128,10 @@ Game._getGameInfoWithConnPromise = async (
   gameInfo.scores = scores;
   gameInfo.choices = choices;
 
-  return({
+  return {
     gameInfo: gameInfo,
     playerInfo: null
-  });
+  };
 };
 
 Game._updateIfDoneRespondingWithConnPromise = async (
@@ -365,6 +365,65 @@ Game._chooseScenarioPromise = async (
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
+/**
+ * Choose the next user.
+ */
+Game._getNextReactor = (users: Array<number>, oldReactor: number) => {
+  if (users.length == 0) {
+    return;
+  }
+  let oldIdx = users.indexOf(oldReactor);
+  if (oldIdx == users.length - 1) {
+    return users[0];
+  }
+  return users[oldIdx + 1];
+};
+
+/**
+ * Advance to the next round.
+ **/
+Game._nextRoundPromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  let [info, image, userIDs] = await Promise.all([
+    Game._getGameInfoWithConnPromise(conn, req.gameID),
+    Game._getNextImagePromise(),
+    DAO.getGameUsersPromise(conn, req.gameID)
+  ]);
+  let gameInfo = info.gameInfo;
+  if (req.playerID != gameInfo.reactorID) {
+    throw new Error('Error moving to the next round: Wait up!');
+  }
+
+  // Get the next reactor
+  let nextReactor = Game._getNextReactor(userIDs, gameInfo.reactorID);
+  if (!nextReactor) {
+    throw new Error('Error moving to the next round: No players left.');
+  }
+  let nextReactorNickname = (await DAO.getUserPromise(conn, nextReactor)).nickname;
+
+  // Remove responses from people and set submittedScenario to false
+  await Promise.all(userIDs.map(
+    (userID) => DAO.setUserPromise(conn, userID, {
+      response: null,
+      submittedScenario: false
+    })
+  ));
+
+  await DAO.setGamePromise(conn, req.gameID, {
+    round: gameInfo.round + 1,
+    image: image,
+    waitingForScenarios: true,
+    reactorID: nextReactor,
+    reactorNickname: nextReactorNickname,
+    winningResponse: null,
+    winningResponseSubmittedBy: null
+  });
+
+  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+};
+
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
   getGameInfo: Game._getGameInfoPromise,
@@ -373,7 +432,8 @@ const actions = {
   createNewGame: Game._createNewGamePromise,
   startGame: Game._startGamePromise,
   submitResponse: Game._submitResponsePromise,
-  chooseScenario: Game._chooseScenarioPromise
+  chooseScenario: Game._chooseScenarioPromise,
+  nextRound: Game._nextRoundPromise
 };
 
 /**

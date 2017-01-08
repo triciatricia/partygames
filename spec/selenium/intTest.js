@@ -129,5 +129,12 @@ describe('website', () => {
       expect(user2.getText('#score')).toEqual('0');
     }
 
+    // Go to the next round
+    user1.waitForExist('button=Next');
+    user1.click('button=Next');
+    user1.waitForExist('#submitResponseButton');
+    user1.waitForExist('#round');
+    expect(user1.getText('#round')).toEqual('2', 'Get to next round');
+
   });
 });
