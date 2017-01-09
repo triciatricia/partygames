@@ -217,14 +217,14 @@ Game._createNewGamePromise = async () => {
 
 Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
   // Check if there is a user with the same nickname in the game
-  for (var n in gameInfo.scores) {
+  for (const n in gameInfo.scores) {
     if (n == name) {
       return true;
     }
   }
 
   return false;
-}
+};
 
 Game._setHostWithConnPromise = async (
   conn: ConnUtils.DBConn,
@@ -343,7 +343,7 @@ Game._submitResponsePromise = async (
 
 /**
  * Choose the scenario.
- **/
+ */
 Game._chooseScenarioPromise = async (
   req: Object,
   conn: ConnUtils.DBConn
