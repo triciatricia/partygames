@@ -119,6 +119,14 @@ module.exports.nextRound = function(gameID, playerID, cb) {
   }, cb);
 };
 
+module.exports.endGame = function(gameID, playerID, cb) {
+  postToServer({
+    gameID: gameID,
+    playerID: playerID,
+    action: 'endGame'
+  }, cb);
+};
+
 module.exports.log = function() {
   // Log things to the console while developing
   if (~conf.isProduction) {

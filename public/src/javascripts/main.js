@@ -94,7 +94,8 @@ const ScenarioList = React.createClass({
     winningResponseSubmittedBy: React.PropTypes.string,
     isReactor: React.PropTypes.bool,
     chooseScenario: React.PropTypes.func,
-    nextRound: React.PropTypes.func
+    nextRound: React.PropTypes.func,
+    endGame: React.PropTypes.func
   },
   getInitialState: function() {
     return {
@@ -107,6 +108,7 @@ const ScenarioList = React.createClass({
   render: function() {
     let scenarios;
     let button;
+    let endGameButton;
     if (this.props.isReactor && this.props.winningResponse === null) {
       // have the reactor choose their favorite scenario
       scenarios = Object.getOwnPropertyNames(this.props.choices).map(
@@ -151,6 +153,10 @@ const ScenarioList = React.createClass({
           type="button"
           className="btn btn-default"
           onClick={this.props.nextRound} >Next</button>;
+        endGameButton = <button
+          type="button"
+          className="btn btn-default"
+          onClick={this.props.endGame} >End Game</button>;
       }
     }
     return (
@@ -158,6 +164,7 @@ const ScenarioList = React.createClass({
         <label>{this.props.reactorNickname}&#39;s response when:</label>
         {scenarios}
         {button}
+        {endGameButton}
       </form>
     );
   }
@@ -169,7 +176,8 @@ const ResponseForm = React.createClass({
     playerInfo: React.PropTypes.object,
     submitResponse: React.PropTypes.func,
     chooseScenario: React.PropTypes.func,
-    nextRound: React.PropTypes.func
+    nextRound: React.PropTypes.func,
+    endGame: React.PropTypes.func
   },
   submitResponse: function() {
     this.props.submitResponse(this.refs.response.value.trim());
@@ -219,7 +227,8 @@ const ResponseForm = React.createClass({
           winningResponseSubmittedBy={this.props.gameInfo.winningResponseSubmittedBy}
           isReactor={this.props.gameInfo.reactorID == this.props.playerInfo.id}
           chooseScenario={this.props.chooseScenario}
-          nextRound={this.props.nextRound} />
+          nextRound={this.props.nextRound}
+          endGame={this.props.endGame} />
       </div>
     );
   }
@@ -231,7 +240,8 @@ const RoundInfo = React.createClass({
     playerInfo: React.PropTypes.object,
     submitResponse: React.PropTypes.func,
     chooseScenario: React.PropTypes.func,
-    nextRound: React.PropTypes.func
+    nextRound: React.PropTypes.func,
+    endGame: React.PropTypes.func
   },
   render: function() {
     return (
@@ -246,7 +256,8 @@ const RoundInfo = React.createClass({
             playerInfo={this.props.playerInfo}
             submitResponse={this.props.submitResponse}
             chooseScenario={this.props.chooseScenario}
-            nextRound={this.props.nextRound} />
+            nextRound={this.props.nextRound}
+            endGame={this.props.endGame} />
         </div>
       </div>
     );
@@ -414,7 +425,7 @@ const GameOver = React.createClass({
     return (
       <div className="jumbotron">
         <p>And we are done!</p>
-        <ul className="list-unstyled">{scoreTable}</ul>
+        <ul id="scoreTable" className="list-unstyled">{scoreTable}</ul>
         {againButton}
       </div>
     );
@@ -567,6 +578,17 @@ const Container = React.createClass({
         });
       });
   },
+  endGame: function() {
+    GameUtils.endGame(
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      (err, gameInfo, playerInfo) =>
+        this.setState({
+          errorMessage: err,
+          gameInfo: gameInfo,
+          playerInfo: playerInfo
+        }));
+  },
   componentDidMount: function() {
     this.pollGameInfo();
     setInterval(this.pollGameInfo, 1000);
@@ -591,7 +613,8 @@ const Container = React.createClass({
             playerInfo={this.state.playerInfo}
             submitResponse={this.submitResponse}
             chooseScenario={this.chooseScenario}
-            nextRound={this.nextRound} />
+            nextRound={this.nextRound}
+            endGame={this.endGame} />
         </div>
       );
     }

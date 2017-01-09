@@ -424,6 +424,44 @@ Game._nextRoundPromise = async (
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
+/**
+ * End the game.
+ **/
+Game._endGamePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  let [info, userIDs] = await Promise.all([
+    Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
+    DAO.getGameUsersPromise(conn, req.gameID)
+  ]);
+
+  if (req.gameID != info.playerInfo.game) {
+    throw new Error('Error ending game: Player not in game.');
+  }
+
+  // Remove responses from people and set submittedScenario to false
+  await Promise.all(userIDs.map(
+    (userID) => DAO.setUserPromise(conn, userID, {
+      response: null,
+      submittedScenario: false
+    })
+  ));
+
+  await DAO.setGamePromise(conn, req.gameID, {
+    round: null,
+    image: null,
+    waitingForScenarios: false,
+    reactorID: null,
+    reactorNickname: null,
+    winningResponse: null,
+    winningResponseSubmittedBy: null,
+    gameOver: true
+  });
+
+  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+};
+
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
   getGameInfo: Game._getGameInfoPromise,
@@ -433,7 +471,8 @@ const actions = {
   startGame: Game._startGamePromise,
   submitResponse: Game._submitResponsePromise,
   chooseScenario: Game._chooseScenarioPromise,
-  nextRound: Game._nextRoundPromise
+  nextRound: Game._nextRoundPromise,
+  endGame: Game._endGamePromise
 };
 
 /**

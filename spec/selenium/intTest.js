@@ -172,13 +172,22 @@ describe('website', () => {
     user2.waitForExist('button=Next');
     user1.waitForExist('p.chosen');
     user3.waitForExist('p.chosen');
-    expect(user1.getText('#score')).toEqual('1');
-    expect(user2.getText('#score')).toEqual('0');
-    expect(user3.getText('#score')).toEqual('1');
+    expect(user1.getText('#score')).toEqual('1', 'Score of user1 should be 1');
+    expect(user2.getText('#score')).toEqual('0', 'Score of user2 should be 0');
+    expect(user3.getText('#score')).toEqual('1', 'Score of user3 should be 1');
 
     // End game
-    user2.waitForExist('button=End');
-    user2.click('button=End');
+    user2.waitForExist('button=End Game');
+    user2.click('button=End Game');
+    console.log('Ended game');
+    user1.waitForExist('#scoreTable');
+    let scores = user1.getText('#scoreTable li');
+    expect(scores.length).toEqual(3, 'There should be 3 items in the score table');
+    expect(scores).toContain('1 user1', 'User1 should be in the score table');
+    expect(scores).toContain('1 user3', 'User3 should be in the score table');
+    expect(scores[2]).toEqual('0 user2', 'User2 should be last in the score table');
+
+    user1.debug();
 
   });
 });
