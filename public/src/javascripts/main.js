@@ -390,7 +390,8 @@ const NewPlayer = React.createClass({
 const GameOver = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
-    playerInfo: React.PropTypes.object
+    playerInfo: React.PropTypes.object,
+    startGame: React.PropTypes.func
   },
   render: function() {
     /* Display scores in descending order */
@@ -413,20 +414,15 @@ const GameOver = React.createClass({
       }
     );
 
-    let againButton;
-    if (this.props.playerInfo.id == this.props.gameInfo.hostID) {
-      againButton = (
-        <button type="button" className="btn btn-primary">
-          Again!
-        </button>
-      );
-    }
-
     return (
       <div className="jumbotron">
         <p>And we are done!</p>
         <ul id="scoreTable" className="list-unstyled">{scoreTable}</ul>
-        {againButton}
+        <button
+          type="button"
+          id="rematchButton"
+          className="btn btn-primary"
+          onClick={this.props.startGame} >Again!</button>
       </div>
     );
   }
@@ -622,7 +618,8 @@ const Container = React.createClass({
       return (
         <GameOver
           gameInfo={this.state.gameInfo}
-          playerInfo={this.state.playerInfo} />
+          playerInfo={this.state.playerInfo}
+          startGame={this.startGame} />
       );
     }
     if (this.state.playerInfo == null) {

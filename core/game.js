@@ -280,9 +280,10 @@ Game._createPlayerPromise = async (req: Object, conn: ConnUtils.DBConn) => {
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
 Game._startGamePromise = async (req: Object, conn: ConnUtils.DBConn) => {
-  let [info, image] = await Promise.all([
+  let [info, image, userIDs] = await Promise.all([
     Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
-    Game._getNextImagePromise()
+    Game._getNextImagePromise(),
+    DAO.getGameUsersPromise(conn, req.gameID)
   ]);
   let [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
@@ -294,9 +295,17 @@ Game._startGamePromise = async (req: Object, conn: ConnUtils.DBConn) => {
     reactorNickname: playerInfo.nickname
   };
 
-  if (req.playerID != gameInfo.hostID) {
-    throw new Error('Error starting game: You\'re not the host. Please wait for the host to start the game.');
+  if (req.gameID != playerInfo.game) {
+    throw new Error('Error starting game: Couldn\'t find player in game.');
   }
+
+  await Promise.all(userIDs.map(
+    (userID) => DAO.setUserPromise(conn, userID, {
+      response: null,
+      submittedScenario: false,
+      score: 0
+    })
+  ));
 
   let res = await DAO.setGamePromise(conn, req.gameID, gameChanges);
   if (!res) {

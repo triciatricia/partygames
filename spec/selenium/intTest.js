@@ -187,6 +187,19 @@ describe('website', () => {
     expect(scores).toContain('1 user3', 'User3 should be in the score table');
     expect(scores[2]).toEqual('0 user2', 'User2 should be last in the score table');
 
+    // rematch
+    user3.waitForExist('#rematchButton');
+    user3.click('#rematchButton');
+    user1.waitForExist('#round');
+    expect(user1.getText('#round')).toEqual('1', 'Round should be reset to 1');
+    user1.waitForExist('#score');
+    expect(user1.getText('#score')).toEqual('0', 'Score should be reset to 0');
+    user1.waitForExist('#gif');
+    user2.waitForExist('#score');
+    expect(user2.getText('#score')).toEqual('0', 'Score should be reset to 0');
+    user3.waitForExist('#score');
+    expect(user3.getText('#score')).toEqual('0', 'Score should be reset to 0');
+
     user1.debug();
 
   });
