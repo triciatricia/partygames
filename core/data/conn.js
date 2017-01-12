@@ -104,6 +104,30 @@ const ConnectionUtils = {
     });
   },
 
+  beginTransactionPromise: function(conn: DBConn): Promise<void> {
+    return new Promise(function(resolve, reject) {
+      conn.getConn().beginTransaction((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  },
+
+  commitTransactionPromise: function(conn: DBConn): Promise<void> {
+    return new Promise(function(resolve, reject) {
+      conn.getConn().commit((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  },
+
   DBConn: DBConn
 };
 

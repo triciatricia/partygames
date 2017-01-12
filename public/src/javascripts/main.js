@@ -325,7 +325,7 @@ const NewGame = React.createClass({
               <input type="gameCode" className='form-control' id="gameCode"
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
-              <p className="help-block">{this.props.errorMessage}</p>
+              <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
               <button id="joinGameButton" type="button" className="btn btn-default"
                 onClick={this.joinGame} >
                 Join Game
@@ -374,7 +374,7 @@ const NewPlayer = React.createClass({
               <input type="text" className="form-control" id="nickname" value={this.state.nickname}
                 placeholder="What do you want to be called?" onChange={this.handleChange}
                 ref="nicknameInput" />
-              <p className="help-block">{this.props.errorMessage}</p>
+              <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
               <button type="button" id="submitNicknameButton" className="btn btn-primary btn-lg"
                 onClick={this.createPlayer}>
                 Submit nickname
@@ -473,7 +473,7 @@ const Container = React.createClass({
     GameUtils.createPlayer(nickname, this.state.gameInfo.id, (err, gameInfo, playerInfo) => {
       if (err) {
         this.setState({
-          errorMessage: 'Error creating new player. ' + err
+          errorMessage: err
         });
       } else {
         this.setState({

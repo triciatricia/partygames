@@ -26,6 +26,15 @@ describe('website', () => {
     user2.setValue('#gameCode', gameCode);
     user2.click('#joinGameButton');
     user2.waitForExist('#nickname');
+    // Try to use the same name (should error)
+    user2.setValue('#nickname', 'user1');
+    user2.click('#submitNicknameButton');
+    user2.waitForExist('#errorMessage');
+    console.log(user2.getText('#errorMessage'));
+    expect(user2.getText('#errorMessage')).toEqual(
+      'user1 is already taken. Please use another name.',
+      'Should display error for having same name.'
+    );
     user2.setValue('#nickname', 'user2');
     user2.click('#submitNicknameButton');
     user2.waitForExist('#gameCode');

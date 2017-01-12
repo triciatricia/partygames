@@ -12,17 +12,9 @@ router.get('/', function(req, res) {
 /* POST for game api */
 router.post('/api/game', async (req, res) => {
   console.log('Game API request:', req.body);
-  let error = null; // TODO validate
-
-  if (error) {
-    console.log('Failed game API request:', req.body, error);
-    return res.json({
-      result: null,
-      errorMessage: error
-    });
-  }
 
   try {
+
     let info = await game.processRequest(req.body);
     console.log('Sending info:', info);
     res.json({
@@ -32,11 +24,14 @@ router.post('/api/game', async (req, res) => {
       },
       errorMessage: null
     });
+
   } catch(err) {
+
     console.log('Sending error:', err);
     res.json({
-      errorMessage: err
+      errorMessage: err.message
     });
+
   }
   /*
   game.processRequest(

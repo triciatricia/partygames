@@ -114,7 +114,7 @@ Game._getPlayerGameInfoWithConnPromise = async (
 Game._getGameInfoWithConnPromise = async (
   conn: ConnUtils.DBConn,
   gameID: number
-): Promise<{gameInfo: GameInfo, playerInfo: null}> => {
+): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
   let [gameInfo, userIDs] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
@@ -179,7 +179,10 @@ Game._checkAllResponsesInWithConnPromise = async (
   return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID);
 };
 
-Game._getGameInfoPromise = async (req: Object, conn: ConnUtils.DBConn) => {
+Game._getGameInfoPromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Promise to return game info (and player info if the player ID is given)
   if (req.playerID) {
     return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
@@ -187,17 +190,24 @@ Game._getGameInfoPromise = async (req: Object, conn: ConnUtils.DBConn) => {
   return await Game._getGameInfoWithConnPromise(conn, req.gameID);
 };
 
-Game._joinGamePromise = async (req: Object, conn: ConnUtils.DBConn) => {
+Game._joinGamePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Get the gameID of a game and check if it's a valid
   // game.
   let gameID = Game._getIDFromGameCode(req.gameCode);
-  return {gameInfo: await DAO.getGamePromise(conn, gameID)};
+  return {
+    gameInfo: await DAO.getGamePromise(conn, gameID),
+    playerInfo: null
+  };
 };
 
 /**
  * Create a new game
  */
-Game._createNewGamePromise = async () => {
+Game._createNewGamePromise = async (
+): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   let conn;
 
   try {
@@ -260,7 +270,10 @@ Game._addNewPlayerWithConnPromise = async (
   return playerID;
 };
 
-Game._createPlayerPromise = async (req: Object, conn: ConnUtils.DBConn) => {
+Game._createPlayerPromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   // Create a player called req.nickname
   // in the game req.gameID
   let gameID = Game._getIDFromGameCode(req.gameID);
@@ -279,7 +292,10 @@ Game._createPlayerPromise = async (req: Object, conn: ConnUtils.DBConn) => {
 /**
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
-Game._startGamePromise = async (req: Object, conn: ConnUtils.DBConn) => {
+Game._startGamePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   let [info, image, userIDs] = await Promise.all([
     Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
     Game._getNextImagePromise(),
@@ -491,7 +507,7 @@ const actions = {
  */
 Game.processRequest = async (
   req: Object
-): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+): Promise<?{gameInfo: GameInfo, playerInfo: ?Object}> => {
   if (!req.hasOwnProperty('action') || !actions.hasOwnProperty(req.action)) {
     throw new Error('Error while processing your information');
   }
@@ -500,7 +516,18 @@ Game.processRequest = async (
   try {
 
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-    return await actions[req.action](req, conn);
+    await ConnUtils.beginTransactionPromise(conn);
+    let info = await actions[req.action](req, conn);
+    await ConnUtils.commitTransactionPromise(conn);
+    return info;
+
+  } catch (err) {
+
+    console.log(err);
+    if (conn && conn.getConn) {
+      conn.getConn().rollback();
+    }
+    throw err;
 
   } finally {
 
