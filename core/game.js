@@ -207,22 +207,13 @@ Game._joinGamePromise = async (
  * Create a new game
  */
 Game._createNewGamePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
-  let conn;
-
-  try {
-
-    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-    let res = await DAO.newGamePromise(conn, defaultGame);
-    console.log('Creating game with ID ' + res.insertId);
-    let gameInfo = await DAO.getGamePromise(conn, res.insertId);
-    return {gameInfo, playerInfo: null};
-
-  } finally {
-    if (conn && conn.getConn) {
-      conn.getConn().end();
-    }
-  }
+  let res = await DAO.newGamePromise(conn, defaultGame);
+  console.log('Creating game with ID ' + res.insertId);
+  let gameInfo = await DAO.getGamePromise(conn, res.insertId);
+  return {gameInfo, playerInfo: null};
 };
 
 Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
@@ -277,8 +268,6 @@ Game._createPlayerPromise = async (
   // Create a player called req.nickname
   // in the game req.gameID
   let gameID = Game._getIDFromGameCode(req.gameID);
-
-  conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
   let gameInfo: GameInfo = (await Game._getGameInfoWithConnPromise(conn, gameID)).gameInfo;
   let playerID = await Game._addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
 
