@@ -10,7 +10,8 @@ var Games = {
   hostID: DataTypes.id(),
   gameOver: DataTypes.boolean(),
   winningResponse: DataTypes.id(),
-  winningResponseSubmittedBy: DataTypes.char()
+  winningResponseSubmittedBy: DataTypes.char(),
+  lastGif: DataTypes.char()
 };
 
 module.exports = Games;

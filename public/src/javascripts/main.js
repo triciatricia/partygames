@@ -177,7 +177,8 @@ const ResponseForm = React.createClass({
     submitResponse: React.PropTypes.func,
     chooseScenario: React.PropTypes.func,
     nextRound: React.PropTypes.func,
-    endGame: React.PropTypes.func
+    endGame: React.PropTypes.func,
+    skipImage: React.PropTypes.func
   },
   submitResponse: function() {
     this.props.submitResponse(this.refs.response.value.trim());
@@ -188,7 +189,11 @@ const ResponseForm = React.createClass({
         return (
           <div>
             <p>Waiting for responses. Hold on tight!</p>
-            <button type="submit" className="btn btn-default">Skip Image</button>
+            <button
+              type="button"
+              id="skipImageButton"
+              className="btn btn-default"
+              onClick={this.props.skipImage} >Skip Image</button>
           </div>);
       }
 
@@ -241,7 +246,8 @@ const RoundInfo = React.createClass({
     submitResponse: React.PropTypes.func,
     chooseScenario: React.PropTypes.func,
     nextRound: React.PropTypes.func,
-    endGame: React.PropTypes.func
+    endGame: React.PropTypes.func,
+    skipImage: React.PropTypes.func
   },
   render: function() {
     return (
@@ -257,7 +263,8 @@ const RoundInfo = React.createClass({
             submitResponse={this.props.submitResponse}
             chooseScenario={this.props.chooseScenario}
             nextRound={this.props.nextRound}
-            endGame={this.props.endGame} />
+            endGame={this.props.endGame}
+            skipImage={this.props.skipImage} />
         </div>
       </div>
     );
@@ -562,6 +569,17 @@ const Container = React.createClass({
         });
       });
   },
+  skipImage: function() {
+    GameUtils.skipImage(
+      this.state.gameInfo.id,
+      this.state.playerInfo.id,
+      (err, gameInfo, playerInfo) =>
+        this.setState({
+          errorMessage: err,
+          gameInfo: gameInfo,
+          playerInfo: playerInfo
+        }));
+  },
   nextRound: function() {
     GameUtils.nextRound(
       this.state.gameInfo.id,
@@ -610,7 +628,8 @@ const Container = React.createClass({
             submitResponse={this.submitResponse}
             chooseScenario={this.chooseScenario}
             nextRound={this.nextRound}
-            endGame={this.endGame} />
+            endGame={this.endGame}
+            skipImage={this.skipImage} />
         </div>
       );
     }

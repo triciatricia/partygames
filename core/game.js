@@ -38,17 +38,20 @@ Game._getIDFromGameCode = (code: string): number => {
 /**
  * Promise to return a random reaction image url.
  */
-Game._getNextImagePromise = (): Promise<string> => {
+Game._getNextImagePromise = (
+  lastPostRetrieved?: string
+): Promise<{gifUrl: string, lastPostRetrieved: string}> => {
   return new Promise((resolve, reject) => {
-    Gifs.getRandomGif((err, gifUrl) => {
+    Gifs.getRandomGif((err, gifUrl, lastPostRetrieved) => {
       if (err) {
         reject(err);
       } else if (!gifUrl) {
         reject('Cannot find a gif');
       } else {
-        resolve(gifUrl);
+        resolve({gifUrl, lastPostRetrieved});
       }
-    });
+    },
+  lastPostRetrieved);
   });
 };
 
@@ -285,7 +288,7 @@ Game._startGamePromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  let [info, image, userIDs] = await Promise.all([
+  let [info, imageInfo, userIDs] = await Promise.all([
     Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
     Game._getNextImagePromise(),
     DAO.getGameUsersPromise(conn, req.gameID)
@@ -294,10 +297,11 @@ Game._startGamePromise = async (
 
   let gameChanges = {
     round: 1,
-    image: image,
+    image: imageInfo.gifUrl,
     waitingForScenarios: true,
     reactorID: req.playerID,
-    reactorNickname: playerInfo.nickname
+    reactorNickname: playerInfo.nickname,
+    lastGif: imageInfo.lastPostRetrieved
   };
 
   if (req.gameID != playerInfo.game) {
@@ -321,6 +325,24 @@ Game._startGamePromise = async (
       playerInfo: playerInfo
     });
   }
+};
+
+/**
+ * Change the gif
+ */
+Game._skipImagePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  let imageInfo = await Game._getNextImagePromise(info.gameInfo.lastGif);
+
+  await DAO.setGamePromise(conn, req.gameID, {
+    image: imageInfo.gifUrl,
+    lastGif: imageInfo.lastPostRetrieved
+  });
+
+  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
 /**
@@ -400,15 +422,16 @@ Game._nextRoundPromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  let [info, image, userIDs] = await Promise.all([
+  let [info, userIDs] = await Promise.all([
     Game._getGameInfoWithConnPromise(conn, req.gameID),
-    Game._getNextImagePromise(),
     DAO.getGameUsersPromise(conn, req.gameID)
   ]);
   let gameInfo = info.gameInfo;
   if (req.playerID != gameInfo.reactorID) {
     throw new Error('Error moving to the next round: Wait up!');
   }
+
+  let imageInfo = await Game._getNextImagePromise(gameInfo.lastGif);
 
   // Get the next reactor
   let nextReactor = Game._getNextReactor(userIDs, gameInfo.reactorID);
@@ -427,12 +450,13 @@ Game._nextRoundPromise = async (
 
   await DAO.setGamePromise(conn, req.gameID, {
     round: gameInfo.round + 1,
-    image: image,
+    image: imageInfo.gifUrl,
     waitingForScenarios: true,
     reactorID: nextReactor,
     reactorNickname: nextReactorNickname,
     winningResponse: null,
-    winningResponseSubmittedBy: null
+    winningResponseSubmittedBy: null,
+    lastGif: imageInfo.lastPostRetrieved
   });
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
@@ -483,6 +507,7 @@ const actions = {
   createPlayer: Game._createPlayerPromise,
   createNewGame: Game._createNewGamePromise,
   startGame: Game._startGamePromise,
+  skipImage: Game._skipImagePromise,
   submitResponse: Game._submitResponsePromise,
   chooseScenario: Game._chooseScenarioPromise,
   nextRound: Game._nextRoundPromise,

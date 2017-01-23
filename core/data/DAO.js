@@ -23,7 +23,8 @@ export type GameInfo = {
   winningResponse: string,
   winningResponseSubmittedBy: number,
   scores: Object,
-  choices: Object
+  choices: Object,
+  lastGif: string
 };
 
 // All the data access objects

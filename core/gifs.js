@@ -26,7 +26,10 @@ function filterPosts(posts: Array<{data: {url: string}}>): Array<string> {
   return filteredPosts;
 };
 
-function fetchData(cb: (urls: Array<string>, lastPostRetrieved: string) => void, lastPostRetrieved?: string): void {
+function fetchData(
+  cb: (urls: Array<string>, lastPostRetrieved: string) => void,
+  lastPostRetrieved?: string
+): void {
   // Grab some gif urls from reddit
   // cb(urls, ID of lastPostRetrieved)
   // TODO Check for error
@@ -59,23 +62,29 @@ function fetchData(cb: (urls: Array<string>, lastPostRetrieved: string) => void,
   );
 };
 
-module.exports.getRandomGif = (cb: (err: ?string, url: string) => void) => {
-  fetchData((posts: Array<string>) => {
-    // TODO Change to callback
-    if(posts.length >= 1) {
-      cb(null, utils.randItem(posts));
-    } else {
-      // Try again
-      fetchData((posts) => {
-        if(posts.length >= 1) {
-          cb(null, utils.randItem(posts));
-        } else {
-          // If no suitable gif is found, return the default.
-          cb(null, 'http://i.imgur.com/rxkWqmt.gif');
-        }
-      });
-    }
-  });
+module.exports.getRandomGif = (
+  cb: (err: ?string, url: string, lastPostRetrieved: string) => void,
+  lastPostRetrieved?: string
+) => {
+  fetchData(
+    (posts: Array<string>, newLastPostRetrieved: string) => {
+      // TODO Change to callback
+      if(posts.length >= 1) {
+        cb(null, utils.randItem(posts), newLastPostRetrieved);
+      } else {
+        // Try again
+        fetchData((posts, newLastPostRetrieved) => {
+          if(posts.length >= 1) {
+            cb(null, utils.randItem(posts), newLastPostRetrieved);
+          } else {
+            // If no suitable gif is found, return the default.
+            cb(null, 'http://i.imgur.com/rxkWqmt.gif', newLastPostRetrieved);
+          }
+        }, newLastPostRetrieved);
+      }
+    },
+    lastPostRetrieved
+  );
 };
 
 module.exports.fetchData = fetchData;

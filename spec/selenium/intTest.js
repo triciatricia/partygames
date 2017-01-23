@@ -74,7 +74,15 @@ describe('website', () => {
     user2.waitForExist('#round');
     expect(user2.getText('#round')).toEqual('1');
     user2.waitForExist('#gif');
-    expect(user2.getAttribute('#gif', 'src')).toEqual(gif);
+    expect(user2.getAttribute('#gif', 'src')).toEqual(
+      gif,
+      'User 1 and user 2 should see the same gif'
+    );
+    user3.waitForExist('#gif');
+    expect(user3.getAttribute('#gif', 'src')).toEqual(gif);
+    user1.waitForExist('#skipImageButton');
+    user1.click('#skipImageButton');
+    user2.waitUntil(() => user2.getAttribute('#gif', 'src') != gif);
     user2.waitForExist('#scenario');
     user2.setValue('#scenario', 'response A user2');
     user2.click('#submitResponseButton');
@@ -94,8 +102,6 @@ describe('website', () => {
     expect(user3.getText('#score')).toEqual('0');
     user3.waitForExist('#round');
     expect(user3.getText('#round')).toEqual('1');
-    user3.waitForExist('#gif');
-    expect(user3.getAttribute('#gif', 'src')).toEqual(gif);
     user3.waitForExist('#scenario');
     user3.setValue('#scenario', 'response user3');
     user3.click('#submitResponseButton');

@@ -111,6 +111,14 @@ module.exports.chooseScenario = function(choiceID, gameID, playerID, round, cb) 
   }, cb);
 };
 
+module.exports.skipImage = function(gameID, playerID, cb) {
+  postToServer({
+    gameID: gameID,
+    playerID: playerID,
+    action: 'skipImage'
+  }, cb);
+};
+
 module.exports.nextRound = function(gameID, playerID, cb) {
   postToServer({
     gameID: gameID,

@@ -11,12 +11,16 @@ router.get('/', function(req, res) {
 
 /* POST for game api */
 router.post('/api/game', async (req, res) => {
-  console.log('Game API request:', req.body);
+  if (req.body.hasOwnProperty('action') && req.body.action != 'getGameInfo') {
+    console.log('Game API request:', req.body);
+  }
 
   try {
 
     let info = await game.processRequest(req.body);
-    console.log('Sending info:', info);
+    if (req.body.hasOwnProperty('action') && req.body.action != 'getGameInfo') {
+      console.log('Sending info:', info);
+    }
     res.json({
       result: {
         gameInfo: info.gameInfo,
