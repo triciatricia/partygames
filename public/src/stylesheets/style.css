@@ -6,6 +6,16 @@ body {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
+@media (min-width: 992px) {
+  body {
+    padding: 10px;
+  } /* TODO make this work */
+}
+
+.container-fluid {
+  padding: 0px;
+}
+
 div {
   /* border: 1px solid #6f6f6f; */
 }
@@ -16,6 +26,10 @@ a {
 
 p.help-block {
   font-size: 14px;
+}
+
+p.small {
+  font-size: medium;
 }
 
 .chosen {
@@ -32,7 +46,7 @@ p.help-block {
   font-weight: 400;
   line-height: 1.42857143;
   text-align: center;
-  white-space: nowrap;
+  white-space: wrap;
   vertical-align: middle;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -50,7 +64,7 @@ p.help-block {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.42857143;
-  white-space: nowrap;
+  white-space: wrap;
   vertical-align: middle;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -58,4 +72,14 @@ p.help-block {
   -ms-user-select: none;
   border: 1px solid transparent;
   border-radius: 4px;
+}
+
+div.radio.scenario {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+img#gif {
+  width: 100%;
+  padding-bottom: 15px;
 }

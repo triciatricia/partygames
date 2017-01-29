@@ -29,7 +29,7 @@ const ReactionImage = React.createClass({
   render: function() {
     return (
       <div>
-        <img id="gif" src={this.props.image} />
+        <img id="gif" className="img-responsive" src={this.props.image} />
       </div>
     );
   }
@@ -188,7 +188,8 @@ const ResponseForm = React.createClass({
       if (this.props.playerInfo.id == this.props.gameInfo.reactorID) {
         return (
           <div>
-            <p>Waiting for responses. Hold on tight!</p>
+            <p></p>
+            <p className="small">Waiting for responses. Hold on tight!</p>
             <button
               type="button"
               id="skipImageButton"
@@ -289,9 +290,12 @@ const WaitingToStart = React.createClass({
     }
     return (
       <div>
-        <p>Waiting to start!</p>
-        <p>Enter this code to join the game: <span id="gameCode">{this.props.gameID}</span></p>
-        <p><span id="nPlayers">{this.props.nPlayers}</span> players have joined... </p>
+        <h2>Waiting to start!</h2>
+        <p className="small">
+          Game code: <span id="gameCode">{this.props.gameID}</span><br />
+          <span className="text-muted">
+            <span id="nPlayers">{this.props.nPlayers}</span> players have joined...</span>
+        </p>
         {button}
       </div>
     );
@@ -323,32 +327,37 @@ const NewGame = React.createClass({
   },
   render: function() {
     return (
-      <div className="jumbotron">
-        <h1>Hello!</h1>
-        <p>Are you ready to react?</p>
-        <form>
-          <div className="row">
-            <div className={this.props.errorMessage ? 'form-group col-xs-6 has-error' : 'form-group col-xs-6'}>
+      <div className="row">
+        <div className="col-sm-6">
+          <h1>Hello!</h1>
+          <p>Are you ready to react?</p>
+          <form className="form-inline">
+            <p className={this.props.errorMessage ? "form-group has-error" : "form-group"}>
               <input type="gameCode" className='form-control' id="gameCode"
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
-              <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
+
+              <span id="errorMessage" className={this.props.errorMessage ? "help-block" : "hidden"}>
+                {this.props.errorMessage}
+              </span>
+
               <button id="joinGameButton" type="button" className="btn btn-default"
                 onClick={this.joinGame} >
                 Join Game
               </button>
-            </div>
-          </div>
-          <div className="row">
-            <div className="form-group col-xs-6">
+            </p>
+
+            <p></p>
+
+            <p className="form-group">
               <button id="newGameButton" type="button" className="btn btn-primary btn-lg"
                 onClick={this.createGame} >
                 <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
                  &nbsp;&nbsp;New Game
               </button>
-            </div>
-          </div>
-        </form>
+            </p>
+          </form>
+        </div>
       </div>
     );
   }
@@ -374,21 +383,21 @@ const NewPlayer = React.createClass({
   },
   render: function() {
     return (
-      <div className="jumbotron">
-        <form>
-          <div className="row">
-            <div className={this.props.errorMessage ? 'form-group col-xs-6 has-error' : 'form-group col-xs-6'}>
-              <input type="text" className="form-control" id="nickname" value={this.state.nickname}
-                placeholder="What do you want to be called?" onChange={this.handleChange}
-                ref="nicknameInput" />
-              <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
-              <button type="button" id="submitNicknameButton" className="btn btn-primary btn-lg"
-                onClick={this.createPlayer}>
-                Submit nickname
-              </button>
-            </div>
-          </div>
-        </form>
+      <div className="row">
+        <div className="col-sm-6">
+          <form>
+              <div className={this.props.errorMessage ? 'form-group has-error' : 'form-group'}>
+                <input type="text" className="form-control" id="nickname" value={this.state.nickname}
+                  placeholder="What do you want to be called?" onChange={this.handleChange}
+                  ref="nicknameInput" />
+                <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
+                <button type="button" id="submitNicknameButton" className="btn btn-primary btn-lg"
+                  onClick={this.createPlayer}>
+                  Submit nickname
+                </button>
+              </div>
+          </form>
+        </div>
       </div>
     );
   }
@@ -659,6 +668,8 @@ const Container = React.createClass({
 });
 
 ReactDOM.render(
-  <Container />,
+  <div className="jumbotron">
+    <Container />
+  </div>,
   document.getElementById('container')
 );
