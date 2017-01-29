@@ -27,28 +27,6 @@ function getConnection(callback, customConf) {
     });
   }
 
-  connection.connect(callback);
-
-  return connection;
-}
-
-function getConnection2(callback, customConf) {
-  /**
-   * customConf is an optional configuration
-   * If null, it will use the default in ../../conf.js.
-   */
-  let connection;
-  if (customConf) {
-    connection = mysql.createConnection(customConf);
-  } else {
-    connection = mysql.createConnection({
-      host: conf.dbHost,
-      user: conf.dbUser,
-      password: conf.dbPass,
-      database: conf.dbName
-    });
-  }
-
   connection.connect((err) => {
     callback(err, connection);
   });
@@ -78,26 +56,11 @@ Object.assign(DBConn.prototype, {
 });
 
 const ConnectionUtils = {
-  getNewConnection: function(mode: number, callback: (conn: mysql.Connection, cb: Function) => void, customConf: Object) {
-    /**
-     * customConf is an optional object with parameters
-     * host, user, password, and database.
-     */
-    assert(mode === ConnectionModes.READ || mode == ConnectionModes.WRITE);
-
-    var connection = getConnection(callback, customConf);
-    // assert(
-    //   connection.state != 'disconnected',
-    //   'New mysql connection should be connected to database.');
-
-    return new DBConn(connection, mode);
-  },
-
   Modes: ConnectionModes,
 
   getNewConnectionPromise: function(mode: number, customConf?: Object): Promise<DBConn> {
     return new Promise(function(resolve, reject) {
-      getConnection2(
+      getConnection(
         (err, conn) => (err ? reject(err) : resolve(new DBConn(conn, mode))),
         customConf
       );
