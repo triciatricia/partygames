@@ -6,10 +6,10 @@
 
 'use strict';
 
-var utils = require('../utils');
+const utils = require('../utils');
 
 // DataTypes holds all the DataFields defined below.
-var DataTypes = {};
+let DataTypes = {};
 
 function addType(name, dbTypeGetter, props) {
   /**
@@ -23,8 +23,8 @@ function addType(name, dbTypeGetter, props) {
   }
 
   if (props) {
-    for (var i = 0; i < props.length; ++i) {
-      var propName = utils.capitalizeFirst(props[i]);
+    for (let i = 0; i < props.length; ++i) {
+      const propName = utils.capitalizeFirst(props[i]);
       DataField.prototype['set' + propName] = function(value) {
         this.props[props[i]] = value;
         return this;

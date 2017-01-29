@@ -1,6 +1,6 @@
-var DataTypes = require('../core/data/types');
+const DataTypes = require('../core/data/types');
 
-var UserGame = {
+const UserGame = {
   user: DataTypes.id(),
   game: DataTypes.id()
 };

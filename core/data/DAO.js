@@ -28,7 +28,7 @@ export type GameInfo = {
 };
 
 // All the data access objects
-var DAOs = {};
+const DAOs = {};
 
 /**
  * @constructor
@@ -48,8 +48,8 @@ function DAO(DBConn) {
    * callback: Callback function(err, results)
    */
   this.getData = function(table, selectedCols, queryProps, callback) {
-    var command = 'SELECT ?? FROM ??';
-    var commandVals = [selectedCols, table];
+    let command = 'SELECT ?? FROM ??';
+    let commandVals = [selectedCols, table];
     if (queryProps) {
       command += ' WHERE ?';
       Array.prototype.push.apply(commandVals, [queryProps]);
@@ -70,8 +70,8 @@ function DAO(DBConn) {
     assert(this.DBConn.getMode() === conn.Modes.WRITE);
 
     // Make mysql command
-    var command = 'INSERT INTO ' + table + ' SET ?;';
-    var commandVals = [props];
+    const command = 'INSERT INTO ' + table + ' SET ?;';
+    const commandVals = [props];
 
     // Run mysql command
     this.DBConn.getConn().query(command, commandVals, callback);
@@ -90,9 +90,9 @@ function DAO(DBConn) {
     assert(this.DBConn.getMode() === conn.Modes.WRITE);
 
     // Make mysql command
-    var command = 'UPDATE ?? SET';
-    var commandVals = [table];
-    for (var prop in props) {
+    let command = 'UPDATE ?? SET';
+    let commandVals = [table];
+    for (const prop in props) {
       if (props.hasOwnProperty(prop)) {
         if (commandVals.length > 1) {
           command += ',';
@@ -125,8 +125,8 @@ function DAO(DBConn) {
     assert(this.DBConn.getMode() === conn.Modes.WRITE);
 
     // Make and run command
-    var command = 'DELETE FROM ? WHERE ?;';
-    var commandVals = [table, props];
+    const command = 'DELETE FROM ? WHERE ?;';
+    const commandVals = [table, props];
     this.DBConn.getConn().query(command, commandVals, callback);
   };
 }
@@ -138,9 +138,9 @@ DAOs.setGamePromise = function(
   props: Object
 ): Promise<?Object> {
   return new Promise((resolve, reject) => {
-    var gameDAO = new DAO(DBConn);
-    var gameTable = tables.game.tableName;
-    var gameIDName = tables.game.gameIDName;
+    const gameDAO = new DAO(DBConn);
+    const gameTable = tables.game.tableName;
+    const gameIDName = tables.game.gameIDName;
     gameDAO.updateData(gameTable, gameIDName, gameID, props, (err, res) => {
       (err ? reject(err) : resolve(res));
     });
@@ -153,11 +153,11 @@ DAOs.setGamePromise = function(
  */
 DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
-    let gameDAO = new DAO(DBConn);
+    const gameDAO = new DAO(DBConn);
     let props = {};
     // Copy all the properties from game to props.
     Object.assign(props, game);
-    let gameTable = tables.game.tableName;
+    const gameTable = tables.game.tableName;
 
     gameDAO.insertData(gameTable, props, (err, res) => {
       if (err) {
@@ -174,18 +174,18 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
  */
 DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Object> {
   return new Promise((resolve, reject) => {
-    var gameDAO = new DAO(DBConn);
-    var queryProps = {};
+    const gameDAO = new DAO(DBConn);
+    let queryProps = {};
     queryProps[tables.game.gameIDName] = gameID;
 
-    var cb = function(err, res) {
+    const cb = function(err, res) {
       if (err) {
         reject(err);
       } else if (res.length === 0) {
         reject('Could not find game ' + gameID + ' in database');
       } else {
         let game = res[0];
-        game.scores = {}; // TODO Placeholder for actual scores - need to organize better
+        game.scores = {};
         resolve(game);
       }
     };
@@ -199,9 +199,9 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
  */
 DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
   return new Promise((resolve, reject) => {
-    var userDAO = new DAO(DBConn);
-    var userTable = tables.users.tableName;
-    var userIDName = tables.users.userIDName;
+    const userDAO = new DAO(DBConn);
+    const userTable = tables.users.tableName;
+    const userIDName = tables.users.userIDName;
 
     // Modify the callback to change usergame if it's being changed
     // Assumes a user can't be in 2 games at the same time
@@ -226,11 +226,11 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
  */
 DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<number> {
   return new Promise((resolve, reject) => {
-    var userDAO = new DAO(DBConn);
-    var props = {};
+    const userDAO = new DAO(DBConn);
+    let props = {};
     Object.assign(props, user);
 
-    let cb = (err, userID) => {
+    const cb = (err, userID) => {
       if (err) {
         console.log(err);
         reject(err);
@@ -264,11 +264,11 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
  */
 DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Object> {
   return new Promise((resolve, reject) => {
-    var userDAO = new DAO(DBConn);
-    var queryProps = {};
+    const userDAO = new DAO(DBConn);
+    let queryProps = {};
     queryProps[tables.users.userIDName] = userID;
 
-    var cb = function(err, res) {
+    const cb = function(err, res) {
       if (err) {
         reject(err);
       } else if (res.length === 0) {
@@ -289,15 +289,15 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
  */
 DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promise<number[]> {
   return new Promise((resolve, reject) => {
-    var gameDAO = new DAO(DBConn);
-    var queryProps = {'game': gameID};
+    const gameDAO = new DAO(DBConn);
+    const queryProps = {'game': gameID};
 
     var cb = (err, res) => {
       if (err) {
         reject(err);
         return;
       }
-      var users = [];
+      let users = [];
       for (var i = 0; i < res.length; ++i) {
         users.push(res[i].user);
       }
@@ -322,8 +322,8 @@ const getUsersPropHelper = async (
     return {};
   }
 
-  let nextID = userIDs.pop();
-  let userInfo = await DAOs.getUserPromise(DBConn, nextID);
+  const nextID = userIDs.pop();
+  const userInfo = await DAOs.getUserPromise(DBConn, nextID);
   if (!userInfo) {
     throw new Error('Cannot find user record.');
   }

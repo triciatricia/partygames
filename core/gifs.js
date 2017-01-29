@@ -2,8 +2,8 @@
 
 /* @flow */
 
-var https = require('https');
-var utils = require('./utils');
+const https = require('https');
+const utils = require('./utils');
 
 const POST_LIMIT = 10;
 const HOSTNAME = 'www.reddit.com';
@@ -11,14 +11,14 @@ const PATH_BASE = '/r/reactiongifs/hot.json';
 
 function linkIsGif(url: string): boolean {
   // Return whether the url ends in '.gif'
-  var gifSuffix = '.gif';
+  const gifSuffix = '.gif';
   return (url.indexOf(gifSuffix, url.length - gifSuffix.length) > -1);
 }
 
 function filterPosts(posts: Array<{data: {url: string}}>): Array<string> {
   // Filter posts for gifs
-  var filteredPosts = [];
-  for (var i = 0; i < posts.length; i++ ) {
+  let filteredPosts = [];
+  for (let i = 0; i < posts.length; i++ ) {
     if (linkIsGif(posts[i].data.url)) {
       filteredPosts.push(posts[i].data.url);
     }
@@ -40,7 +40,7 @@ function fetchData(
 
   console.log('Retrieving reddit links from ' + HOSTNAME + path);
 
-  let httpsOptions = {
+  const httpsOptions = {
     hostname: HOSTNAME,
     path: path
   };
@@ -53,9 +53,9 @@ function fetchData(
         data += d;
       });
       res.on('end', () => {
-        let parsedData = JSON.parse(data);
-        let posts = parsedData.data.children;
-        let lastPostRetrieved = parsedData.data.after;
+        const parsedData = JSON.parse(data);
+        const posts = parsedData.data.children;
+        const lastPostRetrieved = parsedData.data.after;
         cb(filterPosts(posts), lastPostRetrieved);
       });
     }
@@ -69,12 +69,12 @@ module.exports.getRandomGif = (
   fetchData(
     (posts: Array<string>, newLastPostRetrieved: string) => {
       // TODO Change to callback
-      if(posts.length >= 1) {
+      if (posts.length >= 1) {
         cb(null, utils.randItem(posts), newLastPostRetrieved);
       } else {
         // Try again
         fetchData((posts, newLastPostRetrieved) => {
-          if(posts.length >= 1) {
+          if (posts.length >= 1) {
             cb(null, utils.randItem(posts), newLastPostRetrieved);
           } else {
             // If no suitable gif is found, return the default.

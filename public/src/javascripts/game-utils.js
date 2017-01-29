@@ -1,5 +1,5 @@
 /* Utilities for displaying the game */
-var conf = require('../../../conf');
+const conf = require('../../../conf');
 
 function postToServer(data, cb) {
   // Send game info to the server

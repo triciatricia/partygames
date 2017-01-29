@@ -402,12 +402,12 @@ const GameOver = React.createClass({
   },
   render: function() {
     /* Display scores in descending order */
-    let scores = this.props.gameInfo.scores;
+    const scores = this.props.gameInfo.scores;
     let playersSorted = Object.keys(scores);
     playersSorted.sort((p1, p2) => (scores[p2] - scores[p1]));
-    let highestScore = scores[playersSorted[0]];
+    const highestScore = scores[playersSorted[0]];
 
-    let scoreTable = playersSorted.map(
+    const scoreTable = playersSorted.map(
       player => {
         if (scores[player] == highestScore) {
           return (

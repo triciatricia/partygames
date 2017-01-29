@@ -2,7 +2,7 @@
  * Table names and unique ID column names.
  */
 
- var Tables = {
+ const Tables = {
  	game: {
  		tableName: 'games',
  		gameIDName: 'ID'

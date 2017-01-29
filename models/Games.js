@@ -1,6 +1,6 @@
-var DataTypes = require('../core/data/types');
+const DataTypes = require('../core/data/types');
 
-var Games = {
+const Games = {
   id: DataTypes.id(),
   round: DataTypes.int(),
   image: DataTypes.link(),

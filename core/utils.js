@@ -20,11 +20,11 @@ function capitalizeFirst(word: string): string {
 }
 
 function merge(): Object {
-  var ret = {};
+  let ret = {};
 
   for (var i = 0; i < arguments.length; ++i) {
-    var obj = arguments[i];
-    for (var key in obj) {
+    const obj = arguments[i];
+    for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         ret[key] = obj[key];
       }
