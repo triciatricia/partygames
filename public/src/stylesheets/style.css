@@ -2,14 +2,14 @@
 @import url('bootstrap-theme.min.css');
 
 body {
-  padding: 50px;
+  padding: 20px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
-@media (min-width: 992px) {
+@media (min-width: 576px) {
   body {
-    padding: 10px;
-  } /* TODO make this work */
+    padding: 50px;
+  } 
 }
 
 .container-fluid {
