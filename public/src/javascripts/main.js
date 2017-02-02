@@ -180,7 +180,8 @@ const ResponseForm = React.createClass({
     endGame: React.PropTypes.func,
     skipImage: React.PropTypes.func
   },
-  submitResponse: function() {
+  submitResponse: function(e) {
+    e.preventDefault();
     this.props.submitResponse(this.refs.response.value.trim());
   },
   render: function() {
@@ -207,7 +208,7 @@ const ResponseForm = React.createClass({
         placeholder = this.props.playerInfo.response;
       }
       return (
-        <form>
+        <form onSubmit={this.submitResponse}>
           <div className="form-group">
             <p className='text-success'>{helpMessage}</p>
             <label>{this.props.gameInfo.reactorNickname}&#39;s response when...</label>
@@ -215,7 +216,7 @@ const ResponseForm = React.createClass({
               placeholder={placeholder} defaultValue={this.props.playerInfo.response}
               ref="response" />
           </div>
-            <button id="submitResponseButton" type="button" className="btn btn-default" onClick={this.submitResponse}>{buttonText}</button>
+            <button id="submitResponseButton" type="submit" className="btn btn-default">{buttonText}</button>
         </form>
       );
     }
@@ -318,8 +319,8 @@ const NewGame = React.createClass({
       gameCode: this.refs.gameCodeInput.value.trim()
     });
   },
-  joinGame: function() {
-    // TODO: Code validation, Disable button if submitted and not invalid
+  joinGame: function(e) {
+    e.preventDefault();
     this.props.joinGame(this.refs.gameCodeInput.value.trim());
   },
   createGame: function() {
@@ -331,7 +332,7 @@ const NewGame = React.createClass({
         <div className="col-sm-6">
           <h1>Hello!</h1>
           <p>Are you ready to react?</p>
-          <form className="form-inline">
+          <form className="form-inline" onSubmit={this.joinGame}>
             <p className={this.props.errorMessage ? "form-group has-error" : "form-group"}>
               <input type="gameCode" className='form-control' id="gameCode"
                 placeholder="Enter code:" value={this.state.gameCode}
@@ -341,8 +342,7 @@ const NewGame = React.createClass({
                 {this.props.errorMessage}
               </span>
 
-              <button id="joinGameButton" type="button" className="btn btn-default"
-                onClick={this.joinGame} >
+              <button id="joinGameButton" type="submit" className="btn btn-default">
                 Join Game
               </button>
             </p>
@@ -378,21 +378,21 @@ const NewPlayer = React.createClass({
       nickname: this.refs.nicknameInput.value
     });
   },
-  createPlayer: function() {
+  createPlayer: function(e) {
+    e.preventDefault();
     this.props.createPlayer(this.refs.nicknameInput.value.trim());
   },
   render: function() {
     return (
       <div className="row">
         <div className="col-sm-6">
-          <form>
+          <form onSubmit={this.createPlayer}>
               <div className={this.props.errorMessage ? 'form-group has-error' : 'form-group'}>
                 <input type="text" className="form-control" id="nickname" value={this.state.nickname}
                   placeholder="What do you want to be called?" onChange={this.handleChange}
                   ref="nicknameInput" />
                 <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
-                <button type="button" id="submitNicknameButton" className="btn btn-primary btn-lg"
-                  onClick={this.createPlayer}>
+                <button type="submit" id="submitNicknameButton" className="btn btn-primary btn-lg">
                   Submit nickname
                 </button>
               </div>
