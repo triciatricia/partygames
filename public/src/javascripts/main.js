@@ -7,15 +7,24 @@ const GameUtils = require('./game-utils');
 const GameStatus = React.createClass({
   propTypes: {
     round: React.PropTypes.number,
-    score: React.PropTypes.number
+    score: React.PropTypes.number,
+    nickname: React.PropTypes.string,
+    gameCode: React.PropTypes.number
   },
   render: function() {
     return (
       <div className='row'>
         <div className='col-md-12'>
-          Round: <span id="round" >{this.props.round}</span>
-          <br />
-          Score: <span id="score">{this.props.score}</span>
+          <div className='pull-left'>
+            <span id="nickname" >{this.props.nickname}</span>
+            <br />
+            Score: <span id="score">{this.props.score}</span>
+          </div>
+          <div className='pull-right text-right'>
+            Round: <span id="round" >{this.props.round}</span>
+            <br />
+            Game Code: <span>{this.props.gameCode}</span>
+          </div>
         </div>
       </div>
     );
@@ -685,7 +694,9 @@ const Container = React.createClass({
         <div>
           <GameStatus
             round={this.state.gameInfo.round}
-            score={this.state.playerInfo.score} />
+            score={this.state.playerInfo.score}
+            nickname={this.state.playerInfo.nickname}
+            gameCode={this.state.gameInfo.id} />
           <RoundInfo
             gameInfo={this.state.gameInfo}
             playerInfo={this.state.playerInfo}
