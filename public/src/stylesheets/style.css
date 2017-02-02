@@ -9,7 +9,7 @@ body {
 @media (min-width: 576px) {
   body {
     padding: 50px;
-  } 
+  }
 }
 
 .container-fluid {
@@ -25,6 +25,10 @@ a {
 }
 
 p.help-block {
+  font-size: 14px;
+}
+
+p.form-group.has-error {
   font-size: 14px;
 }
 

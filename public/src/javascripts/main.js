@@ -338,13 +338,13 @@ const NewGame = React.createClass({
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
 
-              <span id="errorMessage" className={this.props.errorMessage ? "help-block" : "hidden"}>
-                {this.props.errorMessage}
-              </span>
-
               <button id="joinGameButton" type="submit" className="btn btn-default">
                 Join Game
               </button>
+
+              <span id="errorMessage" className={this.props.errorMessage ? "help-block" : "hidden"}>
+                {this.props.errorMessage}
+              </span>
             </p>
 
             <p></p>
