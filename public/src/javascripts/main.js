@@ -278,14 +278,33 @@ const WaitingToStart = React.createClass({
     isHost: React.PropTypes.bool,
     nPlayers: React.PropTypes.number,
     startGame: React.PropTypes.func,
-    gameID: React.PropTypes.number
+    gameID: React.PropTypes.number,
+    errorMessage: React.PropTypes.string
+  },
+  getInitialState: function() {
+    return {
+      isLoading: false
+    };
+  },
+  startGame: function() {
+    this.setState({
+      isLoading: true
+    });
+    this.props.startGame();
   },
   render: function() {
     let button;
     if (this.props.isHost) {
       button = (
-        <button id="startNowButton" type="button" onClick={this.props.startGame} className="btn btn-default">
+        <button id="startNowButton" type="button" onClick={this.startGame} className="btn btn-default">
           Start now!
+        </button>
+      );
+    }
+    if (this.state.isLoading && this.props.errorMessage == null) {
+      button = (
+        <button id="startNowButton" type="button" onClick={this.startGame} className="btn btn-default" disabled>
+          Loading...
         </button>
       );
     }
@@ -298,6 +317,9 @@ const WaitingToStart = React.createClass({
             <span id="nPlayers">{this.props.nPlayers}</span> players have joined...</span>
         </p>
         {button}
+        <p id="errorMessage" className={this.props.errorMessage ? "text-danger small" : "hidden"}>
+          {this.props.errorMessage}
+        </p>
       </div>
     );
   }
@@ -407,7 +429,19 @@ const GameOver = React.createClass({
   propTypes: {
     gameInfo: React.PropTypes.object,
     playerInfo: React.PropTypes.object,
-    startGame: React.PropTypes.func
+    startGame: React.PropTypes.func,
+    errorMessage: React.PropTypes.string
+  },
+  getInitialState: function() {
+    return {
+      isLoading: false
+    };
+  },
+  startGame: function() {
+    this.setState({
+      isLoading: true
+    });
+    this.props.startGame();
   },
   render: function() {
     /* Display scores in descending order */
@@ -430,15 +464,30 @@ const GameOver = React.createClass({
       }
     );
 
-    return (
-      <div className="jumbotron">
-        <p>And we are done!</p>
-        <ul id="scoreTable" className="list-unstyled">{scoreTable}</ul>
+    let rematchButton = (<button
+      type="button"
+      id="rematchButton"
+      className="btn btn-primary"
+      onClick={this.startGame} >Again!</button>);
+    if (this.state.isLoading && this.props.errorMessage == null) {
+      rematchButton = (
         <button
           type="button"
           id="rematchButton"
           className="btn btn-primary"
-          onClick={this.props.startGame} >Again!</button>
+          disabled
+          onClick={this.startGame} >Loading...</button>
+      );
+    }
+
+    return (
+      <div className="jumbotron">
+        <p>And we are done!</p>
+        <ul id="scoreTable" className="list-unstyled">{scoreTable}</ul>
+        {rematchButton}
+        <p id="errorMessage" className={this.props.errorMessage ? "text-danger small" : "hidden"}>
+          {this.props.errorMessage}
+        </p>
       </div>
     );
   }
@@ -653,7 +702,8 @@ const Container = React.createClass({
         <GameOver
           gameInfo={this.state.gameInfo}
           playerInfo={this.state.playerInfo}
-          startGame={this.startGame} />
+          startGame={this.startGame}
+          errorMessage={this.state.errorMessage} />
       );
     }
     return (
@@ -661,7 +711,8 @@ const Container = React.createClass({
         isHost={this.state.gameInfo.hostID == this.state.playerInfo.id}
         nPlayers={Object.keys(this.state.gameInfo.scores).length}
         startGame={this.startGame}
-        gameID={this.state.gameInfo.id} />
+        gameID={this.state.gameInfo.id}
+        errorMessage={this.state.errorMessage} />
     );
 
   }
