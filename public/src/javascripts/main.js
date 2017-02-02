@@ -625,6 +625,12 @@ const Container = React.createClass({
           errorMessage={this.state.errorMessage} />
       );
     }
+    if (this.state.playerInfo == null) {
+      /* player hasn't been created */
+      return (
+        <NewPlayer createPlayer={this.createPlayer} errorMessage={this.state.errorMessage} />
+      );
+    }
     if (this.state.gameInfo.round !== null) {
       return (
         <div>
@@ -648,12 +654,6 @@ const Container = React.createClass({
           gameInfo={this.state.gameInfo}
           playerInfo={this.state.playerInfo}
           startGame={this.startGame} />
-      );
-    }
-    if (this.state.playerInfo == null) {
-      /* player hasn't been created */
-      return (
-        <NewPlayer createPlayer={this.createPlayer} errorMessage={this.state.errorMessage} />
       );
     }
     return (
