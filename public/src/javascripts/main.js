@@ -212,7 +212,7 @@ const ResponseForm = React.createClass({
           <div className="form-group">
             <p className='text-success'>{helpMessage}</p>
             <label>{this.props.gameInfo.reactorNickname}&#39;s response when...</label>
-            <input type="input" className="form-control" id="scenario"
+            <input autoFocus type="input" className="form-control" id="scenario"
               placeholder={placeholder} defaultValue={this.props.playerInfo.response}
               ref="response" />
           </div>
@@ -334,7 +334,7 @@ const NewGame = React.createClass({
           <p>Are you ready to react?</p>
           <form className="form-inline" onSubmit={this.joinGame}>
             <p className={this.props.errorMessage ? "form-group has-error" : "form-group"}>
-              <input type="gameCode" className='form-control' id="gameCode"
+              <input autoFocus type="gameCode" className='form-control' id="gameCode"
                 placeholder="Enter code:" value={this.state.gameCode}
                 ref="gameCodeInput" onChange={this.handleChange} />
 
@@ -388,7 +388,7 @@ const NewPlayer = React.createClass({
         <div className="col-sm-6">
           <form onSubmit={this.createPlayer}>
               <div className={this.props.errorMessage ? 'form-group has-error' : 'form-group'}>
-                <input type="text" className="form-control" id="nickname" value={this.state.nickname}
+                <input autoFocus type="text" className="form-control" id="nickname" value={this.state.nickname}
                   placeholder="What do you want to be called?" onChange={this.handleChange}
                   ref="nicknameInput" />
                 <p id="errorMessage" className="help-block">{this.props.errorMessage}</p>
