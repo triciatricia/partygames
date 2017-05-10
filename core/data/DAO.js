@@ -156,7 +156,7 @@ DAOs.setGamePromise = function(
     const gameTable = tables.game.tableName;
     const gameIDName = tables.game.gameIDName;
     gameDAO.updateData(gameTable, gameIDName, gameID, props, (err, res) => {
-      (err ? reject(err) : resolve(res));
+      (err ? reject('Error saving game info.') : resolve(res));
     });
   });
 };
@@ -175,7 +175,7 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
 
     gameDAO.insertData(gameTable, props, (err, res) => {
       if (err) {
-        reject(err);
+        reject('Error creating new game.');
       } else {
         resolve(res);
       }
@@ -194,7 +194,7 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
 
     const cb = function(err, res) {
       if (err) {
-        reject(err);
+        reject('Error retrieving game info.');
       } else if (res.length === 0) {
         reject('Could not find game ' + gameID + ' in database');
       } else {
@@ -219,13 +219,13 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
 
     // Modify the callback to change usergame if it's being changed
     // Assumes a user can't be in 2 games at the same time
-    let cb = (err, res) => {(err) ? reject(err) : resolve(res);};
+    let cb = (err, res) => {(err) ? reject('Error changing user info.') : resolve(res);};
     if (props.hasOwnProperty('game')) {
       cb = function(err) {
-        if (err) { reject(err); }
+        if (err) { reject('Error changing user info.'); }
         userDAO.updateData(tables.usergame.tableName, 'user',
           userID, {'user': userID, 'game': props.game}, (err, res) => {
-            (err) ? reject(err) : resolve(res);
+            (err) ? reject('Error changing user info.') : resolve(res);
           });
       };
     }
@@ -247,7 +247,7 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
     const cb = (err, userID) => {
       if (err) {
         console.log(err);
-        reject(err);
+        reject('Error creating user.');
         return;
       }
       if (!user.hasOwnProperty('game')) {
@@ -258,7 +258,7 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
       // TODO delete below? If callback above works.
       userDAO.insertData(tables.usergame.tableName,
         {'user': userID, 'game': user.game},
-        (err) => {err ? reject(err) : resolve(userID);});
+        (err) => {err ? reject('Error creating user.') : resolve(userID);});
     };
 
     userDAO.insertData(tables.users.tableName, props,
@@ -317,7 +317,7 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
 
     const cb = function(err, res) {
       if (err) {
-        reject(err);
+        reject('Error retrieving user info.');
       } else if (res.length === 0) {
         reject('Could not find user ' + userID + ' in database');
       } else {
@@ -341,7 +341,7 @@ DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promis
 
     var cb = (err, res) => {
       if (err) {
-        reject(err);
+        reject('Error retrieving game and user info.');
         return;
       }
       let users = [];

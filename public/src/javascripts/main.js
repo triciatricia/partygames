@@ -515,7 +515,7 @@ const Container = React.createClass({
     GameUtils.joinGame(gameCode, (err, gameInfo, playerInfo) => {
       if (err) {
         this.setState({
-          errorMessage: 'Cannot join game'
+          errorMessage: 'Cannot find game. Please check your game code.'
         });
       } else {
         this.setState({
