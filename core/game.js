@@ -187,12 +187,13 @@ Game._getGameInfoPromise = async (
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Promise to return game info (and player info if the player ID is given)
   if (req.playerID) {
-    let gameInfo = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-    if (gameInfo.waitingForScenarios) {
+    let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    console.log(info);
+    if (info.gameInfo.waitingForScenarios) {
       await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
       return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     }
-    return gameInfo;
+    return info;
   }
   return await Game._getGameInfoWithConnPromise(conn, req.gameID);
 };
