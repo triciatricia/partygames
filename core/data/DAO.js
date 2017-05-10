@@ -117,18 +117,32 @@ function DAO(DBConn) {
 
   /**
    * table: Name of the table to modify
-   * props: Object with column names and values to insert
+   * props: Object with column names and values to delete
    * callback: Callback function(err, results)
    */
   this.deleteData = function(table, props, callback) {
-    // Assert that the connection mode is write so the database can be changed.
-    assert(this.DBConn.getMode() === conn.Modes.WRITE);
-
     // Make and run command
-    const command = 'DELETE FROM ? WHERE ?;';
-    const commandVals = [table, props];
+    const command = 'DELETE FROM ?? WHERE' + _toQueryPairs(props) + ';';
+    const commandVals = [table];
     this.DBConn.getConn().query(command, commandVals, callback);
   };
+}
+
+const _toQueryPairs = function(obj) {
+  // Convert an object (ie: {a: b, c: d, e: f}) to a query pair
+  // ie: 'a=b AND c=d AND e=f'
+  let i = 0;
+  let command = '';
+  for (const prop in obj) {
+    if (obj.hasOwnProperty(prop)) {
+      if (i > 0) {
+        command += ' AND';
+      }
+      command += ' ' + mysql.escapeId(prop) + '=' + mysql.escape(obj[prop]);
+      i += 1;
+    }
+  }
+  return command;
 }
 
 // Function that returns a promise to set a value for a game.
@@ -256,6 +270,39 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
         }
         cb(err, res.insertId);
       });
+  });
+};
+
+/**
+ * Function that returns a promise to remove a user from the game.
+ */
+DAOs.leaveGamePromise = function(
+  DBConn: conn.DBConn,
+  userID: number,
+  gameID: number
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const userDAO = new DAO(DBConn);
+    const userTable = tables.users.tableName;
+    const userIDName = tables.users.userIDName;
+
+    let props = {
+      game: null
+    };
+
+    userDAO.updateData(userTable, userIDName, userID, props, (err, res) => {
+      if (err) {
+        console.log(err);
+        reject('Unable to leave game.');
+        return;
+      }
+
+      userDAO.deleteData(
+        tables.usergame.tableName,
+        {user: userID, game: gameID},
+        (err) => {err ? reject('Unable to leave game.') : resolve()}
+      );
+    });
   });
 };
 

@@ -499,6 +499,20 @@ Game._endGamePromise = async (
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
+/**
+ * Leave the game the user is in.
+ * Doesn't reset the other info under the player in the database.
+ * But will send a blank player and game. (So the user can start over.)
+ **/
+Game._leaveGamePromise = async (
+  req: Object,
+  conn: ConnUtils.DBConn
+): Promise<{gameInfo: null, playerInfo: null}> => {
+  const playerInfo = await DAO.getUserPromise(conn, req.playerID);
+  await DAO.leaveGamePromise(conn, req.playerID, playerInfo.game);
+  return {gameInfo: null, playerInfo: null};
+};
+
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
   getGameInfo: Game._getGameInfoPromise,
@@ -510,7 +524,8 @@ const actions = {
   submitResponse: Game._submitResponsePromise,
   chooseScenario: Game._chooseScenarioPromise,
   nextRound: Game._nextRoundPromise,
-  endGame: Game._endGamePromise
+  endGame: Game._endGamePromise,
+  leaveGame: Game._leaveGamePromise
 };
 
 /**

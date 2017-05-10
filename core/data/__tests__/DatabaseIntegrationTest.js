@@ -301,6 +301,14 @@ describe('DatabaseIntegrationTest', function() {
 
       users = await DAO.getGameUsersPromise(wConn, 1);
       expect(users).toEqual([2, 3]);
+
+      await DAO.leaveGamePromise(wConn, 2, 1);
+      users = await DAO.getGameUsersPromise(wConn, 1);
+      expect(users).toEqual([3]);
+
+      await DAO.leaveGamePromise(wConn, 3, 1);
+      users = await DAO.getGameUsersPromise(wConn, 1);
+      expect(users).toEqual([]);
     }
 
     function fail(err) {
