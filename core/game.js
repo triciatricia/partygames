@@ -190,7 +190,7 @@ Game._getGameInfoPromise = async (
     let gameInfo = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     if (gameInfo.waitingForScenarios) {
       await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
-      return Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+      return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     }
     return gameInfo;
   }
