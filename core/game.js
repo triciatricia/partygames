@@ -542,7 +542,7 @@ const actions = {
 Game.processRequest = async (
   req: Object
 ): Promise<?{gameInfo: GameInfo, playerInfo: ?Object}> => {
-  if (!req.hasOwnProperty('action') || !actions.hasOwnProperty(req.action)) {
+  if (!req.action || !actions.hasOwnProperty(req.action)) {
     throw new Error('Error while processing your information');
   }
 
