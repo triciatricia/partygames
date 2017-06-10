@@ -135,6 +135,13 @@ module.exports.endGame = function(gameID, playerID, cb) {
   }, cb);
 };
 
+module.exports.leaveGame = function(playerID, cb) {
+  postToServer({
+    playerID: playerID,
+    action: 'leaveGame'
+  }, cb);
+};
+
 module.exports.log = function() {
   // Log things to the console while developing
   if (~conf.isProduction) {

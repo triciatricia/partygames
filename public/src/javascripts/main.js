@@ -9,21 +9,28 @@ const GameStatus = React.createClass({
     round: React.PropTypes.number,
     score: React.PropTypes.number,
     nickname: React.PropTypes.string,
-    gameCode: React.PropTypes.number
+    gameCode: React.PropTypes.number,
+    leaveGame: React.PropTypes.func
   },
   render: function() {
     return (
-      <div className='row'>
-        <div className='col-md-12'>
-          <div className='pull-left'>
+      <div className="row">
+        <div className="col-md-12">
+          <div className="pull-left">
             <span id="nickname" >{this.props.nickname}</span>
             <br />
             Score: <span id="score">{this.props.score}</span>
           </div>
-          <div className='pull-right text-right'>
+          <div className="pull-right text-right">
             Round: <span id="round" >{this.props.round}</span>
             <br />
             Game Code: <span>{this.props.gameCode}</span>
+            <br />
+            <button
+              className="btn-link"
+              id="leaveGameButton"
+              style={{padding: 0}}
+              onClick={this.props.leaveGame} >Leave Game</button>
           </div>
         </div>
       </div>
@@ -526,6 +533,22 @@ const Container = React.createClass({
       }
     });
   },
+  leaveGame: function() {
+    GameUtils.log('Leaving game');
+    GameUtils.leaveGame(this.state.playerInfo.id, (err, gameInfo, playerInfo) => {
+      if (err) {
+        this.setState({
+          errorMessage: 'Error leaving game.'
+        });
+      } else {
+        this.setState({
+          gameInfo: gameInfo,
+          playerInfo: playerInfo,
+          errorMessage: null
+        });
+      }
+    });
+  },
   createGame: function() {
     GameUtils.log('Creating new game');
     GameUtils.createGame((err, gameInfo, playerInfo) => {
@@ -696,7 +719,8 @@ const Container = React.createClass({
             round={this.state.gameInfo.round}
             score={this.state.playerInfo.score}
             nickname={this.state.playerInfo.nickname}
-            gameCode={this.state.gameInfo.id} />
+            gameCode={this.state.gameInfo.id}
+            leaveGame={this.leaveGame} />
           <RoundInfo
             gameInfo={this.state.gameInfo}
             playerInfo={this.state.playerInfo}

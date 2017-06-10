@@ -215,7 +215,24 @@ describe('website', () => {
     user3.waitForExist('#score');
     expect(user3.getText('#score')).toEqual('0', 'Score should be reset to 0');
 
-    user1.debug();
+    // Submit response
+    user2.waitForExist('#scenario');
+    user2.setValue('#scenario', 'response user2 rematch');
+    user2.click('#submitResponseButton');
+    console.log('User2 Submitted response');
+
+    // Leave game
+    user1.waitForExist('#leaveGameButton');
+    user1.click('#leaveGameButton');
+    console.log('User1 left game');
+    user1.waitForExist('#newGameButton');
+
+    user3.waitForExist('div.radio.scenario');
+    scenarios = user3.getText('div.radio.scenario');
+    expect(scenarios).toEqual('response user2 rematch', 'Should have user2\'s response');
+    // (Only one scenario, so it should not be a list)
+
+    user2.debug();
 
   });
 });
