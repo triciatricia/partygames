@@ -515,6 +515,11 @@ Game._leaveGamePromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: null, playerInfo: null}> => {
   const playerInfo = await DAO.getUserPromise(conn, req.playerID);
+  const gameInfo = await DAO.getGamePromise(conn, playerInfo.game);
+  if (req.playerID == gameInfo.reactorID) {
+    req.gameID = playerInfo.game;
+    await Game._nextRoundPromise(req, conn);
+  }
   await DAO.leaveGamePromise(conn, req.playerID, playerInfo.game);
   return {gameInfo: null, playerInfo: null};
 };

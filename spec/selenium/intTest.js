@@ -232,6 +232,11 @@ describe('website', () => {
     expect(scenarios).toEqual('response user2 rematch', 'Should have user2\'s response');
     // (Only one scenario, so it should not be a list)
 
+    user3.click('#leaveGameButton');
+    console.log('User3 left game');
+    user3.waitForExist('#newGameButton');
+    user2.waitForExist('p=user2, read this list out loud and pick your favorite!');
+
     user2.debug();
 
   });
