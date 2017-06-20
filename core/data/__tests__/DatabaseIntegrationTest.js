@@ -101,7 +101,8 @@ describe('DatabaseIntegrationTest', function() {
       gameOver: 0,
       winningResponse: null,
       winningResponseSubmittedBy: null,
-      lastGif: null
+      lastGif: null,
+      displayOrder: null
     };
 
     let wConn
@@ -179,6 +180,7 @@ describe('DatabaseIntegrationTest', function() {
       winningResponse: null,
       winningResponseSubmittedBy: null,
       lastGif: null,
+      displayOrder: null,
       scores: {}
     };
 
@@ -194,6 +196,7 @@ describe('DatabaseIntegrationTest', function() {
       winningResponse: null,
       winningResponseSubmittedBy: null,
       lastGif: null,
+      displayOrder: null,
       scores: {}
     };
 

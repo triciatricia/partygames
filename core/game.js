@@ -70,6 +70,21 @@ Game._getScoresWithConnPromise = async (
   return scores;
 };
 
+/**
+ * Shuffle an array  
+ */
+Game._shuffle = <T>(arr: Array<T>): Array<T> => {
+  console.log(arr);
+  for (let i = arr.length - 1; i >= 0; i -= 1) {
+    let rand = Math.floor(Math.random() * (i + 1));
+    let temp = arr[i];
+    arr[i] = arr[rand];
+    arr[rand] = temp;
+  }
+  console.log(arr);
+  return arr;
+};
+
 Game._getScenariosWithConnPromise = async (
   conn: ConnUtils.DBConn,
   userIDs: Array<number>
@@ -80,7 +95,8 @@ Game._getScenariosWithConnPromise = async (
   let scenarios = {};
   for (const id in info) {
     if (info[id].response) {
-      scenarios[id] = info[id].response;
+      // Insert '_' before each id so it doesn't default to ordering responses by id.
+      scenarios[Game._choiceIDFromPlayerID(id)] = info[id].response;
     }
   }
 
@@ -105,8 +121,20 @@ Game._getPlayerGameInfoWithConnPromise = async (
     Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
   ]);
 
+  let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
+  const keys = Object.getOwnPropertyNames(choices);
+  let orderedChoices = {};
+  for (let i in displayOrder) {
+    let j = parseInt(displayOrder[i]);
+    if (j < keys.length) {
+      orderedChoices[keys[j]] = choices[keys[j]];
+    }
+  }
+
   gameInfo.scores = scores;
-  gameInfo.choices = choices;
+  gameInfo.choices = orderedChoices;
+
+  gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
 
   return({
     gameInfo: gameInfo,
@@ -128,8 +156,20 @@ Game._getGameInfoWithConnPromise = async (
     Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
   ]);
 
+  let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
+  const keys = Object.getOwnPropertyNames(choices);
+  let orderedChoices = {};
+  for (let i in displayOrder) {
+    let j = parseInt(displayOrder[i]);
+    if (j < keys.length) {
+      orderedChoices[keys[j]] = choices[keys[j]];
+    }
+  }
+
   gameInfo.scores = scores;
-  gameInfo.choices = choices;
+  gameInfo.choices = orderedChoices;
+
+  gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
 
   return {
     gameInfo: gameInfo,
@@ -141,14 +181,24 @@ Game._updateIfDoneRespondingWithConnPromise = async (
   conn: ConnUtils.DBConn,
   gameID: number,
   userIDs: Array<number>,
-  reactorID: number
+  reactorID: number,
+  nPlayers: number
 ): Promise<?string> => {
   // Update game info if all the users but the host have responded
   // cb(err)
   if (userIDs.length == 0) {
     console.log('Scenarios are in for this round!');
+    let displayOrder = [];
 
-    const res = await DAO.setGamePromise(conn, gameID, {waitingForScenarios: false});
+    for (let i = 0; i < nPlayers; i++) {
+      displayOrder.push(i);
+    }
+    displayOrder = Game._shuffle(displayOrder);
+
+    const res = await DAO.setGamePromise(conn, gameID, {
+      waitingForScenarios: false,
+      displayOrder: displayOrder.toString()
+    });
     if (!res) {
       return 'Error checking game status';
     }
@@ -163,7 +213,7 @@ Game._updateIfDoneRespondingWithConnPromise = async (
     if (!userInfo.submittedScenario && nextID != reactorID) {
       return;
     } else {
-      await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID);
+      await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID, nPlayers);
     }
   }
 };
@@ -178,7 +228,7 @@ Game._checkAllResponsesInWithConnPromise = async (
     DAO.getGamePromise(conn, gameID),
     DAO.getGameUsersPromise(conn, gameID)
   ]);
-  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID);
+  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID, userIDs.length);
 };
 
 Game._getGameInfoPromise = async (
@@ -374,6 +424,17 @@ Game._submitResponsePromise = async (
 };
 
 /**
+ * Get the player ID from the choice ID
+ */
+Game._playerIDFromChoiceID = (choiceID: string) => {
+  return parseInt(choiceID.substring(1));
+};
+
+Game._choiceIDFromPlayerID = (playerID: number | string) => {
+  return playerID && '_' + playerID;
+};
+
+/**
  * Choose the scenario.
  */
 Game._chooseScenarioPromise = async (
@@ -381,6 +442,8 @@ Game._chooseScenarioPromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+
+  let winningID = Game._playerIDFromChoiceID(req.choiceID);
 
   if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
     throw new Error('Error submitting response. Try again');
@@ -390,17 +453,17 @@ Game._chooseScenarioPromise = async (
   }
 
   const userIDs = await DAO.getGameUsersPromise(conn, req.gameID);
-  if (userIDs.indexOf(parseInt(req.choiceID)) == -1 || req.playerID == req.choiceID) {
+  if (userIDs.indexOf(winningID) == -1 || req.playerID == winningID) {
     throw new Error('Error submitting response.');
   }
 
-  const winnerInfo = await DAO.getUserPromise(conn, req.choiceID);
-  await DAO.setUserPromise(conn, req.choiceID, {
+  const winnerInfo = await DAO.getUserPromise(conn, winningID);
+  await DAO.setUserPromise(conn, winningID, {
     score: winnerInfo.score + 1
   });
   await DAO.setGamePromise(conn, info.gameInfo.id, {
     winningResponseSubmittedBy: winnerInfo.nickname,
-    winningResponse: req.choiceID
+    winningResponse: winningID
   });
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);

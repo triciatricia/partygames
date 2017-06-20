@@ -115,8 +115,8 @@ describe('_getScenariosWithConnPromise', () => {
     let testCall = (response) => {
       expect(response).toBeDefined();
       expect(response).toEqual({
-        3: 'abcd',
-        4: 'defg'
+        _3: 'abcd',
+        _4: 'defg'
       });
       expect(DAO.getUsersPropPromise).toHaveBeenCalled();
       expect(DAO.getUsersPropPromise.calls.allArgs()[0][1]).toEqual([3, 4, 5]);
@@ -150,7 +150,8 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
     gameOver: 0,
     winningResponse: null,
     winningResponseSubmittedBy: null,
-    scores: {}
+    scores: {},
+    displayOrder: '0,1'
   };
 
   const fakeUser = {
@@ -187,6 +188,7 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
       gameOver: 0,
       winningResponse: null,
       winningResponseSubmittedBy: null,
+      displayOrder: '0,1',
       scores: fakeScores,
       choices: fakeChoices
     },

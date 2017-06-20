@@ -11,7 +11,8 @@ const Games = {
   gameOver: DataTypes.boolean(),
   winningResponse: DataTypes.id(),
   winningResponseSubmittedBy: DataTypes.char(),
-  lastGif: DataTypes.char()
+  lastGif: DataTypes.char(),
+  displayOrder: DataTypes.text()
 };
 
 module.exports = Games;
