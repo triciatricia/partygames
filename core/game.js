@@ -71,7 +71,7 @@ Game._getScoresWithConnPromise = async (
 };
 
 /**
- * Shuffle an array  
+ * Shuffle an array
  */
 Game._shuffle = <T>(arr: Array<T>): Array<T> => {
   console.log(arr);
@@ -308,6 +308,10 @@ Game._addNewPlayerWithConnPromise = async (
 ): Promise<number> => {
   if (Game._nameAlreadyTaken(nickname, gameInfo)) {
     throw new Error(nickname + ' is already taken. Please use another name.');
+  }
+
+  if (nickname.length === 0) {
+    throw new Error('Please enter a non-blank name.');
   }
 
   let playerInfo = {};
