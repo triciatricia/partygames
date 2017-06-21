@@ -74,14 +74,12 @@ Game._getScoresWithConnPromise = async (
  * Shuffle an array
  */
 Game._shuffle = <T>(arr: Array<T>): Array<T> => {
-  console.log(arr);
   for (let i = arr.length - 1; i >= 0; i -= 1) {
     let rand = Math.floor(Math.random() * (i + 1));
     let temp = arr[i];
     arr[i] = arr[rand];
     arr[rand] = temp;
   }
-  console.log(arr);
   return arr;
 };
 
@@ -238,7 +236,6 @@ Game._getGameInfoPromise = async (
   // Promise to return game info (and player info if the player ID is given)
   if (req.playerID) {
     let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-    console.log(info);
     if (info.gameInfo.waitingForScenarios) {
       await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
       return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
