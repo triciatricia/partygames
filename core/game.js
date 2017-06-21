@@ -252,10 +252,14 @@ Game._joinGamePromise = async (
   // Get the gameID of a game and check if it's a valid
   // game.
   const gameID = Game._getIDFromGameCode(req.gameCode);
-  return {
-    gameInfo: await DAO.getGamePromise(conn, gameID),
-    playerInfo: null
-  };
+  try {
+    return {
+      gameInfo: await DAO.getGamePromise(conn, gameID),
+      playerInfo: null
+    };
+  } catch (err) {
+    throw new Error('Cannot find game. Please check your game code.');
+  }
 };
 
 /**
