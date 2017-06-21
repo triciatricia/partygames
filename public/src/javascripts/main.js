@@ -652,46 +652,68 @@ const Container = React.createClass({
       this.state.gameInfo.id,
       this.state.playerInfo.id,
       (err, gameInfo, playerInfo) => {
-        this.setState({
-          errorMessage: err,
-          gameInfo: gameInfo,
-          playerInfo: playerInfo
-        });
+        if (err) {
+          this.setState({
+            errorMessage: err
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+        }
       });
   },
   skipImage: function() {
     GameUtils.skipImage(
       this.state.gameInfo.id,
       this.state.playerInfo.id,
-      (err, gameInfo, playerInfo) =>
-        this.setState({
-          errorMessage: err,
-          gameInfo: gameInfo,
-          playerInfo: playerInfo
-        }));
+      (err, gameInfo, playerInfo) => {
+        if (err) {
+          this.setState({
+            errorMessage: err
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+        }
+      });
   },
   nextRound: function() {
     GameUtils.nextRound(
       this.state.gameInfo.id,
       this.state.playerInfo.id,
       (err, gameInfo, playerInfo) => {
-        this.setState({
-          errorMessage: err,
-          gameInfo: gameInfo,
-          playerInfo: playerInfo
-        });
+        if (err) {
+          this.setState({
+            errorMessage: err
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+        }
       });
   },
   endGame: function() {
     GameUtils.endGame(
       this.state.gameInfo.id,
       this.state.playerInfo.id,
-      (err, gameInfo, playerInfo) =>
-        this.setState({
-          errorMessage: err,
-          gameInfo: gameInfo,
-          playerInfo: playerInfo
-        }));
+      (err, gameInfo, playerInfo) => {
+        if (err) {
+          this.setState({
+            errorMessage: err
+          });
+        } else {
+          this.setState({
+            gameInfo: gameInfo,
+            playerInfo: playerInfo
+          });
+        }
+      });
   },
   componentDidMount: function() {
     this.pollGameInfo();

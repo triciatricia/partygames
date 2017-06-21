@@ -10,11 +10,11 @@ describe('fetchData', function() {
   });
 
   it('should return something', function(done) {
-    gifs.fetchData(function(posts, lastPostRetrieved) {
+    gifs.fetchData(function(err, posts, lastPostRetrieved) {
       expect(posts).toBeDefined();
       expect(lastPostRetrieved).toBeDefined();
 
-      gifs.fetchData(function(posts, lastPostRetrieved2) {
+      gifs.fetchData(function(err, posts, lastPostRetrieved2) {
         expect(posts).toBeDefined();
         expect(lastPostRetrieved2).toBeDefined();
         expect(lastPostRetrieved2).not.toEqual(lastPostRetrieved);

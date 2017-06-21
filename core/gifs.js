@@ -27,7 +27,7 @@ function filterPosts(posts: Array<{data: {url: string}}>): Array<string> {
 };
 
 function fetchData(
-  cb: (urls: Array<string>, lastPostRetrieved: string) => void,
+  cb: (err: ?string, urls: Array<string>, lastPostRetrieved?: string) => void,
   lastPostRetrieved?: string
 ): void {
   // Grab some gif urls from reddit
@@ -53,28 +53,40 @@ function fetchData(
         data += d;
       });
       res.on('end', () => {
-        const parsedData = JSON.parse(data);
-        const posts = parsedData.data.children;
-        const lastPostRetrieved = parsedData.data.after;
-        cb(filterPosts(posts), lastPostRetrieved);
+        try {
+          const parsedData = JSON.parse(data);
+          const posts = parsedData.data.children;
+          const lastPostRetrieved = parsedData.data.after;
+          cb(null, filterPosts(posts), lastPostRetrieved);
+
+        } catch (err) {
+
+          if (data.indexOf('servers are busy right now')) {
+            cb('Servers are busy. Please try again in a minute.', [], lastPostRetrieved);
+          }
+          cb('Error getting an image. Please try again in a minute.', [], lastPostRetrieved);
+
+        }
       });
     }
   );
 };
 
 module.exports.getRandomGif = (
-  cb: (err: ?string, url: string, lastPostRetrieved: string) => void,
+  cb: (err: ?string, url: ?string, lastPostRetrieved?: string) => void,
   lastPostRetrieved?: string
 ) => {
   fetchData(
-    (posts: Array<string>, newLastPostRetrieved: string) => {
+    (err: ?string, posts: Array<string>, newLastPostRetrieved: string) => {
       // TODO Change to callback
       if (posts.length >= 1) {
         cb(null, utils.randItem(posts), newLastPostRetrieved);
       } else {
         // Try again
-        fetchData((posts, newLastPostRetrieved) => {
-          if (posts.length >= 1) {
+        fetchData((err, posts, newLastPostRetrieved) => {
+          if (err) {
+            cb(err, null, newLastPostRetrieved);
+          } else if (posts.length >= 1) {
             cb(null, utils.randItem(posts), newLastPostRetrieved);
           } else {
             // If no suitable gif is found, return the default.

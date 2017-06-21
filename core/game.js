@@ -40,7 +40,7 @@ Game._getIDFromGameCode = (code: string): number => {
  */
 Game._getNextImagePromise = (
   lastPostRetrieved?: string
-): Promise<{gifUrl: string, lastPostRetrieved: string}> => {
+): Promise<{gifUrl: string, lastPostRetrieved?: string}> => {
   return new Promise((resolve, reject) => {
     Gifs.getRandomGif((err, gifUrl, lastPostRetrieved) => {
       if (err) {
@@ -348,11 +348,18 @@ Game._startGamePromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  const [info, imageInfo, userIDs] = await Promise.all([
-    Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
-    Game._getNextImagePromise(),
-    DAO.getGameUsersPromise(conn, req.gameID)
-  ]);
+  let info, imageInfo, userIDs;
+  try {
+    [info, imageInfo, userIDs] = await Promise.all([
+      Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
+      Game._getNextImagePromise(),
+      DAO.getGameUsersPromise(conn, req.gameID)
+    ]);
+  }
+  catch (err) {
+    throw new Error(err);
+  }
+
   const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
   const gameChanges = {

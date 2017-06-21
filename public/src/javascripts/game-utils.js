@@ -13,6 +13,7 @@ function postToServer(data, cb) {
       } else if (res.errorMessage) {
         cb(res.errorMessage, null, null);
       } else {
+        console.log(res);
         cb('Error communicating with server', null, null);
       }
     }
