@@ -453,6 +453,9 @@ Game._chooseScenarioPromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  if (req.choiceID === null) {
+    throw new Error('Please pick your favorite scenario.');
+  }
   const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 
   let winningID = Game._playerIDFromChoiceID(req.choiceID);
