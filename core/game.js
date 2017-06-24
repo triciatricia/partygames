@@ -419,6 +419,10 @@ Game._submitResponsePromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  if (!req.response || req.response.trim().length === 0) {
+    throw new Error('Please submit a non-blank response.')
+  }
+
   const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
   if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
     throw new Error('Error submitting response. Try again');
