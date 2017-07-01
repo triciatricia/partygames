@@ -83,7 +83,9 @@ div.radio.scenario {
   margin-bottom: 0px;
 }
 
-img#gif {
-  width: 100%;
+img#gif, video#gif {
+  max-width: 100%;
   padding-bottom: 15px;
+  max-height: 400px;
+  margin: auto;
 }

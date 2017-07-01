@@ -65,7 +65,7 @@ describe('website', () => {
     expect(user1.getText('#score')).toEqual('0');
     user1.waitForExist('#gif');
     let gif = user1.getAttribute('#gif', 'src');
-    expect(gif).toMatch('https?://.+\.gif');
+    expect(gif).toMatch('https?://.+\.(gif)|(mp4)');
     console.log('started game');
 
     // Submit responses

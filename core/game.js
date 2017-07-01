@@ -40,7 +40,7 @@ Game._getIDFromGameCode = (code: string): number => {
  */
 Game._getNextImagePromise = (
   lastPostRetrieved?: string
-): Promise<{gifUrl: string, lastPostRetrieved?: string}> => {
+): Promise<{gifUrl: string, lastPostRetrieved?: ?string}> => {
   return new Promise((resolve, reject) => {
     Gifs.getRandomGif((err, gifUrl, lastPostRetrieved) => {
       if (err) {
@@ -387,10 +387,7 @@ Game._startGamePromise = async (
   if (!res) {
     throw new Error('Error starting game');
   } else {
-    return({
-      gameInfo: gameInfo,
-      playerInfo: playerInfo
-    });
+    return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
   }
 };
 

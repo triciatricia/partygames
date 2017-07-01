@@ -42,7 +42,27 @@ const ReactionImage = React.createClass({
   propTypes: {
     image: React.PropTypes.string
   },
+  _isVideo: function(url) {
+    // Check if it is an mp4.
+    return url.endsWith('.mp4');
+  },
   render: function() {
+    if (this._isVideo(this.props.image)) {
+      return (
+        <div>
+          <video
+            id="gif"
+            autoPlay
+            loop
+            className="img-responsive"
+            src={this.props.image}
+            muted>
+            Sorry, your browser does not support embedded videos.
+            <a href={this.props.image}>Please click here to download.</a>
+          </video>
+        </div>
+      );
+    }
     return (
       <div>
         <img id="gif" className="img-responsive" src={this.props.image} />
