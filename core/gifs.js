@@ -3,6 +3,8 @@
 /* @flow */
 
 const https = require('https');
+const http = require('http');
+const { JSDOM } = require('jsdom');
 const utils = require('./utils');
 
 const POST_LIMIT = 10;
@@ -11,24 +13,64 @@ const PATH_BASE = '/r/reactiongifs/hot.json';
 
 function linkIsGif(url: string): boolean {
   // Return whether the url ends in '.gif'
-  const gifSuffix = '.gif';
-  return (url.indexOf(gifSuffix, url.length - gifSuffix.length) > -1);
+  return url.toLowerCase().endsWith('.gif');
 }
 
-function filterPosts(posts: Array<{data: {url: string}}>): Array<string> {
+function linkIsMp4(url: string): boolean {
+  // Return whether the url ends in '.mp4'
+  return url.toLowerCase().endsWith('.mp4');
+}
+
+function linkIsGifv(url: string): boolean {
+  // Return whether the url ends in '.gifv'
+  return url.toLowerCase().endsWith('.gifv');
+}
+
+async function vidFromGifv(url: string): Promise<string> {
+  // Get the video link from a gifv
+  const dom = await JSDOM.fromURL(url);
+  const sources = dom.window.document.querySelectorAll('source[type="video/mp4"]');
+
+  if (sources.length === 1 &&
+    sources[0].hasAttribute('src') &&
+    linkIsMp4(sources[0].src)) {
+
+    return sources[0].src;
+
+  } else {
+
+    console.log('error extracting video url from gifv');
+    throw new Error('Error extracting video url from gifv');
+
+  }
+}
+
+async function filterPosts(posts: Array<{data: {url: string}}>): Promise<Array<string>> {
   // Filter posts for gifs
   let filteredPosts = [];
-  for (let i = 0; i < posts.length; i++ ) {
-    if (linkIsGif(posts[i].data.url)) {
+  for (let i = 0; i < posts.length; i++) {
+    if (linkIsGif(posts[i].data.url) || linkIsMp4(posts[i].data.url)) {
+
       filteredPosts.push(posts[i].data.url);
+
+    } else if (linkIsGifv(posts[i].data.url)) {
+
+      try {
+        const vidUrl = await vidFromGifv(posts[i].data.url);
+        filteredPosts.push(vidUrl);
+      } catch (error) {
+        // Do nothing
+        console.log(error);
+      }
+
     }
   }
   return filteredPosts;
 };
 
 function fetchData(
-  cb: (err: ?string, urls: Array<string>, lastPostRetrieved?: string) => void,
-  lastPostRetrieved?: string
+  cb: (err: ?string, urls: Array<string>, lastPostRetrieved?: ?string) => void,
+  lastPostRetrieved?: ?string
 ): void {
   // Grab some gif urls from reddit
   // cb(urls, ID of lastPostRetrieved)
@@ -57,7 +99,9 @@ function fetchData(
           const parsedData = JSON.parse(data);
           const posts = parsedData.data.children;
           const lastPostRetrieved = parsedData.data.after;
-          cb(null, filterPosts(posts), lastPostRetrieved);
+          filterPosts(posts).then(filteredPosts => {
+            cb(null, filteredPosts, lastPostRetrieved);
+          });
 
         } catch (err) {
 
@@ -73,11 +117,11 @@ function fetchData(
 };
 
 module.exports.getRandomGif = (
-  cb: (err: ?string, url: ?string, lastPostRetrieved?: string) => void,
+  cb: (err: ?string, url: ?string, lastPostRetrieved?: ?string) => void,
   lastPostRetrieved?: string
 ) => {
   fetchData(
-    (err: ?string, posts: Array<string>, newLastPostRetrieved: string) => {
+    (err: ?string, posts: Array<string>, newLastPostRetrieved: ?string) => {
       // TODO Change to callback
       if (posts.length >= 1) {
         cb(null, utils.randItem(posts), newLastPostRetrieved);
