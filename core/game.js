@@ -372,6 +372,7 @@ Game._startGamePromise = async (
   const gameChanges = {
     round: 1,
     image: imageInfo.gifUrl,
+    imageQueue: JSON.stringify(imageInfo.imageQueue),
     waitingForScenarios: true,
     reactorID: req.playerID,
     reactorNickname: playerInfo.nickname,
@@ -410,6 +411,7 @@ Game._skipImagePromise = async (
 
   await DAO.setGamePromise(conn, req.gameID, {
     image: imageInfo.gifUrl,
+    imageQueue: JSON.stringify(imageInfo.imageQueue),
     lastGif: imageInfo.lastPostRetrieved
   });
 
@@ -542,6 +544,7 @@ Game._nextRoundPromise = async (
   await DAO.setGamePromise(conn, req.gameID, {
     round: gameInfo.round + 1,
     image: imageInfo.gifUrl,
+    imageQueue: JSON.stringify(imageInfo.imageQueue),
     waitingForScenarios: true,
     reactorID: nextReactor,
     reactorNickname: nextReactorNickname,

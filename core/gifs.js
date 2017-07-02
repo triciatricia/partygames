@@ -122,7 +122,6 @@ export const getGifs = (
   return new Promise((resolve, reject) => {
     fetchData(
       (err: ?string, posts: Array<string>, newLastPostRetrieved: ?string) => {
-        // TODO Change to callback
         if (posts.length >= 1) {
           resolve([posts, newLastPostRetrieved]);
         } else {
