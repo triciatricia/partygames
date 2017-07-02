@@ -116,31 +116,32 @@ function fetchData(
   );
 };
 
-module.exports.getRandomGif = (
-  cb: (err: ?string, url: ?string, lastPostRetrieved?: ?string) => void,
-  lastPostRetrieved?: string
-) => {
-  fetchData(
-    (err: ?string, posts: Array<string>, newLastPostRetrieved: ?string) => {
-      // TODO Change to callback
-      if (posts.length >= 1) {
-        cb(null, utils.randItem(posts), newLastPostRetrieved);
-      } else {
-        // Try again
-        fetchData((err, posts, newLastPostRetrieved) => {
-          if (err) {
-            cb(err, null, newLastPostRetrieved);
-          } else if (posts.length >= 1) {
-            cb(null, utils.randItem(posts), newLastPostRetrieved);
-          } else {
-            // If no suitable gif is found, return the default.
-            cb(null, 'http://i.imgur.com/rxkWqmt.gif', newLastPostRetrieved);
-          }
-        }, newLastPostRetrieved);
-      }
-    },
-    lastPostRetrieved
-  );
+export const getGifs = (
+  lastPostRetrieved: ?string
+): Promise<[Array<string>, ?string]> => {
+  return new Promise((resolve, reject) => {
+    fetchData(
+      (err: ?string, posts: Array<string>, newLastPostRetrieved: ?string) => {
+        // TODO Change to callback
+        if (posts.length >= 1) {
+          resolve([posts, newLastPostRetrieved]);
+        } else {
+          // Try again
+          fetchData((err, posts, newLastPostRetrieved) => {
+            if (err) {
+              reject(err);
+            } else if (posts.length >= 1) {
+              resolve([posts, newLastPostRetrieved]);
+            } else {
+              // If no suitable gif is found, return the default.
+              resolve([['http://i.imgur.com/rxkWqmt.gif'], newLastPostRetrieved]);
+            }
+          }, newLastPostRetrieved);
+        }
+      },
+      lastPostRetrieved
+    );
+  });
 };
 
 module.exports.fetchData = fetchData;

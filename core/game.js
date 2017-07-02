@@ -38,21 +38,33 @@ Game._getIDFromGameCode = (code: string): number => {
 /**
  * Promise to return a random reaction image url.
  */
-Game._getNextImagePromise = (
-  lastPostRetrieved?: string
-): Promise<{gifUrl: string, lastPostRetrieved?: ?string}> => {
-  return new Promise((resolve, reject) => {
-    Gifs.getRandomGif((err, gifUrl, lastPostRetrieved) => {
-      if (err) {
-        reject(err);
-      } else if (!gifUrl) {
-        reject('Cannot find a gif');
-      } else {
-        resolve({gifUrl, lastPostRetrieved});
-      }
-    },
-  lastPostRetrieved);
-  });
+Game._getNextImagePromise = async (
+  imageQueue: Array<string>,
+  lastPostRetrieved: ?string
+): Promise<{
+  imageQueue: Array<string>,
+  gifUrl: string,
+  lastPostRetrieved?: ?string
+}> => {
+  const MIN_IMAGE_QUEUE_SIZE = 5;
+  const MAX_TRIES = 3;
+
+  let ntries = 0;
+  while (imageQueue.length < MIN_IMAGE_QUEUE_SIZE + 1) {
+    if (ntries > MAX_TRIES) {
+      throw new Error('Cannot find more gifs.');
+    }
+
+    // Fetch more gifs
+    const [nextImages, newLastPostRetrieved] = await Gifs.getGifs(lastPostRetrieved);
+    imageQueue = nextImages.concat(imageQueue);
+    lastPostRetrieved = newLastPostRetrieved;
+    ntries += 1;
+  }
+
+  const gifUrl = imageQueue.pop();
+
+  return({ imageQueue, gifUrl, lastPostRetrieved });
 };
 
 Game._getScoresWithConnPromise = async (
@@ -348,17 +360,12 @@ Game._startGamePromise = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  let info, imageInfo, userIDs;
-  try {
-    [info, imageInfo, userIDs] = await Promise.all([
-      Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
-      Game._getNextImagePromise(),
-      DAO.getGameUsersPromise(conn, req.gameID)
-    ]);
-  }
-  catch (err) {
-    throw new Error(err);
-  }
+  let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+
+  let [imageInfo, userIDs] = await Promise.all([
+    Game._getNextImagePromise(info.gameInfo.imageQueue),
+    DAO.getGameUsersPromise(conn, req.gameID)
+  ]);
 
   const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
@@ -399,7 +406,7 @@ Game._skipImagePromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-  const imageInfo = await Game._getNextImagePromise(info.gameInfo.lastGif);
+  const imageInfo = await Game._getNextImagePromise(info.gameInfo.imageQueue, info.gameInfo.lastGif);
 
   await DAO.setGamePromise(conn, req.gameID, {
     image: imageInfo.gifUrl,
@@ -515,7 +522,7 @@ Game._nextRoundPromise = async (
     throw new Error('Error moving to the next round: Wait up!');
   }
 
-  const imageInfo = await Game._getNextImagePromise(gameInfo.lastGif);
+  const imageInfo = await Game._getNextImagePromise(gameInfo.imageQueue, gameInfo.lastGif);
 
   // Get the next reactor
   const nextReactor = Game._getNextReactor(userIDs, gameInfo.reactorID);

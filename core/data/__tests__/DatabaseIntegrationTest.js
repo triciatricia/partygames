@@ -88,7 +88,8 @@ describe('DatabaseIntegrationTest', function() {
       gameOver: 0,
       winningResponse: null,
       winningResponseSubmittedBy: null,
-      lastGif: null
+      lastGif: null,
+      imageQueue: null,
     };
     let expectedRow = {
       id: 1,
@@ -102,7 +103,8 @@ describe('DatabaseIntegrationTest', function() {
       winningResponse: null,
       winningResponseSubmittedBy: null,
       lastGif: null,
-      displayOrder: null
+      displayOrder: null,
+      imageQueue: null,
     };
 
     let wConn
@@ -165,7 +167,8 @@ describe('DatabaseIntegrationTest', function() {
       gameOver: 0,
       winningResponse: null,
       winningResponseSubmittedBy: null,
-      lastGif: null
+      lastGif: null,
+      imageQueue: null,
     };
 
     var expectedRow = {
@@ -181,7 +184,8 @@ describe('DatabaseIntegrationTest', function() {
       winningResponseSubmittedBy: null,
       lastGif: null,
       displayOrder: null,
-      scores: {}
+      imageQueue: [],
+      scores: {},
     };
 
     var expectedRow2 = {
@@ -197,7 +201,8 @@ describe('DatabaseIntegrationTest', function() {
       winningResponseSubmittedBy: null,
       lastGif: null,
       displayOrder: null,
-      scores: {}
+      imageQueue: [],
+      scores: {},
     };
 
     let wConn;

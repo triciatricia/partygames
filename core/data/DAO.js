@@ -25,7 +25,8 @@ export type GameInfo = {
   scores: Object,
   choices: Object,
   lastGif: string,
-  displayOrder: string
+  displayOrder: string,
+  imageQueue: Array<string>,
 };
 
 // All the data access objects
@@ -200,6 +201,14 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
         reject('Could not find game ' + gameID + ' in database');
       } else {
         let game = res[0];
+        game.imageQueue = JSON.parse(game.imageQueue);
+
+        if (game.imageQueue === null) {
+          // The imageQueue hasn't been made yet because
+          // it's a new game.
+          game.imageQueue = [];
+        }
+
         game.scores = {};
         resolve(game);
       }
@@ -222,7 +231,7 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
     // Assumes a user can't be in 2 games at the same time
     let cb = (err, res) => {(err) ? reject('Error changing user info.') : resolve(res);};
     if (props.hasOwnProperty('game')) {
-      cb = function(err) {
+      cb = function(err, res) {
         if (err) { reject('Error changing user info.'); }
         userDAO.updateData(tables.usergame.tableName, 'user',
           userID, {'user': userID, 'game': props.game}, (err, res) => {

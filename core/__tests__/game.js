@@ -13,24 +13,29 @@ describe('_getIDFromGameCode', () => {
 
 describe('_getNextImagePromise', () => {
   beforeEach(() => {
-    let mockGif = (cb) => {
-      cb(null, 'http://fake.gif');
+    let mockGif = (lastPostRetrieved) => {
+      return new Promise((resolve, reject) => {
+        resolve([['img0', 'img1', 'img2', 'img3', 'img4', 'img5'], 'lastPostRetrieved']);
+      });
     };
-    spyOn(Gifs, 'getRandomGif').and.callFake(mockGif);
+    spyOn(Gifs, 'getGifs').and.callFake(mockGif);
   });
 
-  it('should call Gifs.getRandomGif', (done) => {
+  it('should call Gifs.getGifs', (done) => {
     let testCall = (res) => {
       expect(res).toBeDefined();
-      expect(Gifs.getRandomGif).toHaveBeenCalled();
+      expect(Gifs.getGifs).toHaveBeenCalled();
+      expect(res.gifUrl).toEqual('img5');
+      expect(res.imageQueue.length).toEqual(5);
     };
 
-    let fail = () => {
+    let fail = (err) => {
+      console.log(err);
       expect(true).toBe(false);
       done();
     };
 
-    game._getNextImagePromise()
+    game._getNextImagePromise([])
       .then(testCall)
       .catch(fail)
       .then(done);
