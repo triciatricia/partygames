@@ -131,7 +131,6 @@ Game._getPlayerGameInfoWithConnPromise = async (
     Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
   ]);
 
-  console.log(gameInfo);
   let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
   const keys = Object.getOwnPropertyNames(choices);
   let orderedChoices = {};
