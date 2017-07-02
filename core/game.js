@@ -131,6 +131,7 @@ Game._getPlayerGameInfoWithConnPromise = async (
     Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
   ]);
 
+  console.log(gameInfo);
   let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
   const keys = Object.getOwnPropertyNames(choices);
   let orderedChoices = {};
@@ -372,7 +373,7 @@ Game._startGamePromise = async (
   const gameChanges = {
     round: 1,
     image: imageInfo.gifUrl,
-    imageQueue: JSON.stringify(imageInfo.imageQueue),
+    imageQueue: imageInfo.imageQueue,
     waitingForScenarios: true,
     reactorID: req.playerID,
     reactorNickname: playerInfo.nickname,
@@ -411,7 +412,7 @@ Game._skipImagePromise = async (
 
   await DAO.setGamePromise(conn, req.gameID, {
     image: imageInfo.gifUrl,
-    imageQueue: JSON.stringify(imageInfo.imageQueue),
+    imageQueue: imageInfo.imageQueue,
     lastGif: imageInfo.lastPostRetrieved
   });
 
@@ -544,7 +545,7 @@ Game._nextRoundPromise = async (
   await DAO.setGamePromise(conn, req.gameID, {
     round: gameInfo.round + 1,
     image: imageInfo.gifUrl,
-    imageQueue: JSON.stringify(imageInfo.imageQueue),
+    imageQueue: imageInfo.imageQueue,
     waitingForScenarios: true,
     reactorID: nextReactor,
     reactorNickname: nextReactorNickname,

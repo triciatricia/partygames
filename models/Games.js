@@ -13,7 +13,7 @@ const Games = {
   winningResponseSubmittedBy: DataTypes.char(),
   lastGif: DataTypes.char(),
   displayOrder: DataTypes.text(),
-  imageQueue: DataTypes.text(),
+  imageQueue: DataTypes.JSONtext(),
 };
 
 module.exports = Games;

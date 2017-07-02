@@ -157,6 +157,16 @@ DAOs.setGamePromise = function(
     const gameDAO = new DAO(DBConn);
     const gameTable = tables.game.tableName;
     const gameIDName = tables.game.gameIDName;
+
+    // Format data for saving
+    Object.keys(props).forEach(key => {
+      if (Games.hasOwnProperty(key)) {
+        props[key] = Games[key].beforeSaving(props[key]);
+      } else {
+        reject('Cannot save invalid game property: ' + key);
+      }
+    });
+
     gameDAO.updateData(gameTable, gameIDName, gameID, props, (err, res) => {
       (err ? reject('Error saving game info.') : resolve(res));
     });
@@ -174,6 +184,15 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
     // Copy all the properties from game to props.
     Object.assign(props, game);
     const gameTable = tables.game.tableName;
+
+    // Format data for saving
+    Object.keys(props).forEach(key => {
+      if (Games.hasOwnProperty(key)) {
+        props[key] = Games[key].beforeSaving(props[key]);
+      } else {
+        reject('Cannot save invalid game property: ' + key);
+      }
+    });
 
     gameDAO.insertData(gameTable, props, (err, res) => {
       if (err) {
@@ -201,7 +220,13 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
         reject('Could not find game ' + gameID + ' in database');
       } else {
         let game = res[0];
-        game.imageQueue = JSON.parse(game.imageQueue);
+
+        // Format saved data
+        Object.keys(game).forEach(key => {
+          if (Games.hasOwnProperty(key)) {
+            game[key] = Games[key].afterLoading(game[key]);
+          }
+        });
 
         if (game.imageQueue === null) {
           // The imageQueue hasn't been made yet because
@@ -240,6 +265,15 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
       };
     }
 
+    // Format data for saving
+    Object.keys(props).forEach(key => {
+      if (Users.hasOwnProperty(key)) {
+        props[key] = Users[key].beforeSaving(props[key]);
+      } else {
+        reject('Cannot save invalid user property: ' + key);
+      }
+    });
+
     userDAO.updateData(userTable, userIDName, userID, props, cb);
   });
 };
@@ -270,6 +304,15 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
         {'user': userID, 'game': user.game},
         (err) => {err ? reject('Error creating user.') : resolve(userID);});
     };
+
+    // Format data for saving
+    Object.keys(props).forEach(key => {
+      if (Users.hasOwnProperty(key)) {
+        props[key] = Users[key].beforeSaving(props[key]);
+      } else {
+        reject('Cannot save invalid user property: ' + key);
+      }
+    });
 
     userDAO.insertData(tables.users.tableName, props,
       function(err, res) {
@@ -331,7 +374,14 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
       } else if (res.length === 0) {
         reject('Could not find user ' + userID + ' in database');
       } else {
-        resolve(res[0]);
+        let playerInfo = res[0];
+        // Format saved data
+        Object.keys(playerInfo).forEach(key => {
+          if (Users.hasOwnProperty(key)) {
+            playerInfo[key] = Users[key].afterLoading(playerInfo[key]);
+          }
+        });
+        resolve(playerInfo);
       }
     };
 

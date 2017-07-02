@@ -11,15 +11,21 @@ const utils = require('../utils');
 // DataTypes holds all the DataFields defined below.
 let DataTypes = {};
 
-function addType(name, dbTypeGetter, props) {
+function addType(name, dbTypeGetter, props, beforeSaving, afterLoading) {
   /**
    * @constructor
    * name: Name of the data type
    * dbTypeGetter: Function that returns the database type (ie: bigint)
    * props: List of properties of the data type (ie: size)
+   * beforeSaving and afterLoading are functions (value) that
+   * operate on the data before saving to the database or
+   * after loading. afterLoading's argument is a string, and
+   * beforeSaving must return a string.
    */
   function DataField() {
     this.props = {};
+    this.beforeSaving = beforeSaving ? beforeSaving : x => x;
+    this.afterLoading = afterLoading ? afterLoading : x => x;
   }
 
   if (props) {
@@ -65,5 +71,12 @@ addType(
   ['size']);
 addType('text', utils.functionThatReturns('text'));
 addType('link', utils.functionThatReturns('text'));
+addType(
+  'JSONtext',
+  utils.functionThatReturns('text'),
+  null,
+  valueToSave => JSON.stringify(valueToSave),
+  databaseText => JSON.parse(databaseText)
+);
 
 module.exports = DataTypes;
