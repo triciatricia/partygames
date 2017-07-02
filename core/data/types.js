@@ -75,7 +75,11 @@ addType(
   'JSONtext',
   utils.functionThatReturns('text'),
   null,
-  valueToSave => JSON.stringify(valueToSave),
+  valueToSave => {
+    if (valueToSave !== null) {
+      return JSON.stringify(valueToSave)
+    }
+  },
   databaseText => JSON.parse(databaseText)
 );
 
