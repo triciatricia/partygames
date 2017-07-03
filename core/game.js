@@ -6,7 +6,7 @@ const ConnUtils = require('./data/conn');
 const DAO = require('./data/DAO');
 const Gifs = require('./gifs');
 
-import type {GameInfo} from './data/DAO';
+import type { GameInfo, Image } from './data/DAO';
 
 let Game = {};
 
@@ -39,15 +39,22 @@ Game._getIDFromGameCode = (code: string): number => {
  * Promise to return a random reaction image url.
  */
 Game._getNextImagePromise = async (
-  imageQueue: Array<string>,
+  imageQueue: Array<Image>,
+  prevImage: ?Image,
+  curImage: ?Image,
   lastPostRetrieved: ?string
 ): Promise<{
-  imageQueue: Array<string>,
-  gifUrl: string,
+  imageQueue: Array<Image>,
+  image: Image,
   lastPostRetrieved?: ?string
 }> => {
+  // Return current image if the image to be skipped was already skipped.
+  if (prevImage && curImage && prevImage.id < curImage.id) {
+    return({ imageQueue: imageQueue, image: curImage, lastPostRetrieved: lastPostRetrieved });
+  }
+
   const MIN_IMAGE_QUEUE_SIZE = 5;
-  const MAX_TRIES = 3;
+  const MAX_TRIES = 4;
 
   let ntries = 0;
   while (imageQueue.length < MIN_IMAGE_QUEUE_SIZE + 1) {
@@ -57,14 +64,36 @@ Game._getNextImagePromise = async (
 
     // Fetch more gifs
     const [nextImages, newLastPostRetrieved] = await Gifs.getGifs(lastPostRetrieved);
-    imageQueue = nextImages.concat(imageQueue);
+    let lastGifId = 0;
+    if (imageQueue && imageQueue.length > 0) {
+      lastGifId = imageQueue[0].id;
+    }
+    if (prevImage && (imageQueue == null || imageQueue.length == 0)) {
+      // There was a previous gif but the queue is out.
+      lastGifId = prevImage.id;
+    }
+
+    // Asign IDs to the next images
+    let imageQueueToPrepend = [];
+    for (let id = lastGifId + nextImages.length; id > lastGifId; id --) {
+      imageQueueToPrepend.push({
+        url: nextImages[id - lastGifId - 1],
+        id: id
+      });
+    }
+    imageQueue = imageQueueToPrepend.concat(imageQueue);
     lastPostRetrieved = newLastPostRetrieved;
     ntries += 1;
   }
 
-  const gifUrl = imageQueue.pop();
+  let image = imageQueue.pop();
 
-  return({ imageQueue, gifUrl, lastPostRetrieved });
+  while (prevImage && prevImage.id >= image.id && imageQueue.length > 0) {
+    // In case multiple images were skipped.
+    image = imageQueue.pop();
+  }
+
+  return({ imageQueue, image, lastPostRetrieved });
 };
 
 Game._getScoresWithConnPromise = async (
@@ -363,7 +392,7 @@ Game._startGamePromise = async (
   let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 
   let [imageInfo, userIDs] = await Promise.all([
-    Game._getNextImagePromise(info.gameInfo.imageQueue),
+    Game._getNextImagePromise(info.gameInfo.imageQueue, info.gameInfo.image, info.gameInfo.image, info.gameInfo.gifUrl),
     DAO.getGameUsersPromise(conn, req.gameID)
   ]);
 
@@ -371,7 +400,7 @@ Game._startGamePromise = async (
 
   const gameChanges = {
     round: 1,
-    image: imageInfo.gifUrl,
+    image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
     waitingForScenarios: true,
     reactorID: req.playerID,
@@ -407,10 +436,15 @@ Game._skipImagePromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-  const imageInfo = await Game._getNextImagePromise(info.gameInfo.imageQueue, info.gameInfo.lastGif);
+  const imageInfo = await Game._getNextImagePromise(
+    info.gameInfo.imageQueue,
+    req.image ? req.image : info.gameInfo.image,
+    info.gameInfo.image,
+    info.gameInfo.lastGif
+  );
 
   await DAO.setGamePromise(conn, req.gameID, {
-    image: imageInfo.gifUrl,
+    image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
     lastGif: imageInfo.lastPostRetrieved
   });
@@ -524,7 +558,7 @@ Game._nextRoundPromise = async (
     throw new Error('Error moving to the next round: Wait up!');
   }
 
-  const imageInfo = await Game._getNextImagePromise(gameInfo.imageQueue, gameInfo.lastGif);
+  const imageInfo = await Game._getNextImagePromise(gameInfo.imageQueue, gameInfo.image, gameInfo.image, gameInfo.lastGif);
 
   // Get the next reactor
   const nextReactor = Game._getNextReactor(userIDs, gameInfo.reactorID);
@@ -543,7 +577,7 @@ Game._nextRoundPromise = async (
 
   await DAO.setGamePromise(conn, req.gameID, {
     round: gameInfo.round + 1,
-    image: imageInfo.gifUrl,
+    image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
     waitingForScenarios: true,
     reactorID: nextReactor,

@@ -25,7 +25,10 @@ describe('_getNextImagePromise', () => {
     let testCall = (res) => {
       expect(res).toBeDefined();
       expect(Gifs.getGifs).toHaveBeenCalled();
-      expect(res.gifUrl).toEqual('img5');
+      expect(res.image).toEqual({
+        id: 1,
+        url: 'img0'
+      });
       expect(res.imageQueue.length).toEqual(5);
     };
 

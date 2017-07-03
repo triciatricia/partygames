@@ -80,7 +80,7 @@ describe('DatabaseIntegrationTest', function() {
     // DAOs.newGame = function(DBConn, game, callback)
     let game = {
       round: 1,
-      image: 'abc',
+      image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
       reactorID: 1,
       reactorNickname: 'Brownie',
@@ -94,7 +94,7 @@ describe('DatabaseIntegrationTest', function() {
     let expectedRow = {
       id: 1,
       round: 1,
-      image: 'abc',
+      image: "{\"url\":\"abc\",\"id\":1}", // quote escaped for JSON.stringify
       waitingForScenarios: 0,
       reactorID: 1,
       reactorNickname: 'Brownie',
@@ -159,7 +159,7 @@ describe('DatabaseIntegrationTest', function() {
     // Connect to the database for the integration test
     var game = {
       round: 1,
-      image: 'abc',
+      image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
       reactorID: 1,
       reactorNickname: 'Brownie',
@@ -174,7 +174,7 @@ describe('DatabaseIntegrationTest', function() {
     var expectedRow = {
       id: 1,
       round: 1,
-      image: 'abc',
+      image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
       reactorID: 1,
       reactorNickname: 'Brownie',
@@ -191,7 +191,7 @@ describe('DatabaseIntegrationTest', function() {
     var expectedRow2 = {
       id: 1,
       round: 2,
-      image: 'abc',
+      image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
       reactorID: 1,
       reactorNickname: 'Brownie',

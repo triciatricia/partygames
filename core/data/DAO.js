@@ -11,10 +11,15 @@ const Games = require('../../models/Games');
 const Users = require('../../models/Users');
 // const UserGame = require('../../models/UserGame');
 
+export type Image = {
+  url: string,
+  id: number,
+};
+
 export type GameInfo = {
   id: number,
   round: number,
-  image: string,
+  image: Image,
   waitingForScenarios: boolean,
   reactorID: number,
   reactorNickname: string,
@@ -26,7 +31,7 @@ export type GameInfo = {
   choices: Object,
   lastGif: string,
   displayOrder: string,
-  imageQueue: Array<string>,
+  imageQueue: Array<Image>,
 };
 
 // All the data access objects
@@ -58,6 +63,7 @@ function DAO(DBConn) {
     } else {
       command += '';
     }
+    command += ' FOR UPDATE';
 
     this.DBConn.getConn().query(command, commandVals, callback);
   };

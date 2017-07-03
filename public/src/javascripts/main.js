@@ -47,7 +47,7 @@ const ReactionImage = React.createClass({
     return url.endsWith('.mp4');
   },
   render: function() {
-    if (this._isVideo(this.props.image)) {
+    if (this._isVideo(this.props.image.url)) {
       return (
         <div>
           <video
@@ -55,17 +55,17 @@ const ReactionImage = React.createClass({
             autoPlay
             loop
             className="img-responsive"
-            src={this.props.image}
+            src={this.props.image.url}
             muted>
             Sorry, your browser does not support embedded videos.
-            <a href={this.props.image}>Please click here to download.</a>
+            <a href={this.props.image.url}>Please click here to download.</a>
           </video>
         </div>
       );
     }
     return (
       <div>
-        <img id="gif" className="img-responsive" src={this.props.image} />
+        <img id="gif" className="img-responsive" src={this.props.image.url} />
       </div>
     );
   }

@@ -3,7 +3,7 @@ const DataTypes = require('../core/data/types');
 const Games = {
   id: DataTypes.id(),
   round: DataTypes.int(),
-  image: DataTypes.link(),
+  image: DataTypes.JSONtext(),
   waitingForScenarios: DataTypes.boolean(),
   reactorID: DataTypes.id(),
   reactorNickname: DataTypes.char(),
