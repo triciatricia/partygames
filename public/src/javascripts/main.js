@@ -659,10 +659,14 @@ const Container = React.createClass({
             errorMessage: err
           });
         } else {
-          this.setState({
-            gameInfo: gameInfo,
-            playerInfo: playerInfo
-          });
+          if (this.state.gameInfo && this.state.gameInfo.hasOwnProperty('id') &&
+            gameInfo != null && gameInfo.hasOwnProperty('id') &&
+            this.state.gameInfo.id == gameInfo.id){
+            this.setState({
+              gameInfo: gameInfo,
+              playerInfo: playerInfo
+            });
+          }
         }
       }
     );
