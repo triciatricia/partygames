@@ -29,7 +29,7 @@ describe('_getNextImagePromise', () => {
         id: 1,
         url: 'img0'
       });
-      expect(res.imageQueue.length).toEqual(5);
+      expect(res.imageQueue.length).toEqual(3); // Only send 3 gifs at a time
     };
 
     let fail = (err) => {

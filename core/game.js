@@ -53,11 +53,11 @@ Game._getNextImagePromise = async (
     return({ imageQueue: imageQueue, image: curImage, lastPostRetrieved: lastPostRetrieved });
   }
 
-  const MIN_IMAGE_QUEUE_SIZE = 5;
+  const IMAGE_QUEUE_SIZE = 3;
   const MAX_TRIES = 4;
 
   let ntries = 0;
-  while (imageQueue.length < MIN_IMAGE_QUEUE_SIZE + 1) {
+  while (imageQueue.length < IMAGE_QUEUE_SIZE + 1) {
     if (ntries > MAX_TRIES) {
       throw new Error('Cannot find more gifs.');
     }
@@ -81,7 +81,7 @@ Game._getNextImagePromise = async (
         id: id
       });
     }
-    imageQueue = imageQueueToPrepend.concat(imageQueue);
+    imageQueue = imageQueueToPrepend.concat(imageQueue).slice(-IMAGE_QUEUE_SIZE - 1);
     lastPostRetrieved = newLastPostRetrieved;
     ntries += 1;
   }
