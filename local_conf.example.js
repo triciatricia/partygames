@@ -11,7 +11,8 @@ var conf = {
   dbUser: 'user',
   dbPass: 'pw',
   dbName: 'partygames',
-  isProduction: false
+  isProduction: false,
+  charset: 'utf8mb4',
 };
 
 module.exports = conf;
