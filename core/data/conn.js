@@ -23,7 +23,8 @@ function getConnection(callback, customConf) {
       host: conf.dbHost,
       user: conf.dbUser,
       password: conf.dbPass,
-      database: conf.dbName
+      database: conf.dbName,
+      charset: conf.charset,
     });
   }
 
