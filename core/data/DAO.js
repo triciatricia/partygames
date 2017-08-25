@@ -11,6 +11,8 @@ const Games = require('../../models/Games');
 const Users = require('../../models/Users');
 // const UserGame = require('../../models/UserGame');
 
+const TIME_LIMIT = 30000; // Time limit per round in milliseconds. TODO 120000
+
 export type Image = {
   url: string,
   id: number,
@@ -32,6 +34,8 @@ export type GameInfo = {
   lastGif: string,
   displayOrder: string,
   imageQueue: Array<Image>,
+  roundStarted: number,
+  timeLeft: number,
 };
 
 // All the data access objects
@@ -241,6 +245,12 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
         }
 
         game.scores = {};
+
+        game.timeLeft = null;
+        if (game.waitingForScenarios && game.roundStarted) {
+          game.timeLeft = TIME_LIMIT - (Date.now() - game.roundStarted);
+        }
+
         resolve(game);
       }
     };

@@ -10,9 +10,29 @@ const GameStatus = React.createClass({
     score: React.PropTypes.number,
     nickname: React.PropTypes.string,
     gameCode: React.PropTypes.number,
-    leaveGame: React.PropTypes.func
+    leaveGame: React.PropTypes.func,
+    timeLeft: React.PropTypes.number,
+    responsesIn: React.PropTypes.number,
   },
   render: function() {
+    const mins = Math.floor(this.props.timeLeft / 60000);
+    let secs = Math.floor((this.props.timeLeft - mins * 60000)/1000);
+    if (secs <= 9) {
+      secs = "0" + secs;
+    }
+    let timeLeft;
+    let responsesIn;
+    if (this.props.waitingForScenarios && this.props.timeLeft !== null) {
+      timeLeft = (
+        <span style={{color: this.props.timeLeft <= 20000 ? 'red' : 'black'}}>
+          Time left: <span id="timeLeft">{mins}:{secs}</span>
+        </span>
+      );
+      let responsesInMessage = ' | ' + this.props.responsesIn + ' ';
+      responsesInMessage += this.props.responsesIn == 1 ? 'player has' : 'players have';
+      responsesInMessage += ' responded so far.';
+      responsesIn = (<span> {responsesInMessage}</span>);
+    }
     return (
       <div className="row">
         <div className="col-md-12">
@@ -20,6 +40,8 @@ const GameStatus = React.createClass({
             <span id="nickname" >{this.props.nickname}</span>
             <br />
             Score: <span id="score">{this.props.score}</span>
+            <br />
+            {timeLeft} {responsesIn}
           </div>
           <div className="pull-right text-right">
             Round: <span id="round" >{this.props.round}</span>
@@ -124,7 +146,7 @@ const ReactionScenario = React.createClass({
 
 const ScenarioList = React.createClass({
   propTypes: {
-    choices: React.PropTypes.object, // TODO randomize choice order
+    choices: React.PropTypes.object,
     reactorNickname: React.PropTypes.string,
     winningResponse: React.PropTypes.number,
     winningResponseSubmittedBy: React.PropTypes.string,
@@ -285,9 +307,22 @@ const RoundInfo = React.createClass({
     chooseScenario: React.PropTypes.func,
     nextRound: React.PropTypes.func,
     endGame: React.PropTypes.func,
-    skipImage: React.PropTypes.func
+    skipImage: React.PropTypes.func,
+    timeUp: React.PropTypes.bool,
   },
   render: function() {
+    const responseForm = (
+      (this.props.timeUp && this.props.gameInfo.responsesIn > 0 && this.props.gameInfo.waitingForScenarios) ?
+      (<span>Gathering responses...</span>) :
+      (<ResponseForm
+        gameInfo={this.props.gameInfo}
+        playerInfo={this.props.playerInfo}
+        submitResponse={this.props.submitResponse}
+        chooseScenario={this.props.chooseScenario}
+        nextRound={this.props.nextRound}
+        endGame={this.props.endGame}
+        skipImage={this.props.skipImage} />)
+    );
     return (
       <div className='row'>
         <div className='col-md-6'>
@@ -295,14 +330,7 @@ const RoundInfo = React.createClass({
             image={this.props.gameInfo.image} />
         </div>
         <div className='col-md-6'>
-          <ResponseForm
-            gameInfo={this.props.gameInfo}
-            playerInfo={this.props.playerInfo}
-            submitResponse={this.props.submitResponse}
-            chooseScenario={this.props.chooseScenario}
-            nextRound={this.props.nextRound}
-            endGame={this.props.endGame}
-            skipImage={this.props.skipImage} />
+          {responseForm}
         </div>
       </div>
     );
@@ -534,7 +562,8 @@ const Container = React.createClass({
     return {
       gameInfo: null,
       playerInfo: null,
-      errorMessage: null
+      errorMessage: null,
+      timeLeft: null,
     };
   },
   joinGame: function(gameCode) {
@@ -666,10 +695,26 @@ const Container = React.createClass({
               gameInfo: gameInfo,
               playerInfo: playerInfo
             });
+
+            // Update time left in round if applicable and over 2000 ms off
+            if (gameInfo.hasOwnProperty('timeLeft') &&
+              (this.state.timeLeft === null ||
+                Math.abs(this.state.timeLeft - gameInfo.timeLeft) > 2000)) {
+              this.setState({
+                timeLeft: gameInfo.timeLeft < 0 ? 0 : gameInfo.timeLeft
+              });
+            }
           }
         }
       }
     );
+  },
+  roundCountdown: function() {
+    if (this.state.timeLeft !== null) {
+      this.setState({
+        timeLeft: Math.max(this.state.timeLeft - 1000, 0),
+      });
+    }
   },
   startGame: function() {
     GameUtils.startGame(
@@ -742,6 +787,7 @@ const Container = React.createClass({
   componentDidMount: function() {
     this.pollGameInfo();
     setInterval(this.pollGameInfo, 1000);
+    setInterval(this.roundCountdown, 1000);
   },
   render: function() {
     if (this.state.gameInfo === null) {
@@ -766,10 +812,14 @@ const Container = React.createClass({
             score={this.state.playerInfo.score}
             nickname={this.state.playerInfo.nickname}
             gameCode={this.state.gameInfo.id}
-            leaveGame={this.leaveGame} />
+            leaveGame={this.leaveGame}
+            timeLeft={this.state.timeLeft}
+            waitingForScenarios={this.state.gameInfo.waitingForScenarios}
+            responsesIn={this.state.gameInfo.responsesIn} />
           <RoundInfo
             gameInfo={this.state.gameInfo}
             playerInfo={this.state.playerInfo}
+            timeUp={this.state.timeLeft <= 0}
             submitResponse={this.submitResponse}
             chooseScenario={this.chooseScenario}
             nextRound={this.nextRound}

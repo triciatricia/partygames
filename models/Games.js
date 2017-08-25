@@ -14,6 +14,7 @@ const Games = {
   lastGif: DataTypes.char(),
   displayOrder: DataTypes.text(),
   imageQueue: DataTypes.JSONtext(),
+  roundStarted: DataTypes.unsignedint(),
 };
 
 module.exports = Games;

@@ -172,6 +172,7 @@ Game._getPlayerGameInfoWithConnPromise = async (
 
   gameInfo.scores = scores;
   gameInfo.choices = orderedChoices;
+  gameInfo.responsesIn = Object.keys(choices).length;
 
   gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
 
@@ -198,6 +199,7 @@ Game._getGameInfoWithConnPromise = async (
   let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
   const keys = Object.getOwnPropertyNames(choices);
   let orderedChoices = {};
+  let nResponses = choices.length;
   for (let i in displayOrder) {
     let j = parseInt(displayOrder[i]);
     if (j < keys.length) {
@@ -209,6 +211,7 @@ Game._getGameInfoWithConnPromise = async (
   gameInfo.choices = orderedChoices;
 
   gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
+  gameInfo.nResponses = nResponses;
 
   return {
     gameInfo: gameInfo,
@@ -227,21 +230,7 @@ Game._updateIfDoneRespondingWithConnPromise = async (
   // cb(err)
   if (userIDs.length == 0) {
     console.log('Scenarios are in for this round!');
-    let displayOrder = [];
-
-    for (let i = 0; i < nPlayers; i++) {
-      displayOrder.push(i);
-    }
-    displayOrder = Game._shuffle(displayOrder);
-
-    const res = await DAO.setGamePromise(conn, gameID, {
-      waitingForScenarios: false,
-      displayOrder: displayOrder.toString()
-    });
-    if (!res) {
-      return 'Error checking game status';
-    }
-    return;
+    return await Game._goToChooseScenarios(conn, gameID, nPlayers);
 
   } else {
 
@@ -270,6 +259,42 @@ Game._checkAllResponsesInWithConnPromise = async (
   return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID, userIDs.length);
 };
 
+Game._goToChooseScenarios = async (
+  conn: ConnUtils.DBConn,
+  gameID: number,
+  nResponses: number
+): Promise<?string> => {
+  let displayOrder = [];
+
+  for (let i = 0; i < nResponses; i++) {
+    displayOrder.push(i);
+  }
+  displayOrder = Game._shuffle(displayOrder);
+
+  const res = await DAO.setGamePromise(conn, gameID, {
+    waitingForScenarios: false,
+    displayOrder: displayOrder.toString(),
+    roundStarted: null,
+  });
+  if (!res) {
+    return 'Error checking game status';
+  }
+};
+
+Game._checkTimeUpWithConnPromise = async (
+  conn: ConnUtils.DBConn,
+  gameID: number
+): Promise<?string> => {
+  // Update if time's up
+  const gameInfo = await DAO.getGamePromise(conn, gameID);
+  const userIDs = await DAO.getGameUsersPromise(conn, gameID);
+  const choices = await Game._getScenariosWithConnPromise(conn, userIDs.slice(0));
+  let nResponses = Object.keys(choices).length;
+  if (gameInfo.timeLeft !== null && gameInfo.timeLeft < -3000 && nResponses > 0) { // Allow 3 secs leeway
+    return await Game._goToChooseScenarios(conn, gameID, userIDs.length);
+  }
+};
+
 Game._getGameInfoPromise = async (
   req: Object,
   conn: ConnUtils.DBConn
@@ -278,6 +303,7 @@ Game._getGameInfoPromise = async (
   if (req.playerID) {
     let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     if (info.gameInfo.waitingForScenarios) {
+      await Game._checkTimeUpWithConnPromise(conn, req.gameID);
       await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
       return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     }
@@ -405,7 +431,8 @@ Game._startGamePromise = async (
     waitingForScenarios: true,
     reactorID: req.playerID,
     reactorNickname: playerInfo.nickname,
-    lastGif: imageInfo.lastPostRetrieved
+    lastGif: imageInfo.lastPostRetrieved,
+    roundStarted: Date.now(),
   };
 
   if (req.gameID != playerInfo.game) {
@@ -446,7 +473,8 @@ Game._skipImagePromise = async (
   await DAO.setGamePromise(conn, req.gameID, {
     image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
-    lastGif: imageInfo.lastPostRetrieved
+    lastGif: imageInfo.lastPostRetrieved,
+    roundStarted: Date.now(),
   });
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
@@ -584,7 +612,8 @@ Game._nextRoundPromise = async (
     reactorNickname: nextReactorNickname,
     winningResponse: null,
     winningResponseSubmittedBy: null,
-    lastGif: imageInfo.lastPostRetrieved
+    lastGif: imageInfo.lastPostRetrieved,
+    roundStarted: Date.now(),
   });
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);

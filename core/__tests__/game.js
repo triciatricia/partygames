@@ -198,7 +198,8 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
       winningResponseSubmittedBy: null,
       displayOrder: '0,1',
       scores: fakeScores,
-      choices: fakeChoices
+      choices: fakeChoices,
+      responsesIn: 2,
     },
     playerInfo: fakeUser
   };
