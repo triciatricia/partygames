@@ -11,7 +11,7 @@ const Games = require('../../models/Games');
 const Users = require('../../models/Users');
 // const UserGame = require('../../models/UserGame');
 
-const TIME_LIMIT = 30000; // Time limit per round in milliseconds. TODO 120000
+const TIME_LIMIT = 120000; // Time limit per round in milliseconds.
 
 export type Image = {
   url: string,
