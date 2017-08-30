@@ -46,24 +46,22 @@ async function vidFromGifv(url: string): Promise<string> {
 }
 
 async function filterPosts(posts: Array<{data: {url: string}}>): Promise<Array<string>> {
-  // Filter posts for gifs
+  // Filter posts for gifs (only use videos because they have smaller file sizes)
   let filteredPosts = [];
   for (let i = 0; i < posts.length; i++) {
-    if (linkIsGif(posts[i].data.url)) { // Currently, only gifs are sent.
+    if (linkIsMp4(posts[i].data.url)) {
 
       filteredPosts.push(posts[i].data.url);
 
     } else if (linkIsGifv(posts[i].data.url)) {
 
-      continue; // Currently, only gifs are sent.
-
-      // try {
-      //   const vidUrl = await vidFromGifv(posts[i].data.url);
-      //   filteredPosts.push(vidUrl);
-      // } catch (error) {
-      //   // Do nothing
-      //   console.log(error);
-      // }
+      try {
+        const vidUrl = await vidFromGifv(posts[i].data.url);
+        filteredPosts.push(vidUrl);
+      } catch (error) {
+        // Do nothing
+        console.log(error);
+      }
 
     }
   }
