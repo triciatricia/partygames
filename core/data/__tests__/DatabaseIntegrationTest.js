@@ -342,4 +342,79 @@ describe('DatabaseIntegrationTest', function() {
         done();
       });
     });
+
+  it('should error when setting a game with invalid fields', function(done) {
+    // Connect to the database for the integration test
+    var game1 = {
+      round: 1,
+      image: {url: 'abc', id: 1},
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null,
+      lastGif: null,
+      imageQueue: null,
+      roundStarted: null,
+      notAValidField: 'haha',
+    };
+
+    var game2 = {
+      round: 'notANumber',
+      image: {url: 'abc', id: 1},
+      waitingForScenarios: 0,
+      reactorID: 1,
+      reactorNickname: 'Brownie',
+      hostID: 1,
+      gameOver: 0,
+      winningResponse: null,
+      winningResponseSubmittedBy: null,
+      lastGif: null,
+      imageQueue: null,
+      roundStarted: null,
+      abcd: 123,
+    };
+
+    let wConn;
+
+    async function testGame1() {
+      wConn = await connUtils.getNewConnectionPromise(
+        connUtils.Modes.WRITE,
+        DBConfig
+      );
+      try {
+        await DAO.newGamePromise(wConn, game1);
+        fail();
+      }
+      catch (err) {
+        // ignore
+      }
+    }
+
+    async function testGame2() {
+      try {
+        await DAO.newGamePromise(wConn, game2);
+        fail();
+      }
+      catch (err) {
+        // ignore, close connection
+        wConn.getConn().end();
+        done();
+      }
+    }
+
+    function fail() {
+      if (wConn && wConn.hasOwnProperty('getConn')) {
+        wConn.getConn().end();
+      }
+      console.log('DatabaseIntegrationTest: Error expected but not found.');
+      expect(true).toBe(false);
+      done();
+    }
+
+    testGame1()
+      .then(testGame2);
+  });
 });

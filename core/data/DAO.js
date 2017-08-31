@@ -171,7 +171,12 @@ DAOs.setGamePromise = function(
     // Format data for saving
     Object.keys(props).forEach(key => {
       if (Games.hasOwnProperty(key)) {
-        props[key] = Games[key].beforeSaving(props[key]);
+        try {
+          props[key] = Games[key].beforeSaving(props[key]);
+        }
+        catch (err) {
+          reject('Cannot save game property ${key}. Check formatting.');
+        }
       } else {
         reject('Cannot save invalid game property: ' + key);
       }
@@ -198,7 +203,12 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
     // Format data for saving
     Object.keys(props).forEach(key => {
       if (Games.hasOwnProperty(key)) {
-        props[key] = Games[key].beforeSaving(props[key]);
+        try {
+          props[key] = Games[key].beforeSaving(props[key]);
+        }
+        catch (err) {
+          reject('Cannot save game property ${key}. Check formatting.');
+        }
       } else {
         reject('Cannot save invalid game property: ' + key);
       }
@@ -234,7 +244,12 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
         // Format saved data
         Object.keys(game).forEach(key => {
           if (Games.hasOwnProperty(key)) {
-            game[key] = Games[key].afterLoading(game[key]);
+            try {
+              game[key] = Games[key].afterLoading(game[key]);
+            }
+            catch (err) {
+              reject('Error retrieving game info.');
+            }
           }
         });
 
@@ -284,7 +299,12 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
     // Format data for saving
     Object.keys(props).forEach(key => {
       if (Users.hasOwnProperty(key)) {
-        props[key] = Users[key].beforeSaving(props[key]);
+        try {
+          props[key] = Users[key].beforeSaving(props[key]);
+        }
+        catch (err) {
+          reject('Cannot save user property ${key}. Check formatting.');
+        }
       } else {
         reject('Cannot save invalid user property: ' + key);
       }
@@ -324,7 +344,12 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
     // Format data for saving
     Object.keys(props).forEach(key => {
       if (Users.hasOwnProperty(key)) {
-        props[key] = Users[key].beforeSaving(props[key]);
+        try {
+          props[key] = Users[key].beforeSaving(props[key]);
+        }
+        catch (err) {
+          reject('Cannot save user property ${key}. Check formatting.');
+        }
       } else {
         reject('Cannot save invalid user property: ' + key);
       }
@@ -394,7 +419,12 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
         // Format saved data
         Object.keys(playerInfo).forEach(key => {
           if (Users.hasOwnProperty(key)) {
-            playerInfo[key] = Users[key].afterLoading(playerInfo[key]);
+            try {
+              playerInfo[key] = Users[key].afterLoading(playerInfo[key]);
+            }
+            catch (err) {
+              reject('Error retrieving user info.');
+            }
           }
         });
         resolve(playerInfo);
