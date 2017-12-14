@@ -6,6 +6,8 @@ const ConnUtils = require('./data/conn');
 const DAO = require('./data/DAO');
 const Gifs = require('./gifs');
 
+import {sendPushesIfActivePromise} from './notifications';
+
 import type { GameInfo, Image } from './data/DAO';
 
 let Game = {};
@@ -142,6 +144,16 @@ Game._getScenariosWithConnPromise = async (
   return scenarios;
 };
 
+// Save the current time as the last time the app was active
+Game._setActiveTimePromise = async (
+  conn: ConnUtils.DBConn,
+  playerID: number,
+): Promise<void> => {
+  await DAO.setUserPromise(conn, playerID, {
+    lastActiveTime: Date.now(),
+  });
+}
+
 /**
  * Returns a promise to return a player info object
  */
@@ -222,28 +234,30 @@ Game._getGameInfoWithConnPromise = async (
 Game._updateIfDoneRespondingWithConnPromise = async (
   conn: ConnUtils.DBConn,
   gameID: number,
-  userIDs: Array<number>,
+  userIDsLeft: Array<number>,
   reactorID: number,
-  nPlayers: number
+  nPlayers: number,
+  allUserIds: Array<number>,
+  roundStarted: number,
 ): Promise<?string> => {
   // Update game info if all the users but the host have responded
   // cb(err)
-  if (userIDs.length == 0) {
+  if (userIDsLeft.length === 0) {
     console.log('Scenarios are in for this round!');
-    return await Game._goToChooseScenarios(conn, gameID, nPlayers);
+    return await Game._goToChooseScenarios(conn, gameID, nPlayers, allUserIds, roundStarted);
 
-  } else {
-
-    const nextID = userIDs.pop();
-    const userInfo = await DAO.getUserPromise(conn, nextID);
-
-    // Check if not reactor and still hasn't submitted scenario
-    if (!userInfo.submittedScenario && nextID != reactorID) {
-      return;
-    } else {
-      await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, reactorID, nPlayers);
-    }
   }
+
+  const nextID = userIDsLeft.pop();
+  const userInfo = await DAO.getUserPromise(conn, nextID);
+
+  // Check if not reactor and still hasn't submitted scenario
+  if (!userInfo.submittedScenario && nextID != reactorID) {
+    return;
+  } else {
+    await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDsLeft, reactorID, nPlayers, allUserIds, roundStarted);
+  }
+
 };
 
 Game._checkAllResponsesInWithConnPromise = async (
@@ -256,14 +270,16 @@ Game._checkAllResponsesInWithConnPromise = async (
     DAO.getGamePromise(conn, gameID),
     DAO.getGameUsersPromise(conn, gameID)
   ]);
-  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID, userIDs.length);
+  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID, userIDs.length, userIDs.slice(), gameInfo.roundStarted);
 };
 
 Game._goToChooseScenarios = async (
   conn: ConnUtils.DBConn,
   gameID: number,
-  nResponses: number
-): Promise<?string> => {
+  nResponses: number,
+  userIDs: Array<number>,
+  roundStarted: number,
+): Promise<void> => {
   let displayOrder = [];
 
   for (let i = 0; i < nResponses; i++) {
@@ -277,8 +293,16 @@ Game._goToChooseScenarios = async (
     roundStarted: null,
   });
   if (!res) {
-    return 'Error checking game status';
+    throw Error('Error checking game status');
   }
+
+  // Send push notifications to players with the app hidden
+  await sendPushesIfActivePromise(
+    'The responses are in! Click here to see them.',
+    conn,
+    userIDs,
+    roundStarted,
+  );
 };
 
 Game._checkTimeUpWithConnPromise = async (
@@ -291,7 +315,7 @@ Game._checkTimeUpWithConnPromise = async (
   const choices = await Game._getScenariosWithConnPromise(conn, userIDs.slice(0));
   let nResponses = Object.keys(choices).length;
   if (gameInfo.timeLeft !== null && gameInfo.timeLeft < -3000 && nResponses > 0) { // Allow 3 secs leeway
-    return await Game._goToChooseScenarios(conn, gameID, userIDs.length);
+    return await Game._goToChooseScenarios(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
   }
 };
 
@@ -392,14 +416,22 @@ Game._addNewPlayerWithConnPromise = async (
 };
 
 Game._createPlayerPromise = async (
-  req: Object,
+  req: {gameID: string, nickname: string, pushToken?: string},
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   // Create a player called req.nickname
   // in the game req.gameID
+  // req.pushToken (optional) can specify a token for push notifications.
   const gameID = Game._getIDFromGameCode(req.gameID);
   const gameInfo: GameInfo = (await Game._getGameInfoWithConnPromise(conn, gameID)).gameInfo;
   const playerID = await Game._addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
+
+  if (req.pushToken) {
+    console.log('Setting push token ' + req.pushToken);
+    await DAO.setUserPromise(conn, playerID, {
+      ExpoPushToken: req.pushToken,
+    });
+  }
 
   if (gameInfo.hostID === null) {
     // Set the host to be the player.
@@ -708,6 +740,12 @@ Game.processRequest = async (
 
     conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
     await ConnUtils.beginTransactionPromise(conn);
+
+    // Update the last active time if the app is active
+    if (req.playerID && req.appIsActive) {
+      await Game._setActiveTimePromise(conn, req.playerID);
+    }
+
     const info = await actions[req.action](req, conn);
     await ConnUtils.commitTransactionPromise(conn);
     return info;

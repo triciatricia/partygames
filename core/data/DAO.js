@@ -67,7 +67,6 @@ function DAO(DBConn) {
     } else {
       command += '';
     }
-    command += ' FOR UPDATE';
 
     this.DBConn.getConn().query(command, commandVals, callback);
   };
@@ -235,6 +234,7 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
 
     const cb = function(err, res) {
       if (err) {
+        console.warn(err);
         reject('Error retrieving game info.');
       } else if (res.length === 0) {
         reject('Could not find game ' + gameID + ' in database');
@@ -506,6 +506,45 @@ DAOs.getUsersPropPromise = (
   props: string[]
 ): Promise<Object> => {
   return getUsersPropHelper(DBConn, userIDs.slice(0), props);
+};
+
+/**
+ * Function that returns a promise to return the pushTokens of
+ * users that have apps that were last active between
+ * the times specified (the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC.)
+ */
+DAOs.getPushTokensPromise = function(
+  DBConn: conn.DBConn,
+  userIDs: Array<number>,
+  start: number,
+  end: number
+): Promise<Array<string>> {
+  return new Promise((resolve, reject) => {
+    if (userIDs.length === 0) {
+      resolve([]);
+      return;
+    }
+
+    let command = (
+      `SELECT ExpoPushToken FROM ${tables.users.tableName} ` +
+      `WHERE ${tables.users.userIDName} IN (${userIDs.join(', ')}) ` +
+      `AND lastActiveTime >= ${start} ` +
+      `AND lastActiveTime <= ${end} FOR UPDATE`
+    );
+
+    DBConn.getConn().query(command, [], (err, res) => {
+      if (err) {
+        reject('Error retrieving user info.');
+      } else {
+        let pushTokens = [];
+        for (let data of res) {
+          pushTokens.push(data.ExpoPushToken);
+        }
+        resolve(pushTokens);
+      }
+    });
+
+  });
 };
 
 module.exports = DAOs;

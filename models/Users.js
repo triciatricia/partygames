@@ -8,7 +8,10 @@ const Users = {
   response: DataTypes.text(),
   score: DataTypes.int(),
   game: DataTypes.id(),
-  submittedScenario: DataTypes.boolean()
+  submittedScenario: DataTypes.boolean(),
+  lastActiveTime: DataTypes.unsignedint(),
+  ExpoPushToken: DataTypes.char(),
+  message: DataTypes.text(),
 };
 
 module.exports = Users;

@@ -57,7 +57,23 @@ describe('DatabaseIntegrationTest', function() {
               done();
               return;
             }
-            cb(done);
+            connection.query('TRUNCATE TABLE images', function(err) {
+              if (err) {
+                console.error('Error truncating mysql table for jasmine test setup: ' + err.stack);
+                connection.end();
+                done();
+                return;
+              }
+              connection.query('TRUNCATE TABLE gameimage', function(err) {
+                if (err) {
+                  console.error('Error truncating mysql table for jasmine test setup: ' + err.stack);
+                  connection.end();
+                  done();
+                  return;
+                }
+                cb(done);
+              });
+            });
           });
         });
       });
@@ -274,7 +290,10 @@ describe('DatabaseIntegrationTest', function() {
       response: null,
       score: 0,
       game: 1,
-      submittedScenario: 0
+      submittedScenario: 0,
+      lastActiveTime: null,
+      ExpoPushToken: null,
+      message: null,
     };
     var expectedRow2 = {
       id: 1,
@@ -284,7 +303,10 @@ describe('DatabaseIntegrationTest', function() {
       response: null,
       score: 3,
       game: 2,
-      submittedScenario: 0
+      submittedScenario: 0,
+      lastActiveTime: null,
+      ExpoPushToken: null,
+      message: null,
     };
 
     let wConn;
