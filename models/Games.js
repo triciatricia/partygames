@@ -15,6 +15,7 @@ const Games = {
   displayOrder: DataTypes.text(),
   imageQueue: DataTypes.JSONtext(),
   roundStarted: DataTypes.unsignedint(),
+  firstImageID: DataTypes.unsignedint(),
 };
 
 module.exports = Games;

@@ -38,13 +38,16 @@ Game._getIDFromGameCode = (code: string): number => {
 };
 
 /**
- * Promise to return a random reaction image url.
+ * Promise to return a new reaction image url.
  */
 Game._getNextImagePromise = async (
   imageQueue: Array<Image>,
   prevImage: ?Image,
   curImage: ?Image,
-  lastPostRetrieved: ?string
+  lastPostRetrieved: ?string,
+  gameId: number,
+  reactorNickname: string,
+  conn: ConnUtils.DBConn,
 ): Promise<{
   imageQueue: Array<Image>,
   image: Image,
@@ -94,6 +97,9 @@ Game._getNextImagePromise = async (
     // In case multiple images were skipped.
     image = imageQueue.pop();
   }
+
+  // Save the image to the database
+  await DAO.newImagePromise(conn, image.url, gameId, image.id, reactorNickname);
 
   return({ imageQueue, image, lastPostRetrieved });
 };
@@ -324,16 +330,23 @@ Game._getGameInfoPromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Promise to return game info (and player info if the player ID is given)
+  let info;
   if (req.playerID) {
-    let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     if (info.gameInfo.waitingForScenarios) {
       await Game._checkTimeUpWithConnPromise(conn, req.gameID);
       await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
       return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
     }
-    return info;
+  } else {
+    info = await Game._getGameInfoWithConnPromise(conn, req.gameID);
   }
-  return await Game._getGameInfoWithConnPromise(conn, req.gameID);
+
+  if (info.gameInfo.gameOver) {
+    info.gameInfo.gameImages = await DAO.getGameImagesPromise(conn, req.gameID, info.gameInfo.firstImageID);
+  }
+
+  return info;
 };
 
 Game._joinGamePromise = async (
@@ -364,6 +377,14 @@ Game._createNewGamePromise = async (
   console.log('Creating game with ID ' + res.insertId);
   const gameInfo = await DAO.getGamePromise(conn, res.insertId);
   return {gameInfo, playerInfo: null};
+};
+
+Game._heartImagePromise = async (
+  req: {url: string, playerID: number, gameID: number},
+  conn: ConnUtils.DBConn,
+): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
+  await DAO.increaseHeartCountPromise(conn, req.url);
+  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
 
 Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
@@ -448,16 +469,26 @@ Game._startGamePromise = async (
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
   let [imageInfo, userIDs] = await Promise.all([
-    Game._getNextImagePromise(info.gameInfo.imageQueue, info.gameInfo.image, info.gameInfo.image, info.gameInfo.gifUrl),
+    Game._getNextImagePromise(
+      gameInfo.imageQueue,
+      gameInfo.image,
+      gameInfo.image,
+      gameInfo.gifUrl,
+      gameInfo.id,
+      playerInfo.nickname,
+      conn,
+    ),
     DAO.getGameUsersPromise(conn, req.gameID)
   ]);
 
-  const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
+  let newFirstImageID = imageInfo.image.id;
 
   const gameChanges = {
     round: 1,
+    firstImageID: newFirstImageID,
     image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
     waitingForScenarios: true,
@@ -499,8 +530,16 @@ Game._skipImagePromise = async (
     info.gameInfo.imageQueue,
     req.image ? req.image : info.gameInfo.image,
     info.gameInfo.image,
-    info.gameInfo.lastGif
+    info.gameInfo.lastGif,
+    info.gameInfo.id,
+    info.gameInfo.reactorNickname,
+    conn,
   );
+
+  if (req.image && imageInfo.image.id > req.image.id) {
+    // The image has been skipped for the first time in this game.
+    await DAO.skipImagePromise(conn, req.image.url, req.gameID, req.image.id);
+  }
 
   await DAO.setGamePromise(conn, req.gameID, {
     image: imageInfo.image,
@@ -580,10 +619,14 @@ Game._chooseScenarioPromise = async (
   await DAO.setUserPromise(conn, winningID, {
     score: winnerInfo.score + 1
   });
-  await DAO.setGamePromise(conn, info.gameInfo.id, {
-    winningResponseSubmittedBy: winnerInfo.nickname,
-    winningResponse: winningID
-  });
+  await Promise.all([
+    DAO.setGamePromise(conn, info.gameInfo.id, {
+      winningResponseSubmittedBy: winnerInfo.nickname,
+      winningResponse: winningID
+    }),
+    DAO.setImageScenarioPromise(conn, info.gameInfo.id,
+      info.gameInfo.image.id, winnerInfo.response)
+    ]);
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
 };
@@ -618,14 +661,22 @@ Game._nextRoundPromise = async (
     throw new Error('Error moving to the next round: Wait up!');
   }
 
-  const imageInfo = await Game._getNextImagePromise(gameInfo.imageQueue, gameInfo.image, gameInfo.image, gameInfo.lastGif);
-
   // Get the next reactor
   const nextReactor = Game._getNextReactor(userIDs, gameInfo.reactorID);
   if (!nextReactor) {
     throw new Error('Error moving to the next round: No players left.');
   }
   const nextReactorNickname = (await DAO.getUserPromise(conn, nextReactor)).nickname;
+
+  const imageInfo = await Game._getNextImagePromise(
+    gameInfo.imageQueue,
+    gameInfo.image,
+    gameInfo.image,
+    gameInfo.lastGif,
+    gameInfo.id,
+    nextReactorNickname,
+    conn,
+  );
 
   // Remove responses from people and set submittedScenario to false
   await Promise.all(userIDs.map(
@@ -683,7 +734,7 @@ Game._endGamePromise = async (
     reactorNickname: null,
     winningResponse: null,
     winningResponseSubmittedBy: null,
-    gameOver: true
+    gameOver: true,
   });
 
   return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
@@ -714,6 +765,7 @@ const actions = {
   joinGame: Game._joinGamePromise,
   createPlayer: Game._createPlayerPromise,
   createNewGame: Game._createNewGamePromise,
+  heartImage: Game._heartImagePromise,
   startGame: Game._startGamePromise,
   skipImage: Game._skipImagePromise,
   submitResponse: Game._submitResponsePromise,

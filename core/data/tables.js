@@ -5,15 +5,21 @@
  const Tables = {
  	game: {
  		tableName: 'games',
- 		gameIDName: 'ID'
+ 		gameIDName: 'ID',
  	},
  	users: {
  		tableName: 'users',
- 		userIDName: 'ID'
+ 		userIDName: 'ID',
  	},
  	usergame: {
- 		tableName: 'usergame'
- 	}
+ 		tableName: 'usergame',
+ 	},
+  images: {
+    tableName: 'images',
+  },
+  gameimage: {
+    tableName: 'gameimage',
+  }
  };
 
  module.exports = Tables;

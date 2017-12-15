@@ -13,12 +13,26 @@ describe('_getIDFromGameCode', () => {
 
 describe('_getNextImagePromise', () => {
   beforeEach(() => {
-    let mockGif = (lastPostRetrieved) => {
+    const mockGif = (lastPostRetrieved) => {
       return new Promise((resolve, reject) => {
         resolve([['img0', 'img1', 'img2', 'img3', 'img4', 'img5'], 'lastPostRetrieved']);
       });
     };
     spyOn(Gifs, 'getGifs').and.callFake(mockGif);
+
+    const mockNewImage = (
+      DBConn: string,
+      url: string,
+      gameId: number,
+      gameImageId: number,
+      reactorNickname: string,
+    ) => {
+      return new Promise((resolve, reject) => {
+        resolve({});
+      });
+    };
+
+    spyOn(DAO, 'newImagePromise').and.callFake(mockNewImage);
   });
 
   it('should call Gifs.getGifs', (done) => {
@@ -30,6 +44,7 @@ describe('_getNextImagePromise', () => {
         url: 'img0'
       });
       expect(res.imageQueue.length).toEqual(3); // Only send 3 gifs at a time
+      expect(DAO.newImagePromise).toHaveBeenCalled();
     };
 
     let fail = (err) => {
@@ -38,7 +53,8 @@ describe('_getNextImagePromise', () => {
       done();
     };
 
-    game._getNextImagePromise([])
+    const fakeConn = 'fake';
+    game._getNextImagePromise([], null, null, null, 'testName', fakeConn)
       .then(testCall)
       .catch(fail)
       .then(done);

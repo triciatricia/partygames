@@ -123,6 +123,7 @@ describe('DatabaseIntegrationTest', function() {
       displayOrder: null,
       imageQueue: null,
       roundStarted: null,
+      firstImageID: null,
     };
 
     let wConn
@@ -205,6 +206,7 @@ describe('DatabaseIntegrationTest', function() {
       displayOrder: null,
       imageQueue: [],
       roundStarted: null,
+      firstImageID: null,
       scores: {},
       timeLeft: null,
     };
@@ -224,6 +226,7 @@ describe('DatabaseIntegrationTest', function() {
       displayOrder: null,
       imageQueue: [],
       roundStarted: null,
+      firstImageID: null,
       scores: {},
       timeLeft: null,
     };
@@ -439,4 +442,102 @@ describe('DatabaseIntegrationTest', function() {
     testGame1()
       .then(testGame2);
   });
+
+  it('should be able to add an image and get image information', function(done) {
+    const expectedImageRow1 = {
+      url: 'testURL1',
+      nSkipped: 0,
+      nHearted: 0,
+    };
+    var expectedGameImageRow1 = {
+      gameId: 3,
+      gameImageId: 2,
+      imageUrl: 'testURL1',
+      wasSkipped: null,
+      scenario: null,
+      reactorNickname: 'reactor1',
+    };
+
+    let wConn;
+
+    async function testImage() {
+      wConn = await connUtils.getNewConnectionPromise(
+        connUtils.Modes.WRITE,
+        DBConfig
+      );
+
+      await DAO.newImagePromise(wConn, 'testURL1', 3, 2, 'reactor1');
+      await DAO.newImagePromise(wConn, 'testURL2', 3, 3, 'reactor2');
+      await DAO.newImagePromise(wConn, 'testURL3', 3, 4, 'reactor3');
+      await DAO.newImagePromise(wConn, 'testURL3', 3, 5, 'reactor4');
+
+      // Same image but different game
+      await DAO.newImagePromise(wConn, 'testURL2', 2, 3, 'reactor4');
+
+      let result = await DAO.getImagePromise(wConn, 'testURL1');
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedImageRow1));
+
+      await DAO.skipImagePromise(wConn, 'testURL2', 3, 3);
+      await DAO.increaseHeartCountPromise(wConn, 'testURL2');
+      await DAO.increaseHeartCountPromise(wConn, 'testURL2');
+
+      DAO.setImageScenarioPromise(wConn, 3, 2, 'scenario1');
+      DAO.setImageScenarioPromise(wConn, 3, 4, 'scenario2');
+
+      result = await DAO.getGameImagesPromise(wConn, 3);
+      const expectedGameImages1 = [
+        {
+          gameImageId: 2,
+          imageUrl: 'testURL1',
+          scenario: 'scenario1',
+          reactorNickname: 'reactor1',
+        },
+        {
+          gameImageId: 4,
+          imageUrl: 'testURL3',
+          scenario: 'scenario2',
+          reactorNickname: 'reactor3',
+        },
+      ];
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages1));
+
+      result = await DAO.getGameImagesPromise(wConn, 3, 3);
+      const expectedGameImages2 = [
+        {
+          gameImageId: 4,
+          imageUrl: 'testURL3',
+          scenario: 'scenario2',
+          reactorNickname: 'reactor3',
+        },
+      ];
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages2));
+
+      result = await DAO.getGameImagesPromise(wConn, 2);
+      expect(result.length).toBe(0);
+
+      const expectedImageRow2 = {
+        url: 'testURL2',
+        nSkipped: 1,
+        nHearted: 2,
+      };
+      result = await DAO.getImagePromise(wConn, 'testURL2');
+      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedImageRow2))
+    }
+
+    function fail(err) {
+      console.log(err);
+      if (wConn && wConn.hasOwnProperty('getConn')) {
+        wConn.getConn().end();
+      }
+      expect(true).toBe(false);
+      done();
+    }
+
+    testImage()
+      .catch(fail)
+      .then(() => {
+        wConn.getConn().end();
+        done();
+      });
+    });
 });
