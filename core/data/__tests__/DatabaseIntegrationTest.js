@@ -208,6 +208,7 @@ describe('DatabaseIntegrationTest', function() {
       roundStarted: null,
       firstImageID: null,
       scores: {},
+      choices: {},
       timeLeft: null,
     };
 
@@ -228,6 +229,7 @@ describe('DatabaseIntegrationTest', function() {
       roundStarted: null,
       firstImageID: null,
       scores: {},
+      choices: {},
       timeLeft: null,
     };
 

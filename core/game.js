@@ -104,21 +104,6 @@ Game._getNextImagePromise = async (
   return({ imageQueue, image, lastPostRetrieved });
 };
 
-Game._getScoresWithConnPromise = async (
-  conn: ConnUtils.DBConn,
-  userIDs: Array<number>
-): Promise<Object> => {
-  // return scores = {nickname: score} for the userIDs given
-  const info = await DAO.getUsersPropPromise(conn, userIDs, ['nickname', 'score']);
-
-  let scores = {};
-  for (const id in info) {
-    scores[info[id].nickname] = info[id].score;
-  }
-
-  return scores;
-};
-
 /**
  * Shuffle an array
  */
@@ -130,24 +115,6 @@ Game._shuffle = <T>(arr: Array<T>): Array<T> => {
     arr[rand] = temp;
   }
   return arr;
-};
-
-Game._getScenariosWithConnPromise = async (
-  conn: ConnUtils.DBConn,
-  userIDs: Array<number>
-): Promise<Object> => {
-  // return scenarios, as in: {userID: scenario}
-  const info = await DAO.getUsersPropPromise(conn, userIDs, ['response']);
-
-  let scenarios = {};
-  for (const id in info) {
-    if (info[id].response) {
-      // Insert '_' before each id so it doesn't default to ordering responses by id.
-      scenarios[Game._choiceIDFromPlayerID(id)] = info[id].response;
-    }
-  }
-
-  return scenarios;
 };
 
 // Save the current time as the last time the app was active
@@ -168,31 +135,10 @@ Game._getPlayerGameInfoWithConnPromise = async (
   playerID: number,
   gameID: number
 ): Promise<Object> => {
-  let [gameInfo, playerInfo, userIDs] = await Promise.all([
+  let [gameInfo, playerInfo] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
     DAO.getUserPromise(conn, playerID),
-    DAO.getGameUsersPromise(conn, gameID)
   ]);
-  const [scores, choices] = await Promise.all([
-    Game._getScoresWithConnPromise(conn, userIDs.slice(0)),
-    Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
-  ]);
-
-  let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
-  const keys = Object.getOwnPropertyNames(choices);
-  let orderedChoices = {};
-  for (let i in displayOrder) {
-    let j = parseInt(displayOrder[i]);
-    if (j < keys.length) {
-      orderedChoices[keys[j]] = choices[keys[j]];
-    }
-  }
-
-  gameInfo.scores = scores;
-  gameInfo.choices = orderedChoices;
-  gameInfo.responsesIn = Object.keys(choices).length;
-
-  gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
 
   return({
     gameInfo: gameInfo,
@@ -205,31 +151,7 @@ Game._getGameInfoWithConnPromise = async (
   gameID: number
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
-  let [gameInfo, userIDs] = await Promise.all([
-    DAO.getGamePromise(conn, gameID),
-    DAO.getGameUsersPromise(conn, gameID)
-  ]);
-  const [scores, choices] = await Promise.all([
-    Game._getScoresWithConnPromise(conn, userIDs.slice(0)),
-    Game._getScenariosWithConnPromise(conn, userIDs.slice(0))
-  ]);
-
-  let displayOrder = gameInfo.displayOrder ? gameInfo.displayOrder.split(',') : null;
-  const keys = Object.getOwnPropertyNames(choices);
-  let orderedChoices = {};
-  let nResponses = choices.length;
-  for (let i in displayOrder) {
-    let j = parseInt(displayOrder[i]);
-    if (j < keys.length) {
-      orderedChoices[keys[j]] = choices[keys[j]];
-    }
-  }
-
-  gameInfo.scores = scores;
-  gameInfo.choices = orderedChoices;
-
-  gameInfo.winningResponse = Game._choiceIDFromPlayerID(gameInfo.winningResponse);
-  gameInfo.nResponses = nResponses;
+  let gameInfo = await DAO.getGamePromise(conn, gameID);
 
   return {
     gameInfo: gameInfo,
@@ -318,9 +240,7 @@ Game._checkTimeUpWithConnPromise = async (
   // Update if time's up
   const gameInfo = await DAO.getGamePromise(conn, gameID);
   const userIDs = await DAO.getGameUsersPromise(conn, gameID);
-  const choices = await Game._getScenariosWithConnPromise(conn, userIDs.slice(0));
-  let nResponses = Object.keys(choices).length;
-  if (gameInfo.timeLeft !== null && gameInfo.timeLeft < -3000 && nResponses > 0) { // Allow 3 secs leeway
+  if (gameInfo.timeLeft !== null && gameInfo.timeLeft < -3000 && gameInfo.responsesIn > 0) { // Allow 3 secs leeway
     return await Game._goToChooseScenarios(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
   }
 };
@@ -583,10 +503,6 @@ Game._submitResponsePromise = async (
  */
 Game._playerIDFromChoiceID = (choiceID: string) => {
   return parseInt(choiceID.substring(1));
-};
-
-Game._choiceIDFromPlayerID = (playerID: number | string) => {
-  return playerID && '_' + playerID;
 };
 
 /**

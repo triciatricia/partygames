@@ -25,9 +25,10 @@ export type GameInfo = {
   waitingForScenarios: boolean,
   reactorID: number,
   reactorNickname: string,
+  responsesIn: number,
   hostID: number,
   gameOver: boolean,
-  winningResponse: string,
+  winningResponse: string | null,
   winningResponseSubmittedBy: number,
   scores: Object,
   choices: Object,
@@ -36,7 +37,7 @@ export type GameInfo = {
   imageQueue: Array<Image>,
   roundStarted: ?number,
   firstImageID: ?number,
-  timeLeft: number,
+  timeLeft: number | null,
   gameImages?: Array<{
     gameImageId: number,
     imageUrl: string,
@@ -298,34 +299,38 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
       } else if (res.length === 0) {
         reject('Could not find game ' + gameID + ' in database');
       } else {
-        let game = res[0];
 
-        // Format saved data
-        Object.keys(game).forEach(key => {
-          if (Games.hasOwnProperty(key)) {
-            try {
-              game[key] = Games[key].afterLoading(game[key]);
-            }
-            catch (err) {
+        // Get the scores
+        gameDAO.getData(
+          tables.users.tableName,
+          ['id', 'nickname', 'score', 'response'],
+          {game: gameID},
+          function(err, scoreRes) {
+            if (err) {
+              console.warn(err);
               reject('Error retrieving game info.');
+            } else {
+              let game = res[0];
+
+              // Format saved data
+              Object.keys(game).forEach(key => {
+                if (Games.hasOwnProperty(key)) {
+                  try {
+                    game[key] = Games[key].afterLoading(game[key]);
+                  }
+                  catch (err) {
+                    reject('Error retrieving game info.');
+                  }
+                }
+              });
+
+              addAdditionalProps(game, scoreRes);
+
+              resolve(game);
+
             }
           }
-        });
-
-        if (game.imageQueue === null) {
-          // The imageQueue hasn't been made yet because
-          // it's a new game.
-          game.imageQueue = [];
-        }
-
-        game.scores = {};
-
-        game.timeLeft = null;
-        if (game.waitingForScenarios && game.roundStarted) {
-          game.timeLeft = TIME_LIMIT - (Date.now() - game.roundStarted);
-        }
-
-        resolve(game);
+        );
       }
     };
 
@@ -518,53 +523,6 @@ DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promis
 
     gameDAO.getData(tables.usergame.tableName, ['user'], queryProps, cb);
   });
-};
-
-/**
- * Function to get properties from all users in an array
- * Returns an object where the keys are userIDs
- * cb(err, {userID: {prop: value}})
- */
-const getUsersPropHelper = async (
-  DBConn: conn.DBConn,
-  userIDs: number[],
-  props: string[],
-): Promise<Object> => {
-  if (userIDs.length == 0) {
-    return {};
-  }
-
-  const nextID = userIDs.pop();
-  const userInfo = await DAOs.getUserPromise(DBConn, nextID);
-  if (!userInfo) {
-    throw new Error('Cannot find user record.');
-  }
-
-  let userInfoKeep = {};
-  for (var i = 0; i < props.length; ++i) {
-    userInfoKeep[props[i]] = userInfo[props[i]];
-  }
-
-  let usersInfo = await getUsersPropHelper(DBConn, userIDs, props);
-  if ( !usersInfo || !(userInfo.hasOwnProperty('id')) ) {
-    throw new Error('Error looking up user in database');
-  }
-
-  usersInfo[userInfo.id] = userInfoKeep;
-  return usersInfo;
-};
-
-/**
- * Function to get properties from all users in an array
- * Returns an object where the keys are userIDs
- * cb(err, {userID: {prop: value}})
- */
-DAOs.getUsersPropPromise = (
-  DBConn: conn.DBConn,
-  userIDs: number[],
-  props: string[]
-): Promise<Object> => {
-  return getUsersPropHelper(DBConn, userIDs.slice(0), props);
 };
 
 /**
@@ -791,5 +749,64 @@ DAOs.getGameImagesPromise = function(
 
   });
 };
+
+function choiceIDFromPlayerID(playerID: string | number | null): string | null {
+  // Insert '_' before each id so it doesn't default to ordering responses by id.
+  return playerID ? '_' + playerID : null;
+};
+
+/**
+ * Add additional properties beyond what's in the games table row to make GameInfo complete.
+ * These are: imageQueue, scores, choices, winningResponse, responsesIn, timeLeft.
+ */
+function addAdditionalProps(
+  game: GameInfo,
+  scoreRes: Array<{
+    id: number,
+    score: number | null,
+    nickname: string | null,
+    response: string | null,
+  }>
+) {
+  if (game.imageQueue === null) {
+    // The imageQueue hasn't been made yet because
+    // it's a new game.
+    game.imageQueue = [];
+  }
+
+  game.scores = {};
+  const infoList = [];
+  scoreRes.forEach((info, idx) => {
+    if (info.score != null && info.nickname) {
+      game.scores[info.nickname] = info.score;
+    }
+    if (info.response) {
+      infoList.push(info);
+    }
+  });
+
+  game.choices = {};
+
+  if (game.displayOrder) {
+    const displayOrder = game.displayOrder.split(',');
+    if (displayOrder) {
+      displayOrder.forEach(x => {
+        const i = parseInt(x);
+        if (i < infoList.length) { // In case not everyone submitted a response
+          game.choices[choiceIDFromPlayerID(infoList[i].id)] = infoList[i].response;
+        }
+      });
+    }
+  }
+
+  game.winningResponse = choiceIDFromPlayerID(game.winningResponse);
+  game.responsesIn = infoList.length;
+
+  game.timeLeft = null;
+  const roundStarted = game.roundStarted;
+  if (game.waitingForScenarios && roundStarted) {
+    game.timeLeft = TIME_LIMIT - (Date.now() - roundStarted);
+  }
+}
 
 module.exports = DAOs;
