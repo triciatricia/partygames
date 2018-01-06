@@ -159,46 +159,22 @@ Game._getGameInfoWithConnPromise = async (
   };
 };
 
-Game._updateIfDoneRespondingWithConnPromise = async (
-  conn: ConnUtils.DBConn,
-  gameID: number,
-  userIDsLeft: Array<number>,
-  reactorID: number,
-  nPlayers: number,
-  allUserIds: Array<number>,
-  roundStarted: number,
-): Promise<?string> => {
-  // Update game info if all the users but the host have responded
-  // cb(err)
-  if (userIDsLeft.length === 0) {
-    console.log('Scenarios are in for this round!');
-    return await Game._goToChooseScenarios(conn, gameID, nPlayers, allUserIds, roundStarted);
-
-  }
-
-  const nextID = userIDsLeft.pop();
-  const userInfo = await DAO.getUserPromise(conn, nextID);
-
-  // Check if not reactor and still hasn't submitted scenario
-  if (!userInfo.submittedScenario && nextID != reactorID) {
-    return;
-  } else {
-    await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDsLeft, reactorID, nPlayers, allUserIds, roundStarted);
-  }
-
-};
-
 Game._checkAllResponsesInWithConnPromise = async (
   conn: ConnUtils.DBConn,
   gameID: number
 ): Promise<?string> => {
   // Update if everyone but reactor done submitting response
-
   const [gameInfo, userIDs] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
-    DAO.getGameUsersPromise(conn, gameID)
+    DAO.getGameUsersPromise(conn, gameID),
   ]);
-  return await Game._updateIfDoneRespondingWithConnPromise(conn, gameID, userIDs, gameInfo.reactorID, userIDs.length, userIDs.slice(), gameInfo.roundStarted);
+
+  if (Object.keys(gameInfo.choices).length < userIDs.length - 1) {
+    return;
+  }
+
+  console.log('Scenarios are in for this round!');
+  await Game._goToChooseScenarios(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
 };
 
 Game._goToChooseScenarios = async (
