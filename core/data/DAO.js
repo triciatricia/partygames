@@ -101,18 +101,20 @@ function DAO(DBConn) {
   };
 
   /**
-   * Insert props into the table or ignore if already inserted or other issues arise.
+   * Insert props into the table or update key (possibly to the same value) if already inserted.
    * table: Name of the table to modify
    * props: Object with column names and values to insert
+   * keyName: Column name of the key
+   * keyVal: Value at keyName
    * callback: Callback function(err, results)
    */
-  this.insertOrIgnoreData = function(table, props, callback) {
+  this.insertOrUpdateData = function(table, props, keyName, keyVal, callback) {
     // Assert that the connection mode is write so the database can be changed.
     assert(this.DBConn.getMode() === conn.Modes.WRITE);
 
     // Make mysql command
-    const command = 'INSERT IGNORE INTO ' + table + ' SET ?;';
-    const commandVals = [props];
+    const command = 'INSERT INTO ' + table + ' SET ? ON DUPLICATE KEY UPDATE ?? = ?;';
+    const commandVals = [props, keyName, keyVal];
 
     // Run mysql command
     this.DBConn.getConn().query(command, commandVals, callback);
@@ -641,7 +643,7 @@ DAOs.newImagePromise = function(
   return new Promise((resolve, reject) => {
     const imageDAO = new DAO(DBConn);
 
-    imageDAO.insertOrIgnoreData(tables.images.tableName, {url}, (err, res) => {
+    imageDAO.insertOrUpdateData(tables.images.tableName, {url}, 'url', url, (err, res) => {
       if (err) {
 
         console.warn(err);
