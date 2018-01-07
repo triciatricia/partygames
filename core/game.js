@@ -164,12 +164,13 @@ Game._checkAllResponsesInWithConnPromise = async (
   gameID: number
 ): Promise<?string> => {
   // Update if everyone but reactor done submitting response
-  const [gameInfo, userIDs] = await Promise.all([
+  const [gameInfo, userIDs, responses] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
     DAO.getGameUsersPromise(conn, gameID),
+    DAO.getGameResponses(conn, gameID),
   ]);
 
-  if (Object.keys(gameInfo.choices).length < userIDs.length - 1) {
+  if (Object.keys(responses).length < userIDs.length - 1) {
     return;
   }
 

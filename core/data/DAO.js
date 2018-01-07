@@ -339,6 +339,39 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
 };
 
 /**
+ * Get the responses for the game.
+ */
+DAOs.getGameResponses = function(
+  DBConn: conn.DBConn,
+  gameID: number,
+): Promise<Array<string>> {
+  return new Promise((resolve, reject) => {
+    const gameDAO = new DAO(DBConn);
+    gameDAO.getData(
+      tables.users.tableName,
+      ['id', 'response'],
+      {game: gameID},
+      function(err, res) {
+        if (err) {
+
+          console.warn(err);
+          reject('Error retrieving game info.');
+
+        } else {
+
+          const responseList = [];
+          res.forEach((info, idx) => {
+            if (info.response) {
+              responseList.push(info.response);
+            }
+          });
+          resolve(responseList);
+        }
+      });
+  });
+}
+
+/**
  * Function that promises to set a value for a user.
  */
 DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
