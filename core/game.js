@@ -29,14 +29,6 @@ const defaultGame = {
   reactorID: null
 };  // TODO change this to a real default
 
-/* function generateGameCode(id) {
-  return id.toString();
-} */
-
-Game._getIDFromGameCode = (code: string): number => {
-  return parseInt(code);
-};
-
 /**
  * Promise to return a new reaction image url.
  */
@@ -45,7 +37,7 @@ Game._getNextImagePromise = async (
   prevImage: ?Image,
   curImage: ?Image,
   lastPostRetrieved: ?string,
-  gameId: number,
+  gameId: string,
   reactorNickname: string,
   conn: ConnUtils.DBConn,
 ): Promise<{
@@ -133,7 +125,7 @@ Game._setActiveTimePromise = async (
 Game._getPlayerGameInfoWithConnPromise = async (
   conn: ConnUtils.DBConn,
   playerID: number,
-  gameID: number
+  gameID: string
 ): Promise<Object> => {
   let [gameInfo, playerInfo] = await Promise.all([
     DAO.getGamePromise(conn, gameID),
@@ -148,7 +140,7 @@ Game._getPlayerGameInfoWithConnPromise = async (
 
 Game._getGameInfoWithConnPromise = async (
   conn: ConnUtils.DBConn,
-  gameID: number
+  gameID: string
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
   let gameInfo = await DAO.getGamePromise(conn, gameID);
@@ -161,7 +153,7 @@ Game._getGameInfoWithConnPromise = async (
 
 Game._checkAllResponsesInWithConnPromise = async (
   conn: ConnUtils.DBConn,
-  gameID: number
+  gameID: string
 ): Promise<?string> => {
   // Update if everyone but reactor done submitting response
   const [gameInfo, userIDs, responses] = await Promise.all([
@@ -180,7 +172,7 @@ Game._checkAllResponsesInWithConnPromise = async (
 
 Game._goToChooseScenarios = async (
   conn: ConnUtils.DBConn,
-  gameID: number,
+  gameID: string,
   nResponses: number,
   userIDs: Array<number>,
   roundStarted: number,
@@ -212,7 +204,7 @@ Game._goToChooseScenarios = async (
 
 Game._checkTimeUpWithConnPromise = async (
   conn: ConnUtils.DBConn,
-  gameID: number
+  gameID: string
 ): Promise<?string> => {
   // Update if time's up
   const gameInfo = await DAO.getGamePromise(conn, gameID);
@@ -252,7 +244,7 @@ Game._joinGamePromise = async (
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Get the gameID of a game and check if it's a valid
   // game.
-  const gameID = Game._getIDFromGameCode(req.gameCode);
+  const gameID = req.gameCode;
   try {
     return {
       gameInfo: await DAO.getGamePromise(conn, gameID),
@@ -277,7 +269,7 @@ Game._createNewGamePromise = async (
 };
 
 Game._heartImagePromise = async (
-  req: {url: string, playerID: number, gameID: number},
+  req: {url: string, playerID: number, gameID: string},
   conn: ConnUtils.DBConn,
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   await DAO.increaseHeartCountPromise(conn, req.url);
@@ -297,7 +289,7 @@ Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
 
 Game._setHostWithConnPromise = async (
   conn: ConnUtils.DBConn,
-  gameID: number,
+  gameID: string,
   playerID: number
 ): Promise<Object> => {
   const res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
@@ -312,7 +304,7 @@ Game._setHostWithConnPromise = async (
  */
 Game._addNewPlayerWithConnPromise = async (
   conn: ConnUtils.DBConn,
-  gameID: number,
+  gameID: string,
   gameInfo: GameInfo,
   nickname: string
 ): Promise<number> => {
@@ -340,7 +332,7 @@ Game._createPlayerPromise = async (
   // Create a player called req.nickname
   // in the game req.gameID
   // req.pushToken (optional) can specify a token for push notifications.
-  const gameID = Game._getIDFromGameCode(req.gameID);
+  const gameID = req.gameID;
   const gameInfo: GameInfo = (await Game._getGameInfoWithConnPromise(conn, gameID)).gameInfo;
   const playerID = await Game._addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
 

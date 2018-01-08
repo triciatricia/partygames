@@ -4,13 +4,6 @@ let game = require('../game');
 let Gifs = require('../gifs');
 let DAO = require('../data/DAO');
 
-describe('_getIDFromGameCode', () => {
-  it('should convert game code to ID', () => {
-    expect(game._getIDFromGameCode('10')).toEqual(10);
-    expect(game._getIDFromGameCode('010')).toEqual(10);
-  });
-});
-
 describe('_getNextImagePromise', () => {
   beforeEach(() => {
     const mockGif = (lastPostRetrieved) => {
@@ -54,7 +47,7 @@ describe('_getNextImagePromise', () => {
     };
 
     const fakeConn = 'fake';
-    game._getNextImagePromise([], null, null, null, 'testName', fakeConn)
+    game._getNextImagePromise([], null, null, null, '3', 'testName', fakeConn)
       .then(testCall)
       .catch(fail)
       .then(done);
@@ -69,7 +62,7 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
     roundOfLastResponse: 3,
     response: null,
     score: 1,
-    game: 5,
+    game: '5',
     submittedScenario: 1
   };
 
@@ -80,12 +73,12 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
   };
 
   const fakeChoices = {
-    2: 'choice2',
-    4: 'choice4'
+    '2': 'choice2',
+    '4': 'choice4'
   };
 
   const fakeGame = {
-    id: 5,
+    id: '5',
     round: 3,
     image: 'abc.gif',
     waitingForScenarios: 0,
@@ -103,7 +96,7 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
 
   const expectedAns = {
     gameInfo: {
-      id: 5,
+      id: '5',
       round: 3,
       image: 'abc.gif',
       waitingForScenarios: 0,
@@ -153,7 +146,7 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
 
     let fakeConn = 123;
 
-    game._getPlayerGameInfoWithConnPromise(fakeConn, 2, 5)
+    game._getPlayerGameInfoWithConnPromise(fakeConn, 2, '5')
       .then(testCall)
       .catch(fail)
       .then(done);

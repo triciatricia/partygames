@@ -11,6 +11,8 @@ import Users from '../../models/Users';
 // import UserGame from '../../models/UserGame';
 import Images from '../../models/Images';
 
+import {gameCodeToID, IDToGameCode, randValidGameID} from './gameCode';
+
 const TIME_LIMIT = 120000; // Time limit per round in milliseconds.
 
 export type Image = {
@@ -19,7 +21,7 @@ export type Image = {
 };
 
 export type GameInfo = {
-  id: number,
+  id: string,
   round: number,
   image: Image,
   waitingForScenarios: boolean,
@@ -219,7 +221,7 @@ const _toQueryPairs = function(obj) {
 // Function that returns a promise to set a value for a game.
 DAOs.setGamePromise = function(
   DBConn: conn.DBConn,
-  gameID: number,
+  gameID: string,
   props: Object
 ): Promise<?Object> {
   return new Promise((resolve, reject) => {
@@ -241,7 +243,7 @@ DAOs.setGamePromise = function(
       }
     });
 
-    gameDAO.updateData(gameTable, [gameIDName], [gameID], props, (err, res) => {
+    gameDAO.updateData(gameTable, [gameIDName], [gameCodeToID(gameID)], props, (err, res) => {
       (err ? reject('Error saving game info.') : resolve(res));
     });
   });
@@ -259,38 +261,83 @@ DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Objec
     Object.assign(props, game);
     const gameTable = tables.game.tableName;
 
-    // Format data for saving
-    Object.keys(props).forEach(key => {
-      if (Games.hasOwnProperty(key)) {
-        try {
-          props[key] = Games[key].beforeSaving(props[key]);
-        }
-        catch (err) {
-          reject('Cannot save game property ${key}. Check formatting.');
-        }
-      } else {
-        reject('Cannot save invalid game property: ' + key);
-      }
-    });
-
-    gameDAO.insertData(gameTable, props, (err, res) => {
+    getNewGameID(gameDAO, (IDNumber, err) => {
       if (err) {
-        reject('Error creating new game.');
-      } else {
-        resolve(res);
+        reject(err);
       }
+
+      // Format data for saving
+      Object.keys(props).forEach(key => {
+        if (Games.hasOwnProperty(key)) {
+          try {
+            props[key] = Games[key].beforeSaving(props[key]);
+          }
+          catch (err) {
+            reject(`Cannot save game property ${key}. Check formatting.`);
+          }
+        } else {
+          reject('Cannot save invalid game property: ' + key);
+        }
+      });
+
+      props.id = IDNumber;
+
+      gameDAO.insertData(gameTable, props, (err, res) => {
+        if (err) {
+          reject('Error creating new game.');
+        } else {
+          res.insertId = IDToGameCode(IDNumber);
+          resolve(res);
+        }
+      });
     });
   });
 };
 
 /**
+ * Function to get an unused game ID.
+ * Generates a random number and keeps trying if taken.
+ */
+const getNewGameID = (
+  gameDAO: DAO,
+  cb: (id: number, err: Error | string | null) => void,
+  trialNum?: number,
+) => {
+  const MAX_TRIES = 5;
+  if (!trialNum) {
+    trialNum = 0;
+  }
+  if (trialNum > MAX_TRIES) {
+    cb(-1, 'Cound not find space in database for a new game.');
+    return;
+  }
+  let id;
+  if (trialNum > 4) {
+    id = randValidGameID(6);
+  } else if (trialNum > 2) {
+    id = randValidGameID(5);
+  } else {
+    id = randValidGameID(4)
+  }
+
+  gameDAO.getData(tables.game.tableName, ['id'], {id}, (err, res) => {
+    if (err || res.length > 0) {
+      // Try again
+      getNewGameID(gameDAO, cb, trialNum + 1);
+    } else {
+      cb(id, null);
+    }
+  });
+}
+
+/**
  * Function that returns a promise to return a game.
  */
-DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Object> {
+DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: string): Promise<Object> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
     let queryProps = {};
-    queryProps[tables.game.gameIDName] = gameID;
+    queryProps[tables.game.gameIDName] = gameCodeToID(gameID);
 
     const cb = function(err, res) {
       if (err) {
@@ -304,7 +351,7 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
         gameDAO.getData(
           tables.users.tableName,
           ['id', 'nickname', 'score', 'response'],
-          {game: gameID},
+          {game: gameCodeToID(gameID)},
           function(err, scoreRes) {
             if (err) {
               console.warn(err);
@@ -343,14 +390,14 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: number): Promise<Obj
  */
 DAOs.getGameResponses = function(
   DBConn: conn.DBConn,
-  gameID: number,
+  gameID: string,
 ): Promise<Array<string>> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
     gameDAO.getData(
       tables.users.tableName,
       ['id', 'response'],
-      {game: gameID},
+      {game: gameCodeToID(gameID)},
       function(err, res) {
         if (err) {
 
@@ -400,7 +447,8 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
           props[key] = Users[key].beforeSaving(props[key]);
         }
         catch (err) {
-          reject('Cannot save user property ${key}. Check formatting.');
+          console.log(err);
+          reject(`Cannot save user property ${key} as ${props[key]}. Check formatting.`);
         }
       } else {
         reject('Cannot save invalid user property: ' + key);
@@ -434,7 +482,7 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
       // Add a row to usergame if the user is in a game
       // TODO delete below? If callback above works.
       userDAO.insertData(tables.usergame.tableName,
-        {'user': userID, 'game': user.game},
+        {'user': userID, 'game': gameCodeToID(user.game)},
         (err) => {err ? reject('Error creating user.') : resolve(userID);});
     };
 
@@ -470,7 +518,7 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
 DAOs.leaveGamePromise = function(
   DBConn: conn.DBConn,
   userID: number,
-  gameID: number
+  gameID: string
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const userDAO = new DAO(DBConn);
@@ -490,7 +538,7 @@ DAOs.leaveGamePromise = function(
 
       userDAO.deleteData(
         tables.usergame.tableName,
-        {user: userID, game: gameID},
+        {user: userID, game: gameCodeToID(gameID)},
         (err) => {err ? reject('Unable to leave game.') : resolve()}
       );
     });
@@ -537,10 +585,10 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
  * Function that returns a promise to get the users in a game
  * users: array of userIDs
  */
-DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: number): Promise<number[]> {
+DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: string): Promise<number[]> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
-    const queryProps = {'game': gameID};
+    const queryProps = {'game': gameCodeToID(gameID)};
 
     var cb = (err, res) => {
       if (err) {
@@ -627,7 +675,7 @@ DAOs.getImagePromise = function(DBConn: conn.DBConn, url: string): Promise<Objec
 DAOs.newImagePromise = function(
   DBConn: conn.DBConn,
   url: string,
-  gameId: number,
+  gameId: string,
   gameImageId: number,
   reactorNickname: string,
 ): Promise<Object> {
@@ -643,7 +691,7 @@ DAOs.newImagePromise = function(
       } else {
 
         const props = {
-          gameId: gameId,
+          gameId: gameCodeToID(gameId),
           gameImageId: gameImageId,
           imageUrl: url,
           reactorNickname: reactorNickname,
@@ -670,14 +718,14 @@ DAOs.newImagePromise = function(
 /**
  * Skip image. Increase the skip count of an image by 1.
  */
-DAOs.skipImagePromise = function(DBConn: conn.DBConn, url: string, gameId: number, gameImageId: number): Promise<Object> {
+DAOs.skipImagePromise = function(DBConn: conn.DBConn, url: string, gameId: string, gameImageId: number): Promise<Object> {
   return new Promise((resolve, reject) => {
     const imageDAO = new DAO(DBConn);
 
     imageDAO.updateData(
       tables.gameimage.tableName,
       ['gameId', 'gameImageId'],
-      [gameId, gameImageId],
+      [gameCodeToID(gameId), gameImageId],
       {wasSkipped: true},
       (err, res) => {
         if (err) {
@@ -718,7 +766,7 @@ DAOs.increaseHeartCountPromise = function(DBConn: conn.DBConn, url: string): Pro
  */
 DAOs.setImageScenarioPromise = function(
  DBConn: conn.DBConn,
- gameId: number,
+ gameId: string,
  gameImageId: number,
  scenario: string
 ): Promise<?Object> {
@@ -728,7 +776,7 @@ DAOs.setImageScenarioPromise = function(
     imageDAO.updateData(
       tables.gameimage.tableName,
       ['gameId', 'gameImageId'],
-      [gameId, gameImageId],
+      [gameCodeToID(gameId), gameImageId],
       {wasSkipped: false, scenario: scenario},
       (err, res) => {
         if (err) {
@@ -746,7 +794,7 @@ DAOs.setImageScenarioPromise = function(
  */
 DAOs.getGameImagesPromise = function(
   DBConn: conn.DBConn,
-  gameId: number,
+  gameId: string,
   after?: ?number,
 ): Promise<Array<{
   gameImageId: number,
@@ -765,7 +813,7 @@ DAOs.getGameImagesPromise = function(
     let images = imageDAO.getData(
       tables.gameimage.tableName,
       ['gameImageId', 'imageUrl', 'scenario', 'reactorNickname'],
-      {gameId},
+      {gameId: gameCodeToID(gameId)},
       (err, res) => {
         if (err) {
           console.warn(err);

@@ -109,7 +109,7 @@ describe('DatabaseIntegrationTest', function() {
       roundStarted: null,
     };
     let expectedRow = {
-      id: 1,
+      id: 'REPLACED',
       round: 1,
       image: "{\"url\":\"abc\",\"id\":1}", // quote escaped for JSON.stringify
       waitingForScenarios: 0,
@@ -139,7 +139,6 @@ describe('DatabaseIntegrationTest', function() {
       expect(result).not.toBe(null);
       expect(result.insertId).toBeDefined;
       expect(result.affectedRows).toBeDefined;
-      expect(result.insertId).toBe(1);
       expect(result.affectedRows).toBe(1);
     }
 
@@ -150,6 +149,7 @@ describe('DatabaseIntegrationTest', function() {
         if (result != null) {
           expect(result.length).toBe(1);
           if (result.length == 1) {
+            result[0].id = 'REPLACED';
             expect(JSON.stringify(result[0])).toEqual(JSON.stringify(expectedRow));
           }
         }
@@ -192,7 +192,7 @@ describe('DatabaseIntegrationTest', function() {
     };
 
     var expectedRow = {
-      id: 1,
+      id: 'REPLACED',
       round: 1,
       image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
@@ -214,7 +214,7 @@ describe('DatabaseIntegrationTest', function() {
     };
 
     var expectedRow2 = {
-      id: 1,
+      id: 'REPLACED', // Replace since it can't be predicted.
       round: 2,
       image: {url: 'abc', id: 1},
       waitingForScenarios: 0,
@@ -243,14 +243,15 @@ describe('DatabaseIntegrationTest', function() {
         DBConfig
       );
       let result = await DAO.newGamePromise(wConn, game);
+      const gameId = result.insertId;
       expect(wConn.getConn()).toBeDefined();
-      expect(result.insertId).toEqual(1);
       expect(result.affectedRows).toEqual(1);
 
-      result = await DAO.getGamePromise(wConn, 1);
+      result = await DAO.getGamePromise(wConn, gameId);
+      expectedRow.id = gameId;
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-      result = await DAO.setGamePromise(wConn, 1, {hostID: 3, round: 2});
+      result = await DAO.setGamePromise(wConn, gameId, {hostID: 3, round: 2});
       expect(result).toBeDefined();
       if (result) {
         expect(result.hasOwnProperty('affectedRows')).toBe(true);
@@ -259,7 +260,8 @@ describe('DatabaseIntegrationTest', function() {
         expect(result.affectedRows).toEqual(1);
       }
 
-      result = await DAO.getGamePromise(wConn, 1);
+      result = await DAO.getGamePromise(wConn, gameId);
+      expectedRow2.id = gameId;
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
     }
 
@@ -286,7 +288,7 @@ describe('DatabaseIntegrationTest', function() {
       roundOfLastResponse: null,
       response: null,
       score: 0,
-      game: 1,
+      game: '1',
       submittedScenario: 0
     };
     var expectedRow = {
@@ -296,7 +298,7 @@ describe('DatabaseIntegrationTest', function() {
       roundOfLastResponse: null,
       response: null,
       score: 0,
-      game: 1,
+      game: '1',
       submittedScenario: 0,
       lastActiveTime: null,
       ExpoPushToken: null,
@@ -309,7 +311,7 @@ describe('DatabaseIntegrationTest', function() {
       roundOfLastResponse: null,
       response: null,
       score: 3,
-      game: 2,
+      game: '2',
       submittedScenario: 0,
       lastActiveTime: null,
       ExpoPushToken: null,
@@ -334,24 +336,24 @@ describe('DatabaseIntegrationTest', function() {
       result = await DAO.setUserPromise(wConn, 1, {});
       expect(result).toBe(null);
 
-      result = await DAO.setUserPromise(wConn, 1, {score: 3, game: 2});
+      result = await DAO.setUserPromise(wConn, 1, {score: 3, game: '2'});
       result = await DAO.getUserPromise(wConn, 1);
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
 
       await DAO.newUserPromise(wConn, user);
       await DAO.newUserPromise(wConn, user);
-      let users = await DAO.getGameUsersPromise(wConn, 2);
+      let users = await DAO.getGameUsersPromise(wConn, '2');
       expect(users).toEqual([1]);
 
-      users = await DAO.getGameUsersPromise(wConn, 1);
+      users = await DAO.getGameUsersPromise(wConn, '1');
       expect(users).toEqual([2, 3]);
 
-      await DAO.leaveGamePromise(wConn, 2, 1);
-      users = await DAO.getGameUsersPromise(wConn, 1);
+      await DAO.leaveGamePromise(wConn, 2, '1');
+      users = await DAO.getGameUsersPromise(wConn, '1');
       expect(users).toEqual([3]);
 
-      await DAO.leaveGamePromise(wConn, 3, 1);
-      users = await DAO.getGameUsersPromise(wConn, 1);
+      await DAO.leaveGamePromise(wConn, 3, '1');
+      users = await DAO.getGameUsersPromise(wConn, '1');
       expect(users).toEqual([]);
     }
 
@@ -454,7 +456,7 @@ describe('DatabaseIntegrationTest', function() {
       nHearted: 0,
     };
     var expectedGameImageRow1 = {
-      gameId: 3,
+      gameId: '3',
       gameImageId: 2,
       imageUrl: 'testURL1',
       wasSkipped: null,
@@ -470,25 +472,25 @@ describe('DatabaseIntegrationTest', function() {
         DBConfig
       );
 
-      await DAO.newImagePromise(wConn, 'testURL1', 3, 2, 'reactor1');
-      await DAO.newImagePromise(wConn, 'testURL2', 3, 3, 'reactor2');
-      await DAO.newImagePromise(wConn, 'testURL3', 3, 4, 'reactor3');
-      await DAO.newImagePromise(wConn, 'testURL3', 3, 5, 'reactor4');
+      await DAO.newImagePromise(wConn, 'testURL1', '3', 2, 'reactor1');
+      await DAO.newImagePromise(wConn, 'testURL2', '3', 3, 'reactor2');
+      await DAO.newImagePromise(wConn, 'testURL3', '3', 4, 'reactor3');
+      await DAO.newImagePromise(wConn, 'testURL3', '3', 5, 'reactor4');
 
       // Same image but different game
-      await DAO.newImagePromise(wConn, 'testURL2', 2, 3, 'reactor4');
+      await DAO.newImagePromise(wConn, 'testURL2', '2', 3, 'reactor4');
 
       let result = await DAO.getImagePromise(wConn, 'testURL1');
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedImageRow1));
 
-      await DAO.skipImagePromise(wConn, 'testURL2', 3, 3);
+      await DAO.skipImagePromise(wConn, 'testURL2', '3', 3);
       await DAO.increaseHeartCountPromise(wConn, 'testURL2');
       await DAO.increaseHeartCountPromise(wConn, 'testURL2');
 
-      DAO.setImageScenarioPromise(wConn, 3, 2, 'scenario1');
-      DAO.setImageScenarioPromise(wConn, 3, 4, 'scenario2');
+      DAO.setImageScenarioPromise(wConn, '3', 2, 'scenario1');
+      DAO.setImageScenarioPromise(wConn, '3', 4, 'scenario2');
 
-      result = await DAO.getGameImagesPromise(wConn, 3);
+      result = await DAO.getGameImagesPromise(wConn, '3');
       const expectedGameImages1 = [
         {
           gameImageId: 2,
@@ -505,7 +507,7 @@ describe('DatabaseIntegrationTest', function() {
       ];
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages1));
 
-      result = await DAO.getGameImagesPromise(wConn, 3, 3);
+      result = await DAO.getGameImagesPromise(wConn, '3', 3);
       const expectedGameImages2 = [
         {
           gameImageId: 4,
@@ -516,7 +518,7 @@ describe('DatabaseIntegrationTest', function() {
       ];
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages2));
 
-      result = await DAO.getGameImagesPromise(wConn, 2);
+      result = await DAO.getGameImagesPromise(wConn, '2');
       expect(result.length).toBe(0);
 
       const expectedImageRow2 = {

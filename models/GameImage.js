@@ -1,7 +1,7 @@
 const DataTypes = require('../core/data/types');
 
 const GameImage = {
-  gameId: DataTypes.id(),
+  gameId: DataTypes.gameCodeId(),
   gameImageId: DataTypes.unsignedint(),
   imageUrl: DataTypes.char(),
   wasSkipped: DataTypes.boolean(),

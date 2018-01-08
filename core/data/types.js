@@ -8,6 +8,8 @@
 
 const utils = require('../utils');
 
+import {IDToGameCode, gameCodeToID} from './gameCode';
+
 // DataTypes holds all the DataFields defined below.
 let DataTypes = {};
 
@@ -61,6 +63,13 @@ function addType(name, dbTypeGetter, props, beforeSaving, afterLoading) {
 addType('int', utils.functionThatReturns('bigint (20)'));
 addType('unsignedint', utils.functionThatReturns('bigint (20) unsigned'));
 addType('id', utils.functionThatReturns('bigint (20) unsigned'));
+addType(
+  'gameCodeId',
+  utils.functionThatReturns('bigint (20) unsigned'),
+  null,
+  gameCodeToID,
+  IDToGameCode,
+);
 addType('time', utils.functionThatReturns('int (10) unsigned'));
 addType('boolean', utils.functionThatReturns('tinyint(1)'));
 addType(

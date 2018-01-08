@@ -9,7 +9,7 @@ const GameStatus = React.createClass({
     round: React.PropTypes.number,
     score: React.PropTypes.number,
     nickname: React.PropTypes.string,
-    gameCode: React.PropTypes.number,
+    gameCode: React.PropTypes.string,
     leaveGame: React.PropTypes.func,
     timeLeft: React.PropTypes.number,
     responsesIn: React.PropTypes.number,
@@ -342,7 +342,7 @@ const WaitingToStart = React.createClass({
     isHost: React.PropTypes.bool,
     nPlayers: React.PropTypes.number,
     startGame: React.PropTypes.func,
-    gameID: React.PropTypes.number,
+    gameID: React.PropTypes.string,
     errorMessage: React.PropTypes.string
   },
   getInitialState: function() {

@@ -7,7 +7,7 @@ const Users = {
   roundOfLastResponse: DataTypes.unsignedint(),
   response: DataTypes.text(),
   score: DataTypes.int(),
-  game: DataTypes.id(),
+  game: DataTypes.gameCodeId(),
   submittedScenario: DataTypes.boolean(),
   lastActiveTime: DataTypes.unsignedint(),
   ExpoPushToken: DataTypes.char(),
