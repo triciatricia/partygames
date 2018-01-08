@@ -2,17 +2,15 @@
 // And vice versa.
 // @flow
 
-const ASCII_0 = 48;
-const ASCII_9 = 57;
 const ASCII_A = 65;
 const ASCII_Z = 90;
-const NUM_VALS = ASCII_Z - ASCII_A + 1 + ASCII_9 - ASCII_0 + 1;
+const NUM_VALS = ASCII_Z - ASCII_A + 1;
 const MAX_CODE_LEN = 6;
 const IDEAL_CODE_LEN = 4;
 
 /**
- * Convert the game code (base 36) to an ID number.
- * Characters 0-9 have their respective values. A-Z have values 10-35.
+ * Convert the game code (base 26) to an ID number.
+ * Characters A-Z have values 0-25.
  * The right-most character is the least significant.
  * Game codes are case insensitive.
  */
@@ -25,13 +23,9 @@ export const gameCodeToID = (
   for (let i = 0; i < code.length; ++i) {
     const ascii = code.charCodeAt(code.length - i - 1);
 
-    if (ascii >= ASCII_0 && ascii <= ASCII_9) {
+    if (ascii >= ASCII_A && ascii <= ASCII_Z) {
 
-      ID += (ascii - ASCII_0) * (NUM_VALS ** i);
-
-    } else if (ascii >= ASCII_A && ascii <= ASCII_Z) {
-
-      ID += (ascii - ASCII_A + 10) * (NUM_VALS ** i);
+      ID += (ascii - ASCII_A) * (NUM_VALS ** i);
 
     } else {
 
@@ -45,7 +39,7 @@ export const gameCodeToID = (
 
 /**
  * Get the game code from the ID.
- * Leading zeroes are not shown except for if the code is '0'.
+ * Leading zeroes (A's) are not shown except for if the code is 'A'.
  */
 export const IDToGameCode = (
   IDNumber: number,
@@ -60,14 +54,13 @@ export const IDToGameCode = (
     const val = Math.floor(IDNumber / pow);
 
     if (val > 0 || code != '') {
-      const toAdd = val < 10 ? ASCII_0 : (ASCII_A - 10);
-      code += String.fromCharCode(val + toAdd);
+      code += String.fromCharCode(val + ASCII_A);
       IDNumber %= pow;
     }
   }
 
   if (code == '') {
-    code = '0';
+    code = 'A';
   }
 
   return code;
