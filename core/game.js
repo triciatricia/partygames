@@ -360,6 +360,10 @@ Game._startGameAsync = async (
   let info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
   const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
+  if (Object.keys(gameInfo.scores).length <= 1) {
+    throw Error(`This game needs more than 1 player! Please ask your friends to join using code ${gameInfo.id}.`);
+  }
+
   let [imageInfo, userIDs] = await Promise.all([
     Game._getNextImageAsync(
       gameInfo.imageQueue,
