@@ -4,7 +4,7 @@ import Expo from 'exponent-server-sdk';
 import ConnUtils from './data/conn';
 import DAO from './data/DAO';
 
-export const sendPushesIfActivePromise = async (
+export const sendPushesIfActiveAsync = async (
   message: string,
   conn: ConnUtils.DBConn,
   allUserIds: Array<number>,
@@ -14,7 +14,7 @@ export const sendPushesIfActivePromise = async (
   // Filter allUserIds to get a list of push tokens for
   // users with apps active since the round started, but
   // not active in the past 2 sec.
-  const pushTokens = await DAO.getPushTokensPromise(
+  const pushTokens = await DAO.getPushTokensAsync(
     conn,
     allUserIds,
     roundStarted,

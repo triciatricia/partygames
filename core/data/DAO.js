@@ -219,7 +219,7 @@ const _toQueryPairs = function(obj) {
 }
 
 // Function that returns a promise to set a value for a game.
-DAOs.setGamePromise = function(
+DAOs.setGameAsync = function(
   DBConn: conn.DBConn,
   gameID: string,
   props: Object
@@ -253,7 +253,7 @@ DAOs.setGamePromise = function(
  * Function that returns a promise that returns the result from inserting a game
  * into the database.
  */
-DAOs.newGamePromise = function(DBConn: conn.DBConn, game: Object): Promise<Object> {
+DAOs.newGameAsync = function(DBConn: conn.DBConn, game: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
     let props = {};
@@ -333,7 +333,7 @@ const getNewGameID = (
 /**
  * Function that returns a promise to return a game.
  */
-DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: string): Promise<Object> {
+DAOs.getGameAsync = function(DBConn: conn.DBConn, gameID: string): Promise<Object> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
     let queryProps = {};
@@ -388,7 +388,7 @@ DAOs.getGamePromise = function(DBConn: conn.DBConn, gameID: string): Promise<Obj
 /**
  * Get the responses for the game.
  */
-DAOs.getGameResponses = function(
+DAOs.getGameResponsesAsync = function(
   DBConn: conn.DBConn,
   gameID: string,
 ): Promise<Array<string>> {
@@ -421,7 +421,7 @@ DAOs.getGameResponses = function(
 /**
  * Function that promises to set a value for a user.
  */
-DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
+DAOs.setUserAsync = function(DBConn: conn.DBConn, userID: number, props: Object): Promise<?Object> {
   return new Promise((resolve, reject) => {
     const userDAO = new DAO(DBConn);
     const userTable = tables.users.tableName;
@@ -463,7 +463,7 @@ DAOs.setUserPromise = function(DBConn: conn.DBConn, userID: number, props: Objec
  * Function that returns a promise to create a new user and to return the userID
  * from creating a new user.
  */
-DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<number> {
+DAOs.newUserAsync = function(DBConn: conn.DBConn, user: Object): Promise<number> {
   return new Promise((resolve, reject) => {
     const userDAO = new DAO(DBConn);
     let props = {};
@@ -515,7 +515,7 @@ DAOs.newUserPromise = function(DBConn: conn.DBConn, user: Object): Promise<numbe
 /**
  * Function that returns a promise to remove a user from the game.
  */
-DAOs.leaveGamePromise = function(
+DAOs.leaveGameAsync = function(
   DBConn: conn.DBConn,
   userID: number,
   gameID: string
@@ -548,7 +548,7 @@ DAOs.leaveGamePromise = function(
 /**
  * Function that returns a promise to return a user.
  */
-DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Object> {
+DAOs.getUserAsync = function(DBConn: conn.DBConn, userID: number): Promise<Object> {
   return new Promise((resolve, reject) => {
     const userDAO = new DAO(DBConn);
     let queryProps = {};
@@ -585,7 +585,7 @@ DAOs.getUserPromise = function(DBConn: conn.DBConn, userID: number): Promise<Obj
  * Function that returns a promise to get the users in a game
  * users: array of userIDs
  */
-DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: string): Promise<number[]> {
+DAOs.getGameUsersAsync = function(DBConn: conn.DBConn, gameID: string): Promise<number[]> {
   return new Promise((resolve, reject) => {
     const gameDAO = new DAO(DBConn);
     const queryProps = {'game': gameCodeToID(gameID)};
@@ -612,7 +612,7 @@ DAOs.getGameUsersPromise = function(DBConn: conn.DBConn, gameID: string): Promis
  * the times specified (the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC.)
  * Note that values are not escaped at the moment. TODO
  */
-DAOs.getPushTokensPromise = function(
+DAOs.getPushTokensAsync = function(
   DBConn: conn.DBConn,
   userIDs: Array<number>,
   start: number,
@@ -649,7 +649,7 @@ DAOs.getPushTokensPromise = function(
 /**
  * Function that returns a promise to return data on an image, given the url.
  */
-DAOs.getImagePromise = function(DBConn: conn.DBConn, url: string): Promise<Object> {
+DAOs.getImageAsync = function(DBConn: conn.DBConn, url: string): Promise<Object> {
   return new Promise((resolve, reject) => {
     const imageDAO = new DAO(DBConn);
 
@@ -672,7 +672,7 @@ DAOs.getImagePromise = function(DBConn: conn.DBConn, url: string): Promise<Objec
  * Add an image to the gameimage database.
  * Inserts the image into the images database if it is not already in it.
  */
-DAOs.newImagePromise = function(
+DAOs.newImageAsync = function(
   DBConn: conn.DBConn,
   url: string,
   gameId: string,
@@ -718,7 +718,7 @@ DAOs.newImagePromise = function(
 /**
  * Skip image. Increase the skip count of an image by 1.
  */
-DAOs.skipImagePromise = function(DBConn: conn.DBConn, url: string, gameId: string, gameImageId: number): Promise<Object> {
+DAOs.skipImageAsync = function(DBConn: conn.DBConn, url: string, gameId: string, gameImageId: number): Promise<Object> {
   return new Promise((resolve, reject) => {
     const imageDAO = new DAO(DBConn);
 
@@ -747,7 +747,7 @@ DAOs.skipImagePromise = function(DBConn: conn.DBConn, url: string, gameId: strin
 /**
  * Increase the heart count of an image by 1.
  */
-DAOs.increaseHeartCountPromise = function(DBConn: conn.DBConn, url: string): Promise<Object> {
+DAOs.increaseHeartCountAsync = function(DBConn: conn.DBConn, url: string): Promise<Object> {
   return new Promise((resolve, reject) => {
     const imageDAO = new DAO(DBConn);
 
@@ -764,7 +764,7 @@ DAOs.increaseHeartCountPromise = function(DBConn: conn.DBConn, url: string): Pro
 /**
  * Set the scenario for an image in a game.
  */
-DAOs.setImageScenarioPromise = function(
+DAOs.setImageScenarioAsync = function(
  DBConn: conn.DBConn,
  gameId: string,
  gameImageId: number,
@@ -792,7 +792,7 @@ DAOs.setImageScenarioPromise = function(
  * Returns a promise to return all the images with scenarios for a game.
  * after: Optionally, return only images with gameImageId >= after
  */
-DAOs.getGameImagesPromise = function(
+DAOs.getGameImagesAsync = function(
   DBConn: conn.DBConn,
   gameId: string,
   after?: ?number,

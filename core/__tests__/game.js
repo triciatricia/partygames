@@ -4,14 +4,14 @@ let game = require('../game');
 let Gifs = require('../gifs');
 let DAO = require('../data/DAO');
 
-describe('_getNextImagePromise', () => {
+describe('_getNextImageAsync', () => {
   beforeEach(() => {
     const mockGif = (lastPostRetrieved) => {
       return new Promise((resolve, reject) => {
         resolve([['img0', 'img1', 'img2', 'img3', 'img4', 'img5'], 'lastPostRetrieved']);
       });
     };
-    spyOn(Gifs, 'getGifs').and.callFake(mockGif);
+    spyOn(Gifs, 'getGifsAsync').and.callFake(mockGif);
 
     const mockNewImage = (
       DBConn: string,
@@ -25,19 +25,19 @@ describe('_getNextImagePromise', () => {
       });
     };
 
-    spyOn(DAO, 'newImagePromise').and.callFake(mockNewImage);
+    spyOn(DAO, 'newImageAsync').and.callFake(mockNewImage);
   });
 
-  it('should call Gifs.getGifs', (done) => {
+  it('should call Gifs.getGifsAsync', (done) => {
     let testCall = (res) => {
       expect(res).toBeDefined();
-      expect(Gifs.getGifs).toHaveBeenCalled();
+      expect(Gifs.getGifsAsync).toHaveBeenCalled();
       expect(res.image).toEqual({
         id: 1,
         url: 'img0'
       });
       expect(res.imageQueue.length).toEqual(3); // Only send 3 gifs at a time
-      expect(DAO.newImagePromise).toHaveBeenCalled();
+      expect(DAO.newImageAsync).toHaveBeenCalled();
     };
 
     let fail = (err) => {
@@ -47,14 +47,14 @@ describe('_getNextImagePromise', () => {
     };
 
     const fakeConn = 'fake';
-    game._getNextImagePromise([], null, null, null, '3', 'testName', fakeConn)
+    game._getNextImageAsync([], null, null, null, '3', 'testName', fakeConn)
       .then(testCall)
       .catch(fail)
       .then(done);
   });
 });
 
-describe('_getPlayerGameInfoWithConnPromise', () => {
+describe('_getPlayerGameInfoWithConnAsync', () => {
   const fakeUser = {
     id: 2,
     nickname: 'Momo',
@@ -126,16 +126,16 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
         resolve(fakeUser);
       });
     };
-    spyOn(DAO, 'getGamePromise').and.callFake(mockGame);
-    spyOn(DAO, 'getUserPromise').and.callFake(mockUser);
+    spyOn(DAO, 'getGameAsync').and.callFake(mockGame);
+    spyOn(DAO, 'getUserAsync').and.callFake(mockUser);
   });
 
   it('should get game and player info', (done) => {
     let testCall = (info) => {
       expect(info).toBeDefined();
       expect(info).toEqual(expectedAns);
-      expect(DAO.getGamePromise).toHaveBeenCalled();
-      expect(DAO.getUserPromise).toHaveBeenCalled();
+      expect(DAO.getGameAsync).toHaveBeenCalled();
+      expect(DAO.getUserAsync).toHaveBeenCalled();
     };
 
     let fail = (err) => {
@@ -146,7 +146,7 @@ describe('_getPlayerGameInfoWithConnPromise', () => {
 
     let fakeConn = 123;
 
-    game._getPlayerGameInfoWithConnPromise(fakeConn, 2, '5')
+    game._getPlayerGameInfoWithConnAsync(fakeConn, 2, '5')
       .then(testCall)
       .catch(fail)
       .then(done);

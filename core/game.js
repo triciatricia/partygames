@@ -6,7 +6,7 @@ const ConnUtils = require('./data/conn');
 const DAO = require('./data/DAO');
 const Gifs = require('./gifs');
 
-import {sendPushesIfActivePromise} from './notifications';
+import {sendPushesIfActiveAsync} from './notifications';
 
 import type { GameInfo, Image } from './data/DAO';
 
@@ -32,7 +32,7 @@ const defaultGame = {
 /**
  * Promise to return a new reaction image url.
  */
-Game._getNextImagePromise = async (
+Game._getNextImageAsync = async (
   imageQueue: Array<Image>,
   prevImage: ?Image,
   curImage: ?Image,
@@ -60,7 +60,7 @@ Game._getNextImagePromise = async (
     }
 
     // Fetch more gifs
-    const [nextImages, newLastPostRetrieved] = await Gifs.getGifs(lastPostRetrieved);
+    const [nextImages, newLastPostRetrieved] = await Gifs.getGifsAsync(lastPostRetrieved);
     let lastGifId = 0;
     if (imageQueue && imageQueue.length > 0) {
       lastGifId = imageQueue[0].id;
@@ -91,7 +91,7 @@ Game._getNextImagePromise = async (
   }
 
   // Save the image to the database
-  await DAO.newImagePromise(conn, image.url, gameId, image.id, reactorNickname);
+  await DAO.newImageAsync(conn, image.url, gameId, image.id, reactorNickname);
 
   return({ imageQueue, image, lastPostRetrieved });
 };
@@ -110,11 +110,11 @@ Game._shuffle = <T>(arr: Array<T>): Array<T> => {
 };
 
 // Save the current time as the last time the app was active
-Game._setActiveTimePromise = async (
+Game._setActiveTimeAsync = async (
   conn: ConnUtils.DBConn,
   playerID: number,
 ): Promise<void> => {
-  await DAO.setUserPromise(conn, playerID, {
+  await DAO.setUserAsync(conn, playerID, {
     lastActiveTime: Date.now(),
   });
 }
@@ -122,14 +122,14 @@ Game._setActiveTimePromise = async (
 /**
  * Returns a promise to return a player info object
  */
-Game._getPlayerGameInfoWithConnPromise = async (
+Game._getPlayerGameInfoWithConnAsync = async (
   conn: ConnUtils.DBConn,
   playerID: number,
   gameID: string
 ): Promise<Object> => {
   let [gameInfo, playerInfo] = await Promise.all([
-    DAO.getGamePromise(conn, gameID),
-    DAO.getUserPromise(conn, playerID),
+    DAO.getGameAsync(conn, gameID),
+    DAO.getUserAsync(conn, playerID),
   ]);
 
   return({
@@ -138,12 +138,12 @@ Game._getPlayerGameInfoWithConnPromise = async (
   });
 };
 
-Game._getGameInfoWithConnPromise = async (
+Game._getGameInfoWithConnAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Returns a promise to return {gameInfo: {}, playerInfo: null}
-  let gameInfo = await DAO.getGamePromise(conn, gameID);
+  let gameInfo = await DAO.getGameAsync(conn, gameID);
 
   return {
     gameInfo: gameInfo,
@@ -151,15 +151,15 @@ Game._getGameInfoWithConnPromise = async (
   };
 };
 
-Game._checkAllResponsesInWithConnPromise = async (
+Game._checkAllResponsesInWithConnAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string
 ): Promise<?string> => {
   // Update if everyone but reactor done submitting response
   const [gameInfo, userIDs, responses] = await Promise.all([
-    DAO.getGamePromise(conn, gameID),
-    DAO.getGameUsersPromise(conn, gameID),
-    DAO.getGameResponses(conn, gameID),
+    DAO.getGameAsync(conn, gameID),
+    DAO.getGameUsersAsync(conn, gameID),
+    DAO.getGameResponsesAsync(conn, gameID),
   ]);
 
   if (Object.keys(responses).length < userIDs.length - 1) {
@@ -167,10 +167,10 @@ Game._checkAllResponsesInWithConnPromise = async (
   }
 
   console.log('Scenarios are in for this round!');
-  await Game._goToChooseScenarios(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
+  await Game._goToChooseScenariosAsync(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
 };
 
-Game._goToChooseScenarios = async (
+Game._goToChooseScenariosAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string,
   nResponses: number,
@@ -184,7 +184,7 @@ Game._goToChooseScenarios = async (
   }
   displayOrder = Game._shuffle(displayOrder);
 
-  const res = await DAO.setGamePromise(conn, gameID, {
+  const res = await DAO.setGameAsync(conn, gameID, {
     waitingForScenarios: false,
     displayOrder: displayOrder.toString(),
     roundStarted: null,
@@ -194,7 +194,7 @@ Game._goToChooseScenarios = async (
   }
 
   // Send push notifications to players with the app hidden
-  await sendPushesIfActivePromise(
+  await sendPushesIfActiveAsync(
     'The responses are in! Click here to see them.',
     conn,
     userIDs,
@@ -202,43 +202,43 @@ Game._goToChooseScenarios = async (
   );
 };
 
-Game._checkTimeUpWithConnPromise = async (
+Game._checkTimeUpWithConnAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string
 ): Promise<?string> => {
   // Update if time's up
-  const gameInfo = await DAO.getGamePromise(conn, gameID);
-  const userIDs = await DAO.getGameUsersPromise(conn, gameID);
+  const gameInfo = await DAO.getGameAsync(conn, gameID);
+  const userIDs = await DAO.getGameUsersAsync(conn, gameID);
   if (gameInfo.timeLeft !== null && gameInfo.timeLeft < -3000 && gameInfo.responsesIn > 0) { // Allow 3 secs leeway
-    return await Game._goToChooseScenarios(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
+    return await Game._goToChooseScenariosAsync(conn, gameID, userIDs.length, userIDs, gameInfo.roundStarted);
   }
 };
 
-Game._getGameInfoPromise = async (
+Game._getGameInfoAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
   // Promise to return game info (and player info if the player ID is given)
   let info;
   if (req.playerID) {
-    info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
     if (info.gameInfo.waitingForScenarios) {
-      await Game._checkTimeUpWithConnPromise(conn, req.gameID);
-      await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
-      return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+      await Game._checkTimeUpWithConnAsync(conn, req.gameID);
+      await Game._checkAllResponsesInWithConnAsync(conn, req.gameID);
+      return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
     }
   } else {
-    info = await Game._getGameInfoWithConnPromise(conn, req.gameID);
+    info = await Game._getGameInfoWithConnAsync(conn, req.gameID);
   }
 
   if (info.gameInfo.gameOver) {
-    info.gameInfo.gameImages = await DAO.getGameImagesPromise(conn, req.gameID, info.gameInfo.firstImageID);
+    info.gameInfo.gameImages = await DAO.getGameImagesAsync(conn, req.gameID, info.gameInfo.firstImageID);
   }
 
   return info;
 };
 
-Game._joinGamePromise = async (
+Game._joinGameAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
@@ -247,7 +247,7 @@ Game._joinGamePromise = async (
   const gameID = req.gameCode;
   try {
     return {
-      gameInfo: await DAO.getGamePromise(conn, gameID),
+      gameInfo: await DAO.getGameAsync(conn, gameID),
       playerInfo: null
     };
   } catch (err) {
@@ -258,22 +258,22 @@ Game._joinGamePromise = async (
 /**
  * Create a new game
  */
-Game._createNewGamePromise = async (
+Game._createNewGameAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: ?Object}> => {
-  const res = await DAO.newGamePromise(conn, defaultGame);
+  const res = await DAO.newGameAsync(conn, defaultGame);
   console.log('Creating game with ID ' + res.insertId);
-  const gameInfo = await DAO.getGamePromise(conn, res.insertId);
+  const gameInfo = await DAO.getGameAsync(conn, res.insertId);
   return {gameInfo, playerInfo: null};
 };
 
-Game._heartImagePromise = async (
+Game._heartImageAsync = async (
   req: {url: string, playerID: number, gameID: string},
   conn: ConnUtils.DBConn,
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  await DAO.increaseHeartCountPromise(conn, req.url);
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  await DAO.increaseHeartCountAsync(conn, req.url);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
@@ -287,12 +287,12 @@ Game._nameAlreadyTaken = (name: string, gameInfo: GameInfo) => {
   return false;
 };
 
-Game._setHostWithConnPromise = async (
+Game._setHostWithConnAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string,
   playerID: number
 ): Promise<Object> => {
-  const res = await DAO.setGamePromise(conn, gameID, {'hostID': playerID});
+  const res = await DAO.setGameAsync(conn, gameID, {'hostID': playerID});
   if (!res || !res.changedRows) {
     throw new Error('Error setting ' + playerID.toString() + ' as host.');
   }
@@ -302,7 +302,7 @@ Game._setHostWithConnPromise = async (
 /**
  * Returns a promise to make a new player and return the playerID
  */
-Game._addNewPlayerWithConnPromise = async (
+Game._addNewPlayerWithConnAsync = async (
   conn: ConnUtils.DBConn,
   gameID: string,
   gameInfo: GameInfo,
@@ -321,11 +321,11 @@ Game._addNewPlayerWithConnPromise = async (
   playerInfo.nickname = nickname;
   playerInfo.game = gameID;
 
-  const playerID = await DAO.newUserPromise(conn, playerInfo);
+  const playerID = await DAO.newUserAsync(conn, playerInfo);
   return playerID;
 };
 
-Game._createPlayerPromise = async (
+Game._createPlayerAsync = async (
   req: {gameID: string, nickname: string, pushToken?: string},
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
@@ -333,35 +333,35 @@ Game._createPlayerPromise = async (
   // in the game req.gameID
   // req.pushToken (optional) can specify a token for push notifications.
   const gameID = req.gameID;
-  const gameInfo: GameInfo = (await Game._getGameInfoWithConnPromise(conn, gameID)).gameInfo;
-  const playerID = await Game._addNewPlayerWithConnPromise(conn, gameID, gameInfo, req.nickname);
+  const gameInfo: GameInfo = (await Game._getGameInfoWithConnAsync(conn, gameID)).gameInfo;
+  const playerID = await Game._addNewPlayerWithConnAsync(conn, gameID, gameInfo, req.nickname);
 
   if (req.pushToken) {
     console.log('Setting push token ' + req.pushToken);
-    await DAO.setUserPromise(conn, playerID, {
+    await DAO.setUserAsync(conn, playerID, {
       ExpoPushToken: req.pushToken,
     });
   }
 
   if (gameInfo.hostID === null) {
     // Set the host to be the player.
-    await Game._setHostWithConnPromise(conn, gameID, playerID);
+    await Game._setHostWithConnAsync(conn, gameID, playerID);
   }
-  return await Game._getPlayerGameInfoWithConnPromise(conn, playerID, gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, playerID, gameID);
 };
 
 /**
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
-Game._startGamePromise = async (
+Game._startGameAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  let info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  let info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
   const [gameInfo, playerInfo] = [info.gameInfo, info.playerInfo];
 
   let [imageInfo, userIDs] = await Promise.all([
-    Game._getNextImagePromise(
+    Game._getNextImageAsync(
       gameInfo.imageQueue,
       gameInfo.image,
       gameInfo.image,
@@ -370,7 +370,7 @@ Game._startGamePromise = async (
       playerInfo.nickname,
       conn,
     ),
-    DAO.getGameUsersPromise(conn, req.gameID)
+    DAO.getGameUsersAsync(conn, req.gameID)
   ]);
 
   let newFirstImageID = imageInfo.image.id;
@@ -392,30 +392,30 @@ Game._startGamePromise = async (
   }
 
   await Promise.all(userIDs.map(
-    (userID) => DAO.setUserPromise(conn, userID, {
+    (userID) => DAO.setUserAsync(conn, userID, {
       response: null,
       submittedScenario: false,
       score: 0
     })
   ));
 
-  let res = await DAO.setGamePromise(conn, req.gameID, gameChanges);
+  let res = await DAO.setGameAsync(conn, req.gameID, gameChanges);
   if (!res) {
     throw new Error('Error starting game');
   } else {
-    return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+    return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
   }
 };
 
 /**
  * Change the gif
  */
-Game._skipImagePromise = async (
+Game._skipImageAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
-  const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
-  const imageInfo = await Game._getNextImagePromise(
+  const info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
+  const imageInfo = await Game._getNextImageAsync(
     info.gameInfo.imageQueue,
     req.image ? req.image : info.gameInfo.image,
     info.gameInfo.image,
@@ -427,23 +427,23 @@ Game._skipImagePromise = async (
 
   if (req.image && imageInfo.image.id > req.image.id) {
     // The image has been skipped for the first time in this game.
-    await DAO.skipImagePromise(conn, req.image.url, req.gameID, req.image.id);
+    await DAO.skipImageAsync(conn, req.image.url, req.gameID, req.image.id);
   }
 
-  await DAO.setGamePromise(conn, req.gameID, {
+  await DAO.setGameAsync(conn, req.gameID, {
     image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
     lastGif: imageInfo.lastPostRetrieved,
     roundStarted: Date.now(),
   });
 
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 /**
  * Promise to return {gameInfo: {}, playerInfo: {}}
  */
-Game._submitResponsePromise = async (
+Game._submitResponseAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
@@ -451,7 +451,7 @@ Game._submitResponsePromise = async (
     throw new Error('Please submit a non-blank response.')
   }
 
-  const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  const info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
   if (!info || !info.gameInfo || info.gameInfo.round != req.round) {
     throw new Error('Error submitting response. Try again');
   }
@@ -462,9 +462,9 @@ Game._submitResponsePromise = async (
     roundOfLastResponse: req.round
   };
 
-  await DAO.setUserPromise(conn, req.playerID, playerChanges);
-  await Game._checkAllResponsesInWithConnPromise(conn, req.gameID);
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  await DAO.setUserAsync(conn, req.playerID, playerChanges);
+  await Game._checkAllResponsesInWithConnAsync(conn, req.gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 /**
@@ -477,14 +477,14 @@ Game._playerIDFromChoiceID = (choiceID: string) => {
 /**
  * Choose the scenario.
  */
-Game._chooseScenarioPromise = async (
+Game._chooseScenarioAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   if (req.choiceID === null) {
     throw new Error('Please pick your favorite scenario.');
   }
-  const info = await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  const info = await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 
   let winningID = Game._playerIDFromChoiceID(req.choiceID);
 
@@ -495,25 +495,25 @@ Game._chooseScenarioPromise = async (
     throw new Error('Please wait for the reactor to choose their favorite scenario.');
   }
 
-  const userIDs = await DAO.getGameUsersPromise(conn, req.gameID);
+  const userIDs = await DAO.getGameUsersAsync(conn, req.gameID);
   if (userIDs.indexOf(winningID) == -1 || req.playerID == winningID) {
     throw new Error('Error submitting response.');
   }
 
-  const winnerInfo = await DAO.getUserPromise(conn, winningID);
-  await DAO.setUserPromise(conn, winningID, {
+  const winnerInfo = await DAO.getUserAsync(conn, winningID);
+  await DAO.setUserAsync(conn, winningID, {
     score: winnerInfo.score + 1
   });
   await Promise.all([
-    DAO.setGamePromise(conn, info.gameInfo.id, {
+    DAO.setGameAsync(conn, info.gameInfo.id, {
       winningResponseSubmittedBy: winnerInfo.nickname,
       winningResponse: winningID
     }),
-    DAO.setImageScenarioPromise(conn, info.gameInfo.id,
+    DAO.setImageScenarioAsync(conn, info.gameInfo.id,
       info.gameInfo.image.id, winnerInfo.response)
     ]);
 
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 /**
@@ -533,13 +533,13 @@ Game._getNextReactor = (users: Array<number>, oldReactor: number) => {
 /**
  * Advance to the next round.
  **/
-Game._nextRoundPromise = async (
+Game._nextRoundAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   const [info, userIDs] = await Promise.all([
-    Game._getGameInfoWithConnPromise(conn, req.gameID),
-    DAO.getGameUsersPromise(conn, req.gameID)
+    Game._getGameInfoWithConnAsync(conn, req.gameID),
+    DAO.getGameUsersAsync(conn, req.gameID)
   ]);
   const gameInfo = info.gameInfo;
   if (req.playerID != gameInfo.reactorID) {
@@ -551,9 +551,9 @@ Game._nextRoundPromise = async (
   if (!nextReactor) {
     throw new Error('Error moving to the next round: No players left.');
   }
-  const nextReactorNickname = (await DAO.getUserPromise(conn, nextReactor)).nickname;
+  const nextReactorNickname = (await DAO.getUserAsync(conn, nextReactor)).nickname;
 
-  const imageInfo = await Game._getNextImagePromise(
+  const imageInfo = await Game._getNextImageAsync(
     gameInfo.imageQueue,
     gameInfo.image,
     gameInfo.image,
@@ -565,13 +565,13 @@ Game._nextRoundPromise = async (
 
   // Remove responses from people and set submittedScenario to false
   await Promise.all(userIDs.map(
-    (userID) => DAO.setUserPromise(conn, userID, {
+    (userID) => DAO.setUserAsync(conn, userID, {
       response: null,
       submittedScenario: false
     })
   ));
 
-  await DAO.setGamePromise(conn, req.gameID, {
+  await DAO.setGameAsync(conn, req.gameID, {
     round: gameInfo.round + 1,
     image: imageInfo.image,
     imageQueue: imageInfo.imageQueue,
@@ -584,19 +584,19 @@ Game._nextRoundPromise = async (
     roundStarted: Date.now(),
   });
 
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 /**
  * End the game.
  **/
-Game._endGamePromise = async (
+Game._endGameAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: GameInfo, playerInfo: Object}> => {
   const [info, userIDs] = await Promise.all([
-    Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID),
-    DAO.getGameUsersPromise(conn, req.gameID)
+    Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID),
+    DAO.getGameUsersAsync(conn, req.gameID)
   ]);
 
   if (req.gameID != info.playerInfo.game) {
@@ -605,13 +605,13 @@ Game._endGamePromise = async (
 
   // Remove responses from people and set submittedScenario to false
   await Promise.all(userIDs.map(
-    (userID) => DAO.setUserPromise(conn, userID, {
+    (userID) => DAO.setUserAsync(conn, userID, {
       response: null,
       submittedScenario: false
     })
   ));
 
-  await DAO.setGamePromise(conn, req.gameID, {
+  await DAO.setGameAsync(conn, req.gameID, {
     round: null,
     image: null,
     waitingForScenarios: false,
@@ -622,7 +622,7 @@ Game._endGamePromise = async (
     gameOver: true,
   });
 
-  return await Game._getPlayerGameInfoWithConnPromise(conn, req.playerID, req.gameID);
+  return await Game._getPlayerGameInfoWithConnAsync(conn, req.playerID, req.gameID);
 };
 
 /**
@@ -630,34 +630,34 @@ Game._endGamePromise = async (
  * Doesn't reset the other info under the player in the database.
  * But will send a blank player and game. (So the user can start over.)
  **/
-Game._leaveGamePromise = async (
+Game._leaveGameAsync = async (
   req: Object,
   conn: ConnUtils.DBConn
 ): Promise<{gameInfo: null, playerInfo: null}> => {
-  const playerInfo = await DAO.getUserPromise(conn, req.playerID);
-  const gameInfo = await DAO.getGamePromise(conn, playerInfo.game);
+  const playerInfo = await DAO.getUserAsync(conn, req.playerID);
+  const gameInfo = await DAO.getGameAsync(conn, playerInfo.game);
   if (req.playerID == gameInfo.reactorID) {
     req.gameID = playerInfo.game;
-    await Game._nextRoundPromise(req, conn);
+    await Game._nextRoundAsync(req, conn);
   }
-  await DAO.leaveGamePromise(conn, req.playerID, playerInfo.game);
+  await DAO.leaveGameAsync(conn, req.playerID, playerInfo.game);
   return {gameInfo: null, playerInfo: null};
 };
 
 // Functions that call cb(err, res), where res = {gameInfo: [blah], playerInfo: [blah]}
 const actions = {
-  getGameInfo: Game._getGameInfoPromise,
-  joinGame: Game._joinGamePromise,
-  createPlayer: Game._createPlayerPromise,
-  createNewGame: Game._createNewGamePromise,
-  heartImage: Game._heartImagePromise,
-  startGame: Game._startGamePromise,
-  skipImage: Game._skipImagePromise,
-  submitResponse: Game._submitResponsePromise,
-  chooseScenario: Game._chooseScenarioPromise,
-  nextRound: Game._nextRoundPromise,
-  endGame: Game._endGamePromise,
-  leaveGame: Game._leaveGamePromise
+  getGameInfo: Game._getGameInfoAsync,
+  joinGame: Game._joinGameAsync,
+  createPlayer: Game._createPlayerAsync,
+  createNewGame: Game._createNewGameAsync,
+  heartImage: Game._heartImageAsync,
+  startGame: Game._startGameAsync,
+  skipImage: Game._skipImageAsync,
+  submitResponse: Game._submitResponseAsync,
+  chooseScenario: Game._chooseScenarioAsync,
+  nextRound: Game._nextRoundAsync,
+  endGame: Game._endGameAsync,
+  leaveGame: Game._leaveGameAsync
 };
 
 /**
@@ -665,7 +665,7 @@ const actions = {
  * req has the 'action' property to tell it what action to complete
  * Returns a promise to return {gameInfo: {}, playerInfo: {}}
  */
-Game.processRequest = async (
+Game.processRequestAsync = async (
   req: Object
 ): Promise<?{gameInfo: GameInfo, playerInfo: ?Object}> => {
   if (!req.action || !actions.hasOwnProperty(req.action)) {
@@ -675,16 +675,16 @@ Game.processRequest = async (
   let conn;
   try {
 
-    conn = await ConnUtils.getNewConnectionPromise(ConnUtils.Modes.WRITE);
-    await ConnUtils.beginTransactionPromise(conn);
+    conn = await ConnUtils.getNewConnectionAsync(ConnUtils.Modes.WRITE);
+    await ConnUtils.beginTransactionAsync(conn);
 
     // Update the last active time if the app is active
     if (req.playerID && req.appIsActive) {
-      await Game._setActiveTimePromise(conn, req.playerID);
+      await Game._setActiveTimeAsync(conn, req.playerID);
     }
 
     const info = await actions[req.action](req, conn);
-    await ConnUtils.commitTransactionPromise(conn);
+    await ConnUtils.commitTransactionAsync(conn);
     return info;
 
   } catch (err) {

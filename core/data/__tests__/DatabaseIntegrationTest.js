@@ -130,11 +130,11 @@ describe('DatabaseIntegrationTest', function() {
 
     // Connect to the database for the integration test
     async function testGame() {
-      wConn = await connUtils.getNewConnectionPromise(
+      wConn = await connUtils.getNewConnectionAsync(
         connUtils.Modes.WRITE,
         DBConfig
       );
-      let result = await DAO.newGamePromise(wConn, game);
+      let result = await DAO.newGameAsync(wConn, game);
       expect(wConn.getConn()).toBeDefined();
       expect(result).not.toBe(null);
       expect(result.insertId).toBeDefined;
@@ -238,20 +238,20 @@ describe('DatabaseIntegrationTest', function() {
     let wConn;
 
     async function testGame() {
-      wConn = await connUtils.getNewConnectionPromise(
+      wConn = await connUtils.getNewConnectionAsync(
         connUtils.Modes.WRITE,
         DBConfig
       );
-      let result = await DAO.newGamePromise(wConn, game);
+      let result = await DAO.newGameAsync(wConn, game);
       const gameId = result.insertId;
       expect(wConn.getConn()).toBeDefined();
       expect(result.affectedRows).toEqual(1);
 
-      result = await DAO.getGamePromise(wConn, gameId);
+      result = await DAO.getGameAsync(wConn, gameId);
       expectedRow.id = gameId;
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-      result = await DAO.setGamePromise(wConn, gameId, {hostID: 3, round: 2});
+      result = await DAO.setGameAsync(wConn, gameId, {hostID: 3, round: 2});
       expect(result).toBeDefined();
       if (result) {
         expect(result.hasOwnProperty('affectedRows')).toBe(true);
@@ -260,7 +260,7 @@ describe('DatabaseIntegrationTest', function() {
         expect(result.affectedRows).toEqual(1);
       }
 
-      result = await DAO.getGamePromise(wConn, gameId);
+      result = await DAO.getGameAsync(wConn, gameId);
       expectedRow2.id = gameId;
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
     }
@@ -321,39 +321,39 @@ describe('DatabaseIntegrationTest', function() {
     let wConn;
 
     async function testUser() {
-      wConn = await connUtils.getNewConnectionPromise(
+      wConn = await connUtils.getNewConnectionAsync(
         connUtils.Modes.WRITE,
         DBConfig
       );
 
-      let id = await DAO.newUserPromise(wConn, user);
+      let id = await DAO.newUserAsync(wConn, user);
       expect(wConn.getConn()).toBeDefined();
       expect(id).toEqual(1);
 
-      let result = await DAO.getUserPromise(wConn, 1);
+      let result = await DAO.getUserAsync(wConn, 1);
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow));
 
-      result = await DAO.setUserPromise(wConn, 1, {});
+      result = await DAO.setUserAsync(wConn, 1, {});
       expect(result).toBe(null);
 
-      result = await DAO.setUserPromise(wConn, 1, {score: 3, game: 'C'});
-      result = await DAO.getUserPromise(wConn, 1);
+      result = await DAO.setUserAsync(wConn, 1, {score: 3, game: 'C'});
+      result = await DAO.getUserAsync(wConn, 1);
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedRow2));
 
-      await DAO.newUserPromise(wConn, user);
-      await DAO.newUserPromise(wConn, user);
-      let users = await DAO.getGameUsersPromise(wConn, 'C');
+      await DAO.newUserAsync(wConn, user);
+      await DAO.newUserAsync(wConn, user);
+      let users = await DAO.getGameUsersAsync(wConn, 'C');
       expect(users).toEqual([1]);
 
-      users = await DAO.getGameUsersPromise(wConn, 'B');
+      users = await DAO.getGameUsersAsync(wConn, 'B');
       expect(users).toEqual([2, 3]);
 
-      await DAO.leaveGamePromise(wConn, 2, 'B');
-      users = await DAO.getGameUsersPromise(wConn, 'B');
+      await DAO.leaveGameAsync(wConn, 2, 'B');
+      users = await DAO.getGameUsersAsync(wConn, 'B');
       expect(users).toEqual([3]);
 
-      await DAO.leaveGamePromise(wConn, 3, 'B');
-      users = await DAO.getGameUsersPromise(wConn, 'B');
+      await DAO.leaveGameAsync(wConn, 3, 'B');
+      users = await DAO.getGameUsersAsync(wConn, 'B');
       expect(users).toEqual([]);
     }
 
@@ -411,12 +411,12 @@ describe('DatabaseIntegrationTest', function() {
     let wConn;
 
     async function testGame1() {
-      wConn = await connUtils.getNewConnectionPromise(
+      wConn = await connUtils.getNewConnectionAsync(
         connUtils.Modes.WRITE,
         DBConfig
       );
       try {
-        await DAO.newGamePromise(wConn, game1);
+        await DAO.newGameAsync(wConn, game1);
         fail();
       }
       catch (err) {
@@ -426,7 +426,7 @@ describe('DatabaseIntegrationTest', function() {
 
     async function testGame2() {
       try {
-        await DAO.newGamePromise(wConn, game2);
+        await DAO.newGameAsync(wConn, game2);
         fail();
       }
       catch (err) {
@@ -467,30 +467,30 @@ describe('DatabaseIntegrationTest', function() {
     let wConn;
 
     async function testImage() {
-      wConn = await connUtils.getNewConnectionPromise(
+      wConn = await connUtils.getNewConnectionAsync(
         connUtils.Modes.WRITE,
         DBConfig
       );
 
-      await DAO.newImagePromise(wConn, 'testURL1', 'D', 2, 'reactor1');
-      await DAO.newImagePromise(wConn, 'testURL2', 'D', 3, 'reactor2');
-      await DAO.newImagePromise(wConn, 'testURL3', 'D', 4, 'reactor3');
-      await DAO.newImagePromise(wConn, 'testURL3', 'D', 5, 'reactor4');
+      await DAO.newImageAsync(wConn, 'testURL1', 'D', 2, 'reactor1');
+      await DAO.newImageAsync(wConn, 'testURL2', 'D', 3, 'reactor2');
+      await DAO.newImageAsync(wConn, 'testURL3', 'D', 4, 'reactor3');
+      await DAO.newImageAsync(wConn, 'testURL3', 'D', 5, 'reactor4');
 
       // Same image but different game
-      await DAO.newImagePromise(wConn, 'testURL2', 'C', 3, 'reactor4');
+      await DAO.newImageAsync(wConn, 'testURL2', 'C', 3, 'reactor4');
 
-      let result = await DAO.getImagePromise(wConn, 'testURL1');
+      let result = await DAO.getImageAsync(wConn, 'testURL1');
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedImageRow1));
 
-      await DAO.skipImagePromise(wConn, 'testURL2', 'D', 3);
-      await DAO.increaseHeartCountPromise(wConn, 'testURL2');
-      await DAO.increaseHeartCountPromise(wConn, 'testURL2');
+      await DAO.skipImageAsync(wConn, 'testURL2', 'D', 3);
+      await DAO.increaseHeartCountAsync(wConn, 'testURL2');
+      await DAO.increaseHeartCountAsync(wConn, 'testURL2');
 
-      DAO.setImageScenarioPromise(wConn, 'D', 2, 'scenario1');
-      DAO.setImageScenarioPromise(wConn, 'D', 4, 'scenario2');
+      DAO.setImageScenarioAsync(wConn, 'D', 2, 'scenario1');
+      DAO.setImageScenarioAsync(wConn, 'D', 4, 'scenario2');
 
-      result = await DAO.getGameImagesPromise(wConn, 'D');
+      result = await DAO.getGameImagesAsync(wConn, 'D');
       const expectedGameImages1 = [
         {
           gameImageId: 2,
@@ -507,7 +507,7 @@ describe('DatabaseIntegrationTest', function() {
       ];
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages1));
 
-      result = await DAO.getGameImagesPromise(wConn, 'D', 3);
+      result = await DAO.getGameImagesAsync(wConn, 'D', 3);
       const expectedGameImages2 = [
         {
           gameImageId: 4,
@@ -518,7 +518,7 @@ describe('DatabaseIntegrationTest', function() {
       ];
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedGameImages2));
 
-      result = await DAO.getGameImagesPromise(wConn, 'C');
+      result = await DAO.getGameImagesAsync(wConn, 'C');
       expect(result.length).toBe(0);
 
       const expectedImageRow2 = {
@@ -526,7 +526,7 @@ describe('DatabaseIntegrationTest', function() {
         nSkipped: 1,
         nHearted: 2,
       };
-      result = await DAO.getImagePromise(wConn, 'testURL2');
+      result = await DAO.getImageAsync(wConn, 'testURL2');
       expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedImageRow2))
     }
 

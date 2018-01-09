@@ -59,7 +59,7 @@ Object.assign(DBConn.prototype, {
 const ConnectionUtils = {
   Modes: ConnectionModes,
 
-  getNewConnectionPromise: function(mode: number, customConf?: Object): Promise<DBConn> {
+  getNewConnectionAsync: function(mode: number, customConf?: Object): Promise<DBConn> {
     return new Promise(function(resolve, reject) {
       getConnection(
         (err, conn) => (err ? reject(err) : resolve(new DBConn(conn, mode))),
@@ -68,7 +68,7 @@ const ConnectionUtils = {
     });
   },
 
-  beginTransactionPromise: function(conn: DBConn): Promise<void> {
+  beginTransactionAsync: function(conn: DBConn): Promise<void> {
     return new Promise(function(resolve, reject) {
       conn.getConn().beginTransaction((err) => {
         if (err) {
@@ -80,7 +80,7 @@ const ConnectionUtils = {
     });
   },
 
-  commitTransactionPromise: function(conn: DBConn): Promise<void> {
+  commitTransactionAsync: function(conn: DBConn): Promise<void> {
     return new Promise(function(resolve, reject) {
       conn.getConn().commit((err) => {
         if (err) {

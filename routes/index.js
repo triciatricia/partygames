@@ -16,7 +16,7 @@ router.post('/api/game', async (req, res) => {
   }
 
   try {
-    const info = await game.processRequest(req.body);
+    const info = await game.processRequestAsync(req.body);
     if (req.body.action !== 'getGameInfo') {
       console.log('Sending info:', info);
     }

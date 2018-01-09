@@ -17,7 +17,7 @@ describe ('Make connection integration test', function() {
       let connUtils = require('../conn');
       let rConn;
       try {
-        rConn = await connUtils.getNewConnectionPromise(connUtils.Modes.READ);
+        rConn = await connUtils.getNewConnectionAsync(connUtils.Modes.READ);
         rConn.getConn().end();
       } catch (err) {
         expect(err).toBeNull();

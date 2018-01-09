@@ -26,7 +26,7 @@ function linkIsGifv(url: string): boolean {
   return url.toLowerCase().endsWith('.gifv');
 }
 
-async function vidFromGifv(url: string): Promise<string> {
+async function vidFromGifvAsync(url: string): Promise<string> {
   // Get the video link from a gifv
   const dom = await JSDOM.fromURL(url);
   const sources = dom.window.document.querySelectorAll('source[type="video/mp4"]');
@@ -45,7 +45,7 @@ async function vidFromGifv(url: string): Promise<string> {
   }
 }
 
-async function filterPosts(posts: Array<{data: {url: string}}>): Promise<Array<string>> {
+async function filterPostsAsync(posts: Array<{data: {url: string}}>): Promise<Array<string>> {
   // Filter posts for gifs (only use videos because they have smaller file sizes)
   let filteredPosts = [];
   for (let i = 0; i < posts.length; i++) {
@@ -56,7 +56,7 @@ async function filterPosts(posts: Array<{data: {url: string}}>): Promise<Array<s
     } else if (linkIsGifv(posts[i].data.url)) {
 
       try {
-        const vidUrl = await vidFromGifv(posts[i].data.url);
+        const vidUrl = await vidFromGifvAsync(posts[i].data.url);
         filteredPosts.push(vidUrl);
       } catch (error) {
         // Do nothing
@@ -99,7 +99,7 @@ function fetchData(
           const parsedData = JSON.parse(data);
           const posts = parsedData.data.children;
           const lastPostRetrieved = parsedData.data.after;
-          filterPosts(posts).then(filteredPosts => {
+          filterPostsAsync(posts).then(filteredPosts => {
             cb(null, filteredPosts, lastPostRetrieved);
           });
 
@@ -116,7 +116,7 @@ function fetchData(
   );
 };
 
-export const getGifs = (
+export const getGifsAsync = (
   lastPostRetrieved: ?string
 ): Promise<[Array<string>, ?string]> => {
   return new Promise((resolve, reject) => {
