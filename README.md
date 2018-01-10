@@ -1,4 +1,5 @@
-#My Reaction When <img src='public/build/images/mrw_face_small.png' align='right' alt='logo' />
+My Reaction When <img src='public/build/images/mrw_face_small.png' align='right' alt='logo' />
+=====
 
 _A multiplayer party game with gifs!_
 
