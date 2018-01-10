@@ -10,7 +10,7 @@ var conf = {
   dbHost: 'localhost',
   dbUser: 'user',
   dbPass: 'pw',
-  dbName: 'partygames',
+  dbName: 'myreactionwhen',
   isProduction: false,
   charset: 'utf8mb4',
 };
